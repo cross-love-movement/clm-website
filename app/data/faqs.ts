@@ -106,3 +106,31 @@ export const contactFaqs: FaqItem[] = [
       'Email us with “Complaint” in the subject line. Complaints go directly to the Executive Director and are acknowledged within 48 hours.',
   },
 ]
+
+export const eventFaqs: FaqItem[] = [
+  {
+    question: 'Do I need to register?',
+    answer:
+      'Yes, for planning and seating. Registration is free, and it is how we know how many people to prepare for. Registering also gets you a reminder and any change of venue.',
+  },
+  {
+    question: 'Can I bring a friend or my family?',
+    answer:
+      'Yes. Choose how many people are coming when you register so that we can plan seats and food properly. Children are welcome with a guardian.',
+  },
+  {
+    question: 'What should I bring?',
+    answer:
+      'Comfortable clothes and a reusable water bottle. For creation care workshops we provide gloves and sorting materials. For artiste clinics, bring a song you are working on.',
+  },
+  {
+    question: 'What if I can no longer attend?',
+    answer:
+      'Email us as early as you can. Places at clinics and outreach days are limited, and we would rather give yours to someone on the waiting list.',
+  },
+  {
+    question: 'Are the venues accessible?',
+    answer:
+      'Tell us what you need in the registration notes — step-free access, seating near the front, or anything else — and we will confirm what the venue can support before the day.',
+  },
+]

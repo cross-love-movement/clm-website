@@ -122,5 +122,60 @@ export interface DonationOption {
   impact: string
 }
 
+export type EventCategory =
+  | 'session'
+  | 'training'
+  | 'workshop'
+  | 'devotion'
+  | 'outreach'
+  | 'showcase'
+
+export interface Event {
+  slug: string
+  title: string
+  category: EventCategory
+  summary: string
+  description: string[]
+  /** ISO 8601 timestamp with offset. Ghana is GMT (UTC+00:00). */
+  startsAt: string
+  endsAt: string
+  venue: string
+  address: string
+  city: string
+  capacity: number
+  /** Places already taken — replace with real registrations. */
+  registered: number
+  registrationDeadline?: string
+  featured?: boolean
+}
+
+export type PostCategory = 'story' | 'update' | 'reflection' | 'event'
+
+export interface PostSection {
+  heading?: string
+  paragraphs: string[]
+}
+
+export interface PostQuote {
+  text: string
+  attribution?: string
+}
+
+export interface Post {
+  slug: string
+  title: string
+  category: PostCategory
+  excerpt: string
+  /** ISO date (time optional) used for ordering and display. */
+  publishedAt: string
+  author: string
+  readingMinutes: number
+  image: string
+  imageAlt: string
+  featured?: boolean
+  quote?: PostQuote
+  sections: PostSection[]
+}
+
 /** Field-level errors keyed by form field name. */
 export type FieldErrors = Record<string, string>

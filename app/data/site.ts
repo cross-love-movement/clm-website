@@ -30,9 +30,10 @@ export const site = {
 } as const
 
 export const primaryNav: NavLink[] = [
-  { label: 'Home', to: '/' },
   { label: 'About', to: '/about' },
   { label: 'Our Projects', to: '/projects' },
+  { label: 'Events', to: '/events' },
+  { label: 'News', to: '/news' },
   { label: 'Volunteer', to: '/volunteer' },
   { label: 'Partnership', to: '/partnership' },
   { label: 'Contact', to: '/contact' },
@@ -44,6 +45,8 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
     links: [
       { label: 'About us', to: '/about' },
       { label: 'Our projects', to: '/projects' },
+      { label: 'Events', to: '/events' },
+      { label: 'News', to: '/news' },
       { label: 'Contact', to: '/contact' },
     ],
   },

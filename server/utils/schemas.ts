@@ -78,3 +78,17 @@ export const donationSchema = z.object({
   frequency: z.enum(['one-time', 'monthly'], { message: 'Please choose a giving frequency.' }),
   note: z.string().trim().max(1000).optional().default(''),
 })
+
+export const eventRegistrationSchema = z.object({
+  eventSlug: z.string().trim().min(1, 'Please choose an event.'),
+  name,
+  email,
+  phone: optionalPhone,
+  attendees: z.coerce
+    .number({ message: 'Please choose how many are coming.' })
+    .int('Please use a whole number.')
+    .min(1, 'At least one person must attend.')
+    .max(10, 'Please contact us for groups larger than 10.'),
+  notes: z.string().trim().max(1000).optional().default(''),
+  consent,
+})

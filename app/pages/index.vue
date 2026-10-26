@@ -76,6 +76,10 @@ useSeo({
       </div>
     </section>
 
+    <EventsSection />
+
+    <NewsSection />
+
     <!-- Vision -->
     <section class="container-page py-20 sm:py-24">
       <figure class="relative mx-auto max-w-4xl text-center">

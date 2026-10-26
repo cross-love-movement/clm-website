@@ -79,19 +79,24 @@ clm-website/
 │  │  ├─ layout/               # SiteHeader, SiteFooter
 │  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard,
 │  │  │                        # StatGrid, FaqList, AlertBox, Icon, BrandMark, fields…
-│  │  ├─ home/                 # HeroSection
-│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter
-│  ├─ composables/             # useSite, useProjects, useProject, useForm, useSeo
-│  ├─ data/                    # Typed content: site, projects, about, involve, faqs
+│  │  ├─ home/                 # HeroSection, EventsSection, NewsSection
+│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter,
+│  │                           # EventRegistration
+│  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
+│  │                           # useForm, useSeo
+│  ├─ data/                    # Typed content: site, projects, about, involve, faqs, posts
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
-│  ├─ pages/                   # File-based routes
-│  ├─ utils/form.ts            # Shared form control classes
+│  ├─ pages/                   # File-based routes, including /events
+│  ├─ utils/                   # form.ts (control styles), events.ts (date formatting)
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
 ├─ server/
-│  ├─ api/                     # contact, volunteer, partnership, newsletter, donate
+│  ├─ api/                     # contact, volunteer, partnership, newsletter, donate,
+│  │                           # events/register
 │  └─ utils/                   # schemas (Zod), validation, mailer, rate-limit
-├─ shared/types/content.ts     # Types used by both app and server
+├─ shared/
+│  ├─ types/content.ts         # Types used by both app and server
+│  └─ data/events.ts           # Event calendar (shared so the API can validate slugs)
 ├─ tests/                      # Vitest: content integrity + server schema tests
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
 ├─ nuxt.config.ts
@@ -106,17 +111,20 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route              | Page           | Server route            |
-| ------------------ | -------------- | ----------------------- |
-| `/`                | Home           | —                       |
-| `/about`           | About          | —                       |
-| `/projects`        | Projects index | —                       |
-| `/projects/[slug]` | Project detail | —                       |
-| `/volunteer`       | Volunteer      | `POST /api/volunteer`   |
-| `/partnership`     | Partnership    | `POST /api/partnership` |
-| `/contact`         | Contact        | `POST /api/contact`     |
-| `/donate`          | Donate         | `POST /api/donate`      |
-| footer newsletter  | —              | `POST /api/newsletter`  |
+| Route              | Page           | Server route                |
+| ------------------ | -------------- | --------------------------- |
+| `/`                | Home           | —                           |
+| `/about`           | About          | —                           |
+| `/projects`        | Projects index | —                           |
+| `/projects/[slug]` | Project detail | —                           |
+| `/events`          | Events         | `POST /api/events/register` |
+| `/news`            | News index     | —                           |
+| `/news/[slug]`     | Article        | —                           |
+| `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
+| `/partnership`     | Partnership    | `POST /api/partnership`     |
+| `/contact`         | Contact        | `POST /api/contact`         |
+| `/donate`          | Donate         | `POST /api/donate`          |
+| footer newsletter  | —              | `POST /api/newsletter`      |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -135,6 +143,18 @@ Pages never import content directly from components; they go through `useProject
 `useSite()`, etc. When the organisation outgrows flat files, only those composables need to change
 — swap the implementation for Nuxt Content (`.md` + MDC) or a headless CMS and the page templates
 keep working. That is the intended upgrade path.
+
+Events live in `shared/data/events.ts` because both sides need them: the events page renders the
+calendar, and the registration API validates that a submitted slug exists and that registration is
+still open. `useEvents()` exposes the sorted upcoming list to the app.
+
+News posts live in `app/data/posts.ts` with structured sections (`heading` + `paragraphs`), an
+optional pull quote, and reading time. `useNews()` provides the date-sorted list, the featured post,
+category filtering, and related posts. `/news/[slug]` adds `BlogPosting` JSON-LD on top of the
+standard SEO metadata.
+
+> Event registration currently **emails the team**; it does not persist a booking or increment
+> `capacity`/`registered`. Connect a database or sheet before relying on it for headcounts.
 
 ### Content provenance
 
@@ -165,6 +185,10 @@ invented to fill them. These items are **editorial placeholders** and need sign-
 - Bank / mobile-money details and international giving routes
 - Officer list beyond the Executive Director
 - Photography, social media links, and any impact figures
+- **Event calendar** — all dates, venues, capacities, and registration deadlines are dummy data;
+  "free to attend" and the confirmation-reminder promise are editorial assumptions
+- **News posts** — all six articles are illustrative composites; names and details are changed or
+  invented, and they should be replaced with real reporting before launch
 
 Programme statuses are honest: `active` is used only for activities the profile documents, and
 stated constitutional aims are marked **In development**.
@@ -243,11 +267,15 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
 - `npm run check` — passes (format, lint, type-aware checks across 56 files)
-- `npm test` — 14 tests passing (content integrity + server validation schemas)
+- `npm test` — 24 tests passing (content integrity, event calendar, news posts, server validation)
 - `npm run build` — passes through Vite+ core
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
+- News index, article pages, and the home news strip verified; article pages include `BlogPosting`
+  JSON-LD, and unknown slugs return `404`
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
+- Event registration verified for a valid event (`200`), unknown slug (`404`), and invalid attendee
+  count (`400`), with the confirmation email present in the development mail log
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
 
 ---
@@ -261,11 +289,15 @@ international cards) that creates a transaction and returns a checkout URL, then
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
 5. **Payments** — connect a gateway if online giving is required (see above).
-6. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.
-7. **Analytics and consent** — add only what is needed, with a consent gate if required.
-8. **SEO** — add `@nuxtjs/sitemap` + `robots.txt` once the final domain is live.
-9. **Accessibility** — run axe/Lighthouse and a keyboard pass, especially the mobile menu.
-10. **CI** — run `npm run check`, `npm run typecheck`, `npm test`, and `npm run build` on every push.
+6. **Event registrations** — replace the dummy calendar and connect registration to a real store
+   (database, Google Sheet, or event platform) so capacities and headcounts stay accurate.
+7. **News** — replace the illustrative posts, agree an editorial cadence, and add an RSS feed
+   (`/rss.xml`) if people want to subscribe outside email.
+8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.
+9. **Analytics and consent** — add only what is needed, with a consent gate if required.
+10. **SEO** — add `@nuxtjs/sitemap` + `robots.txt` once the final domain is live.
+11. **Accessibility** — run axe/Lighthouse and a keyboard pass, especially the mobile menu.
+12. **CI** — run `npm run check`, `npm run typecheck`, `npm test`, and `npm run build` on every push.
 
 ## Deployment
 
