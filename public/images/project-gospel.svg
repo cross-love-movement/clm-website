@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Abstract artwork: a wave of sound rising inside a church arch">
+  <defs>
+    <linearGradient id="gospel-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#241d18"/>
+      <stop offset="1" stop-color="#0c0908"/>
+    </linearGradient>
+    <radialGradient id="gospel-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#b81828" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#b81828" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#gospel-bg)"/>
+
+  <circle cx="600" cy="450" r="400" fill="url(#gospel-glow)"/>
+
+  <g fill="none" stroke="#b81828">
+    <circle cx="600" cy="430" r="270" stroke-opacity="0.3" stroke-width="1.5"/>
+    <circle cx="600" cy="430" r="330" stroke-opacity="0.2" stroke-width="1.5" stroke-dasharray="3 12"/>
+  </g>
+
+  <path
+    d="M430 610V360a170 170 0 0 1 340 0v250Z"
+    fill="none"
+    stroke="#fdfbf7"
+    stroke-width="7"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M470 610V368a130 130 0 0 1 260 0v242Z"
+    fill="none"
+    stroke="#e0a33e"
+    stroke-opacity="0.55"
+    stroke-width="2.5"
+  />
+
+  <g fill="#fdfbf7">
+    <rect x="500" y="440" width="9" height="60" rx="4.5" opacity="0.55"/>
+    <rect x="521" y="416" width="9" height="108" rx="4.5" opacity="0.75"/>
+    <rect x="542" y="380" width="9" height="180" rx="4.5"/>
+    <rect x="563" y="408" width="9" height="124" rx="4.5" opacity="0.85"/>
+    <rect x="584" y="356" width="9" height="228" rx="4.5"/>
+    <rect x="605" y="392" width="9" height="156" rx="4.5" opacity="0.9"/>
+    <rect x="626" y="368" width="9" height="204" rx="4.5"/>
+    <rect x="647" y="420" width="9" height="100" rx="4.5" opacity="0.75"/>
+    <rect x="668" y="446" width="9" height="48" rx="4.5" opacity="0.55"/>
+  </g>
+
+  <g fill="#e0a33e">
+    <circle cx="250" cy="190" r="4" opacity="0.75"/>
+    <circle cx="318" cy="150" r="2.5" opacity="0.45"/>
+    <circle cx="960" cy="600" r="3.5" opacity="0.55"/>
+    <circle cx="918" cy="650" r="2" opacity="0.35"/>
+  </g>
+</svg>

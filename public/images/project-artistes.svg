@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Abstract artwork: a microphone under a warm spotlight">
+  <defs>
+    <linearGradient id="art-bg" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#241d18"/>
+      <stop offset="1" stop-color="#0c0908"/>
+    </linearGradient>
+    <radialGradient id="art-spot" cx="0.5" cy="0" r="0.8">
+      <stop offset="0" stop-color="#e0a33e" stop-opacity="0.5"/>
+      <stop offset="0.55" stop-color="#b81828" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#b81828" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="art-grille">
+      <rect x="552" y="196" width="96" height="156" rx="48"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#art-bg)"/>
+  <rect width="1200" height="750" fill="url(#art-spot)"/>
+
+  <g fill="none" stroke="#b81828" stroke-opacity="0.35">
+    <circle cx="600" cy="360" r="210" stroke-width="1.5"/>
+    <circle cx="600" cy="360" r="280" stroke-width="1.5" stroke-dasharray="3 12"/>
+  </g>
+
+  <path d="M470 520a130 130 0 0 1 0-260" fill="none" stroke="#e0a33e" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M730 520a130 130 0 0 0 0-260" fill="none" stroke="#e0a33e" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+
+  <rect x="552" y="196" width="96" height="156" rx="48" fill="#fdfbf7"/>
+  <g clip-path="url(#art-grille)" stroke="#17120f" stroke-opacity="0.35" stroke-width="4">
+    <path d="M540 224h120M540 252h120M540 280h120M540 308h120M540 336h120"/>
+  </g>
+
+  <path d="M556 352h88l-12 186a32 32 0 0 1-64 0Z" fill="#fdfbf7" opacity="0.92"/>
+  <rect x="556" y="376" width="88" height="16" fill="#b81828"/>
+
+  <g fill="#e0a33e">
+    <circle cx="300" cy="180" r="4" opacity="0.7"/>
+    <circle cx="880" cy="596" r="3.5" opacity="0.5"/>
+    <circle cx="920" cy="640" r="2" opacity="0.3"/>
+  </g>
+</svg>
