@@ -19,7 +19,7 @@ const countFor = (category: 'all' | ProjectCategory) =>
 useSeo({
   title: 'Our projects',
   description:
-    'Explore Cross-Love Movement’s programmes in Gospel outreach, artiste development, creation care, and community support across Ghana.',
+    'Explore Cross-Love Movement’s Christian Mission Projects with local churches and Youth Empowerment Programmes across Ghana.',
   path: '/projects',
 })
 </script>
@@ -29,7 +29,7 @@ useSeo({
     <PageHero
       eyebrow="Our projects"
       title="Work measured in seasons, not campaigns."
-      description="Programmes drawn from our constitution: Gospel outreach, artiste development, creation care, and compassion in action."
+      description="Two classes of work: Christian Mission Projects with local churches, and Youth Empowerment Programmes for the next generation."
     >
       <BaseButton to="/donate" variant="inverse">
         Fund a programme
@@ -111,7 +111,7 @@ useSeo({
       <CtaBanner
         eyebrow="Put your hands to something"
         title="These programmes run on people like you."
-        description="Musicians, media volunteers, recycling educators, prayer partners — and donors who make the work possible."
+        description="Young creatives, media volunteers, mentors, prayer partners — and donors who make the work possible."
         primary-label="Volunteer"
         primary-to="/volunteer"
         secondary-label="Partner with us"

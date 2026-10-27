@@ -7,120 +7,137 @@ import type {
   IconName,
 } from '#shared/types/content'
 
+/**
+ * Organisation copy follows the 2026 Cross-Love Movement profile.
+ * Where the profile is silent, the earlier claim is kept and flagged in the
+ * README rather than invented.
+ */
+
 export const mission =
-  'To solidify our support for Christian and Bible-believing communities in propagating the Gospel of Christ, and to help upcoming and struggling gospel artistes jumpstart their careers.'
+  'To leverage faith, creativity and inclusion to empower youth in building sustainable societies.'
 
 export const vision =
-  'A society where people are inspired by the beauty of music and motivated to contribute to the well-being of others and the planet.'
+  'To be a hub that builds a succession of youth empowered to drive transgenerational impact in Ghana and beyond.'
 
-export const goal =
-  'To propagate the Gospel of Christ by all means possible through targeted support to Christian and Bible-believing communities, while supporting upcoming and struggling gospel musicians to jumpstart their careers.'
+export const introduction =
+  'Cross-Love Movement is a Christian, non-denominational nonprofit network of young corporate creatives and youthful advocates. Since 2018 we have used faith, creativity, and inclusion to involve young people in work that outlives them.'
 
 export const stats: Stat[] = [
-  { value: '2023', label: 'Established', note: 'registered 18 May 2023' },
-  { value: '3', label: 'Focus areas', note: 'Gospel, artistes, creation' },
-  { value: '12', label: 'Constitutional objectives', note: 'our governing aims' },
-  { value: '2', label: 'Regions reached', note: 'Greater Accra & Upper East' },
+  { value: '2018', label: 'Serving since', note: 'registered in 2023' },
+  { value: '9', label: 'Cross Sessions editions', note: 'annual flagship event' },
+  { value: '2', label: 'Programme classes', note: 'CMPs and YEPs' },
+  { value: '5', label: 'Core values', note: 'faith, creativity, inclusion, service, impact' },
 ]
 
 export const pillars: Pillar[] = [
   {
-    title: 'Bible-believing communities',
+    title: 'Christian Mission Projects',
     description:
-      'We stand with churches and Bible-believing communities — supporting missionary congregations with instruments, seating, and the practical help that keeps worship going.',
+      'Church-specific support in communities the state seldom reaches — building materials, seating, equipment, and the practical help that keeps a local congregation serving its neighbours.',
     icon: 'book',
   },
   {
-    title: 'Gospel artistes',
+    title: 'Youth Empowerment Programmes',
     description:
-      'We help upcoming and struggling gospel musicians build skills, find stages, and release music that speaks honestly to the moment we live in.',
-    icon: 'music',
+      'Capacity-building for young people: peace advocacy, creative mentorship, evangelism in the spaces youth already inhabit, and a career symposium for the next generation.',
+    icon: 'sparkles',
   },
   {
-    title: 'Creation care',
+    title: 'Cross Sessions',
     description:
-      'We train community volunteers to teach waste segregation, plastic recovery, and recycling — caring for the places we sing in.',
-    icon: 'sprout',
+      'Our annual flagship creative event, hosted on Easter Sunday, where a cross-denominational network of young creatives performs, exhibits, and raises funds for the projects.',
+    icon: 'music',
   },
 ]
 
 export const values: ValueItem[] = [
   {
-    title: 'Faith in Christ',
+    title: 'Faith',
     description:
-      'We are followers of Jesus first, musicians second. Everything we do is meant to point beyond us.',
+      'Holding to our Christian values, we ensure our projects are anchored in scripture.',
     icon: 'heart',
   },
   {
-    title: 'Music as ministry',
+    title: 'Creativity',
     description:
-      'Music is not decoration here. It is how we teach, encourage, mourn with people, and call a community together.',
-    icon: 'music',
+      'We use the psychology of creativity as a therapeutic tool to engage the diverse youthful generations of our time and to build initiatives fit for a changing world.',
+    icon: 'sparkles',
   },
   {
-    title: 'Dignity for every person',
+    title: 'Inclusion',
     description:
-      'Artistes, church members, and families in deprived communities are never projects. They are neighbours with names.',
+      'We create space where all — irrespective of social, cultural, or denominational background — get a fair share of the benefits of our initiatives, while honouring the stakeholders who oversee our themes.',
     icon: 'users',
   },
   {
-    title: 'Stewardship of creation',
+    title: 'Service',
     description:
-      'We believe the earth is entrusted to us. Waste segregation and recycling are acts of worship, not side projects.',
-    icon: 'sprout',
+      'Faith with sleeves rolled up, where our collaborative actions respond to societal issues.',
+    icon: 'activity',
   },
   {
-    title: 'Open hands, open books',
+    title: 'Impact',
     description:
-      'We are a registered company limited by guarantee. Our objectives, registration, and finances are open to those who support us.',
-    icon: 'shield',
-  },
-  {
-    title: 'Collaboration',
-    description:
-      'No single group can carry this. We work with churches, artists, schools, and organisations who share the burden.',
-    icon: 'link',
+      'Ensuring our resources, activities, and efforts drive measurable, practical transformation in society.',
+    icon: 'globe',
   },
 ]
 
 export const milestones: Milestone[] = [
   {
-    year: '2023',
-    title: 'A movement of musicians and patriots',
+    year: '2018',
+    title: 'A question about talent',
     description:
-      'Cross-Love Movement was formed by a group of musicians and patriots who wanted music and community engagement to do more than entertain.',
+      'Isaac Nkrumah Dadzie, a young mechanical engineer and musician, asked what his gift was for. The answer — that music could serve people rather than earn from them — became Cross-Love Movement.',
   },
   {
     year: '2023',
     title: 'Registered as a company limited by guarantee',
     description:
-      'CLM was formally registered by the Registrar General’s Department on 18 May 2023 under registration number CG041650523.',
+      'Formally registered by the Registrar General’s Department on 18 May 2023 under registration number CG041650523, after five years of informal community work.',
   },
   {
-    year: 'Ongoing',
-    title: 'Cross Sessions in Accra and Bawku',
+    year: '2024',
+    title: 'Today Is Us peace campaign',
     description:
-      'Our sessions have served The Church of Pentecost, Community 12 District, Paradise Assembly, and the Bawku District, Bakanga Assembly.',
+      'Ahead of the general elections, we composed a peace anthem with musicians from five cultural backgrounds, a youth Muslim community leader, and a children’s orchestra in Tema — taking the message to national television.',
   },
   {
-    year: 'Ongoing',
-    title: 'Awake With God Devotion',
+    year: '2025',
+    title: 'Power-Point at the 7th Cross Sessions',
     description:
-      'A continuing devotional gathering where music, prayer, and encouragement meet in the same room.',
+      'The BusStop Boyz shared how young professionals are tackling sanitation in Ghana, challenging the audience to start in their own homes and churches.',
   },
   {
-    year: 'Next',
-    title: 'Annual showcase and trained volunteers',
+    year: '2026',
+    title: 'Power-Point at the 8th Cross Sessions',
     description:
-      'We are building towards an annual musical showcase for our artistes and a trained volunteer network for recycling education.',
+      'Edward Asare of First Baptist Church, Tema, spoke on “Christ, Creatives, Church, and Country”, calling Christian creatives to anchor their work in Christ.',
+  },
+  {
+    year: '2027',
+    title: 'People Like You',
+    description:
+      'A one-day youth empowerment symposium in Tema on 12 June 2027, bringing 700–1,000 young people together with mentors for practical career guidance.',
+  },
+  {
+    year: '2028',
+    title: 'Ten years of community engagement',
+    description:
+      'April 2028 marks a decade of the Movement — the question we are asking is what we can give to the youth of this generation.',
   },
 ]
 
 export const team: TeamMember[] = [
   {
+    name: 'Isaac Nkrumah Dadzie',
+    role: 'Founder & Executive Director',
+    bio: 'A trained mechanical engineer, musician, and writer who began the Movement in 2018 after asking what his musical gift was for beyond his work.',
+  },
+  {
     name: 'Edward Opoku-Agyemang',
-    role: 'Secretary & Executive Director',
-    bio: 'Leads Cross-Love Movement’s work with churches, gospel artistes, and community partners across Ghana.',
+    role: 'Secretary',
+    bio: 'Company secretary, supporting the Movement’s governance, statutory records, and partner relationships.',
   },
 ]
 
@@ -140,7 +157,7 @@ export const governance: { title: string; description: string; icon: IconName }[
   {
     title: 'Objectives in writing',
     description:
-      'Twelve constitutional aims — from Gospel outreach and artiste development to waste segregation and orphanage support — guide what we accept and decline.',
+      'Twelve constitutional aims — from Gospel outreach and youth development to community support — guide what we accept and decline.',
     icon: 'book',
   },
 ]

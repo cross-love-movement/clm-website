@@ -1,4 +1,4 @@
-export type ProjectCategory = 'gospel' | 'artistes' | 'environment' | 'community'
+export type ProjectCategory = 'cmp' | 'yep'
 
 export type ProjectStatus = 'active' | 'completed' | 'upcoming'
 
@@ -28,6 +28,8 @@ export type IconName =
   | 'calendar'
   | 'quote'
   | 'chevron-down'
+  | 'pause'
+  | 'play'
   | 'download'
   | 'copy'
 
@@ -51,6 +53,16 @@ export interface Pillar {
   title: string
   description: string
   icon: IconName
+}
+
+export interface HomeSlide {
+  eyebrow: string
+  title: string
+  caption: string
+  image: string
+  imageAlt: string
+  to: string
+  cta: string
 }
 
 export interface ValueItem {
@@ -170,7 +182,12 @@ export interface Post {
   body?: unknown
 }
 
-export type PortfolioCategory = 'performances' | 'recordings' | 'outreach' | 'creation' | 'church'
+export type PortfolioCategory =
+  | 'performances'
+  | 'recordings'
+  | 'outreach'
+  | 'empowerment'
+  | 'church'
 
 export interface PortfolioItem {
   slug: string

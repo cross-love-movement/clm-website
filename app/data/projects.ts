@@ -2,17 +2,18 @@ import type { ProjectCategory, ProjectStatus } from '#shared/types/content'
 
 export const projectCategories: { value: 'all' | ProjectCategory; label: string }[] = [
   { value: 'all', label: 'All programmes' },
-  { value: 'gospel', label: 'Gospel outreach' },
-  { value: 'artistes', label: 'Artistes' },
-  { value: 'environment', label: 'Creation care' },
-  { value: 'community', label: 'Community' },
+  { value: 'cmp', label: 'Christian Mission Projects' },
+  { value: 'yep', label: 'Youth Empowerment Programmes' },
 ]
 
 export const categoryLabels: Record<ProjectCategory, string> = {
-  gospel: 'Gospel outreach',
-  artistes: 'Artistes',
-  environment: 'Creation care',
-  community: 'Community',
+  cmp: 'Christian Mission Project',
+  yep: 'Youth Empowerment Programme',
+}
+
+export const categoryShortLabels: Record<ProjectCategory, string> = {
+  cmp: 'CMP',
+  yep: 'YEP',
 }
 
 export const statusLabels: Record<ProjectStatus, string> = {

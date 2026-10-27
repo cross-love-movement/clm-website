@@ -12,4 +12,5 @@ export const postCategories: { value: 'all' | PostCategory; label: string }[] = 
   { value: 'story', label: 'Stories' },
   { value: 'update', label: 'Updates' },
   { value: 'reflection', label: 'Reflections' },
+  { value: 'event', label: 'Events' },
 ]

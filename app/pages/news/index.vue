@@ -22,7 +22,7 @@ function countFor(category: 'all' | PostCategory) {
 useSeo({
   title: 'News & Stories',
   description:
-    'Updates, reflections, and stories from Cross-Love Movement — worship nights, artiste development, creation care, and community outreach across Ghana.',
+    'Updates, reflections, and stories from Cross-Love Movement — Cross Sessions, youth empowerment, church support, and community work across Ghana.',
   path: '/news',
 })
 </script>

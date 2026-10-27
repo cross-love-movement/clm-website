@@ -7,7 +7,7 @@ const { site } = useSite()
 useSeo({
   title: 'Donate',
   description:
-    'Give to Cross-Love Movement — help equip churches, train recycling volunteers, and support emerging gospel artistes in Ghana. Every gift is acknowledged and reported.',
+    'Give to Cross-Love Movement — help equip churches, fund youth empowerment programmes, and support young creatives in Ghana. Every gift is acknowledged and reported.',
   path: '/donate',
 })
 </script>
@@ -157,7 +157,7 @@ useSeo({
             v-for="amount in [
               {
                 value: 'GH₵100 / month',
-                label: 'Print recycling education materials for a session',
+                label: 'Print CSL evangelism tracts for an outreach',
               },
               { value: 'GH₵300 / month', label: 'Help place an instrument in a missionary church' },
               { value: 'GH₵1,000 / month', label: 'Support a Cross Sessions outreach event' },
@@ -194,7 +194,7 @@ useSeo({
       <CtaBanner
         eyebrow="Not able to give?"
         title="Time is just as needed as money."
-        description="Musicians, media volunteers, recycling educators, and prayer partners keep these programmes alive. There is a role for what you already know."
+        description="Young creatives, media volunteers, mentors, and prayer partners keep these programmes alive. There is a role for what you already know."
         primary-label="Volunteer with us"
         primary-to="/volunteer"
         secondary-label="Partner with us"

@@ -10,6 +10,7 @@ import { partners } from '../app/data/partners'
 import { portfolioCategories, portfolioCategoryLabels } from '../app/data/portfolio'
 import { projectCategories } from '../app/data/projects'
 import { footerNav, primaryNav, site } from '../app/data/site'
+import { homeSlides } from '../app/data/slides'
 import { testimonialAudiences, testimonials } from '../app/data/testimonials'
 import type { Event, PortfolioItem } from '../shared/types/content'
 import {
@@ -169,6 +170,20 @@ describe('content', () => {
     for (const faq of faqs) {
       expect(faq.question.trim()).not.toBe('')
       expect(faq.answer.trim().length).toBeGreaterThan(20)
+    }
+  })
+})
+
+describe('home carousel', () => {
+  it('has slides with captions and internal destinations', () => {
+    expect(homeSlides.length).toBeGreaterThan(0)
+
+    for (const slide of homeSlides) {
+      expect(slide.title.trim()).not.toBe('')
+      expect(slide.caption.trim().length).toBeGreaterThan(40)
+      expect(slide.imageAlt.trim()).not.toBe('')
+      expect(slide.image.startsWith('/images/')).toBe(true)
+      expect(slide.to.startsWith('/')).toBe(true)
     }
   })
 })
@@ -382,8 +397,10 @@ describe('testimonials', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('features exactly three quotes for the home page', () => {
-    expect(testimonials.filter((testimonial) => testimonial.featured).length).toBe(3)
+  // No consented quotes are published yet, so this suite is empty by design.
+  // When testimonials are added, these checks apply again.
+  it('features no more than three quotes for the home page', () => {
+    expect(testimonials.filter((testimonial) => testimonial.featured).length).toBeLessThanOrEqual(3)
   })
 })
 

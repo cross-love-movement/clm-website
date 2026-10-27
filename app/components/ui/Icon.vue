@@ -125,6 +125,12 @@ withDefaults(
     <template v-else-if="name === 'chevron-down'">
       <path d="m6 9 6 6 6-6" />
     </template>
+    <template v-else-if="name === 'pause'">
+      <path d="M9 5v14M15 5v14" />
+    </template>
+    <template v-else-if="name === 'play'">
+      <path d="m8 5 11 7-11 7V5Z" />
+    </template>
     <template v-else-if="name === 'copy'">
       <rect x="9" y="9" width="12" height="12" rx="2.4" />
       <path d="M15 5.6A2.6 2.6 0 0 0 12.4 3H5.6A2.6 2.6 0 0 0 3 5.6v6.8A2.6 2.6 0 0 0 5.6 15" />

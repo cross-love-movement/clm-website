@@ -38,7 +38,7 @@ function countFor(category: 'all' | PortfolioCategory) {
 useSeo({
   title: 'Portfolio',
   description:
-    'Selected work from Cross-Love Movement — performances, recordings, outreach days, creation care training, and church support across Ghana.',
+    'Selected work from Cross-Love Movement — performances, recordings, outreach, youth empowerment, and church support across Ghana.',
   path: '/portfolio',
 })
 </script>

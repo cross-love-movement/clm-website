@@ -4,7 +4,7 @@ export const donateFaqs: FaqItem[] = [
   {
     question: 'How is my donation used?',
     answer:
-      'Gifts go to the objectives in our constitution: Gospel outreach and church support, artiste development, creation care, and compassion work such as street feeding and orphanage support. If you restrict a gift to one programme, we ring-fence it and report on it separately.',
+      'Gifts go to our two programme classes: Christian Mission Projects with local churches, and Youth Empowerment Programmes such as Power-Point, CSL Evangelism, and People Like You. If you restrict a gift to one programme, we ring-fence it and report on it separately.',
   },
   {
     question: 'Can I give monthly?',
@@ -32,7 +32,7 @@ export const volunteerFaqs: FaqItem[] = [
   {
     question: 'Do I need qualifications?',
     answer:
-      'Not for most roles. Music mentors and outreach volunteers complete a short briefing, and recycling educators complete CLM’s volunteer training before teaching anyone else.',
+      'Not for most roles. Creative mentors and programme volunteers complete a short briefing before working with young people.',
   },
   {
     question: 'How much time does it take?',
@@ -47,7 +47,7 @@ export const volunteerFaqs: FaqItem[] = [
   {
     question: 'Is there training?',
     answer:
-      'Yes. Every volunteer is briefed before their first programme day, and recycling educators complete specific training so that they can re-educate their own communities.',
+      'Yes. Every volunteer is briefed before their first programme day, and anyone working directly with young people completes our safeguarding briefing.',
   },
   {
     question: 'Can under-18s volunteer?',
@@ -65,7 +65,7 @@ export const partnershipFaqs: FaqItem[] = [
   {
     question: 'Can we choose which programme to support?',
     answer:
-      'Yes. You can fund a named programme — Cross Sessions, church support, artiste development, creation care, or compassion work — or ask us to direct support to the greatest need.',
+      'Yes. You can fund a named programme — Cross Sessions, church support, CSL Evangelism, Power-Point, or People Like You — or ask us to direct support to the greatest need.',
   },
   {
     question: 'What reporting will we receive?',
@@ -121,7 +121,7 @@ export const eventFaqs: FaqItem[] = [
   {
     question: 'What should I bring?',
     answer:
-      'Comfortable clothes and a reusable water bottle. For creation care workshops we provide gloves and sorting materials. For artiste clinics, bring a song you are working on.',
+      'Comfortable clothes and a reusable water bottle. For CSL outreach we bring the tracts and materials. For creative mentoring, bring whatever you work with.',
   },
   {
     question: 'What if I can no longer attend?',

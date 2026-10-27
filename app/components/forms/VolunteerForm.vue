@@ -115,7 +115,7 @@ const availabilityOptions = [
         label="Relevant experience or skills"
         name="experience"
         :rows="4"
-        placeholder="Optional — music, media, recycling education, outreach, administration…"
+        placeholder="Optional — music, media, mentoring, evangelism, administration…"
         hint="No experience is required for most roles. This just helps us place you well."
         :error="errors.experience"
       />

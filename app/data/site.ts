@@ -4,15 +4,15 @@ export const site = {
   name: 'Cross-Love Movement',
   shortName: 'CLM',
   legalName: 'Cross-Love Movement, Limited By Guarantee',
-  tagline: 'Faith. Music. Community.',
+  tagline: 'Faith. Creativity. Inclusion.',
   description:
-    'Cross-Love Movement is a Ghanaian NGO using the power of music and community engagement to share the Gospel of Christ, support gospel artistes, and care for people and the planet.',
-  email: 'info@clmnative.com',
-  website: 'https://www.clmnative.com',
+    'Cross-Love Movement is a Christian, non-denominational nonprofit network of young creatives and youthful advocates in Ghana, using faith, creativity, and inclusion to empower young people to build sustainable societies.',
+  email: 'crosslovemovement.lbg@gmail.com',
+  website: 'https://cross-lovemovement.my.canva.site/',
   phone: '+233 55 175 7842',
   phoneHref: '+233551757842',
-  mobile: '+233 26 854 9359',
-  mobileHref: '+233268549359',
+  mobile: '+233 53 050 2774',
+  mobileHref: '+233530502774',
   address: {
     line1: '28 Waterbird Lane',
     line2: 'Sixth Avenue Street, Tema Community 11',
@@ -21,6 +21,7 @@ export const site = {
     country: 'Ghana',
   },
   hours: 'Monday – Friday, 9:00 – 17:00 GMT',
+  founded: '2018',
   registration: {
     authority: 'Registrar General’s Department',
     number: 'CG041650523',
@@ -62,4 +63,7 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
   },
 ]
 
-export const socials: SocialLink[] = [{ label: 'clmnative.com', href: 'https://www.clmnative.com' }]
+export const socials: SocialLink[] = [
+  { label: 'WhatsApp', href: 'https://wa.me/233530502774' },
+  { label: 'cross-lovemovement.my.canva.site', href: 'https://cross-lovemovement.my.canva.site/' },
+]

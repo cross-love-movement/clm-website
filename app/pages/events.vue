@@ -56,7 +56,7 @@ useSeo({
     <PageHero
       eyebrow="Events"
       title="Come and stand in the room."
-      description="Worship nights, artiste clinics, recycling training, and outreach days. Everything here is free to attend — registration just helps us plan well."
+      description="Cross Sessions, the People Like You symposium, and programme days. Everything here is free to attend — registration just helps us plan well."
     >
       <BaseButton href="#upcoming" variant="inverse">
         See what’s on

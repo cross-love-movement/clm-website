@@ -81,7 +81,7 @@ clm-website/
 │  │  ├─ layout/               # SiteHeader, SiteFooter
 │  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard, PostCard,
 │  │  │                        # TestimonialsSection, PartnersCarousel, StatGrid, FaqList, fields…
-│  │  ├─ home/                 # HeroSection, EventsSection, NewsSection
+│  │  ├─ home/                 # EventCarousel, EventsSection, NewsSection
 │  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter,
 │  │                           # EventRegistration
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
@@ -168,6 +168,18 @@ That covers site settings, about, donate/partnership options, FAQs, testimonials
 content that changes rarely or depends on deeply nested structures. Pages access it through
 `useSite()`, `useTestimonials()`, and friends.
 
+### Homepage carousel
+
+The top of the homepage is a landscape carousel (`EventCarousel.vue`) driven by
+`app/data/slides.ts`. Each slide needs `eyebrow` (date or context), `title`, `caption` (the message
+the slide carries), `image` (landscape, 2400×1350 or wider), `imageAlt`, and an internal `to` with a
+`cta` label.
+
+It auto-advances every 7 seconds, pauses on hover, focus, or the pause button, supports arrow keys
+and dot navigation, and stops auto-advancing entirely under `prefers-reduced-motion`. The current
+images are the abstract SVG artwork — replace them with photographs when they arrive; the caption is
+written to stand on its own if an image fails to load.
+
 To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
 and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
 is hosted, and the public pages keep the same layout, components, and theme.
@@ -234,49 +246,55 @@ new partners, not existing relationships.
 
 ### Content provenance
 
-The site is built from **Cross-Love Movement's organisational profile** (2023). Everything below
-came directly from that document:
+The site is built from **Cross-Love Movement's 2026 profile** (_CROSS-LOVE MOVEMENT PORTFOLIO_),
+with the 2023 registration profile still the source for legal details. Everything below came from
+those documents:
 
 - Legal name and form, registration date (18 May 2023), Registrar General's Department number
   `CG041650523`, TIN `C0062926586`
-- Office address, phone numbers, email, and website
-- Vision, mission, goal, and the twelve constitutional objectives
-- Named beneficiary activities: Cross Sessions (The Church of Pentecost, Community 12 District,
-  Paradise Assembly; Bawku District, Bakanga Assembly), Awake With God Devotion
-- Founding year (2023) and the three target groups: Bible-believing communities, gospel musicians,
-  and the environment
+- Founding year (**2018**), mission, vision, and the five values: faith, creativity, inclusion,
+  service, impact
+- The origin story (a trained mechanical engineer asking what to do with his musical gift) and the
+  two mandates behind the name — vertical (faith in action) and horizontal (faith beyond boundaries)
+- The two programme classes — Christian Mission Projects (CMPs) and Youth Empowerment Programmes
+  (YEPs) — and every initiative now in `content/projects/`
+- Cross Sessions (Easter Sundays, nine editions since 2018), Power-Point, Today Is Us, CSL
+  Evangelism, People Like You (12 June 2027), and the church support work in Community 12 and Bawku
+- Contact details: `crosslovemovement.lbg@gmail.com`, `+233 55 175 7842`, WhatsApp
+  `+233 53 050 2774`, and the temporary site `cross-lovemovement.my.canva.site`
 
-The **logo mark** (`public/images/clm-mark.png`, `public/favicon.png`) was extracted from the profile
-PDF, and the palette is derived from it: logo red `#B81828`, warm charcoal, gold, and cream.
+The **logo mark** (`public/images/clm-mark.png`, `public/favicon.png`) was extracted from the 2023
+profile PDF, and the palette is derived from it: logo red `#B81828`, warm charcoal, gold, and cream.
 
 ### Not yet confirmed — replace before launch
 
-The profile leaves several fields blank (staff table, area of operation, metrics), so nothing was
-invented to fill them. These items are **editorial placeholders** and need sign-off:
+Neither document supplies everything, so nothing was invented to fill the gaps. These items are
+**editorial placeholders** and need sign-off:
 
 - Donation amounts and the impact sentence attached to each one
 - Monthly-giving examples and the programme allocation wording
 - Partner tier amount (`From GH₵5,000 a year`) and benefits
 - Response-time commitments (two working days), 18+ volunteering policy, complaint handling
 - Bank / mobile-money details and international giving routes
-- Officer list beyond the Executive Director
-- Photography, social media links, and any impact figures
-- **Project copy** — the entries in `content/projects/` include illustrative impact figures and
-  programme details; confirm each against actual delivery before launch
-- **Event calendar** — the events in `content/events/` are dummy data, including dates, venues,
-  capacities, and registration deadlines; "free to attend" and the confirmation-reminder promise are
+- Leadership beyond the founder and secretary — the full officer and board list is not published
+- Photography — every image is abstract SVG artwork, not a photograph of the actual work
+- **Event calendar** — `People Like You` (12 June 2027) is dated in the profile. Cross Sessions is
+  described as an Easter Sunday event but no 2027 date, venue, or capacity is published, so it is
+  not listed as an event yet. Capacity, registration deadlines, and "free to attend" remain
   editorial assumptions
-- **News posts** — the articles in `content/news/` are illustrative composites; names and details
-  are changed or invented, and they should be replaced with real reporting before launch
-- **Portfolio pieces** — the entries in `content/portfolio/` are illustrative, and the images are
-  abstract artwork rather than photographs of the actual work
-- **Testimonials** — the six quotes are illustrative composites attributed to invented names. They
-  are not statements from real people and must be replaced with consented, attributable quotes
+- **News posts** — the four articles summarise the profile's own facts; they were published in
+  October 2026 rather than dated to the events they describe
+- **Portfolio pieces** — derived from the profile. Where the profile gives an edition number rather
+  than a year, `year` holds the edition (for example `5th edition`)
+- **Testimonials** — none are published. The earlier set were illustrative composites attributed to
+  invented people and have been removed. Add quotes only with written consent
+- **Bawku region** — the profile says “Bawku-Upper West”; Bawku is in the Upper East Region, which is
+  what the 2023 profile and this site use. Confirm before launch
 - **Partner logos** — only the three named churches/ministries are documented; the dashed entries
   are invitations, not partners. Do not add a logo without written permission from that organisation
 
-Programme statuses are honest: `active` is used only for activities the profile documents, and
-stated constitutional aims are marked **In development**.
+Programme statuses follow the profile: `completed` for the church support work and Today Is Us,
+`active` for Power-Point and CSL Evangelism, `upcoming` for People Like You.
 
 ---
 

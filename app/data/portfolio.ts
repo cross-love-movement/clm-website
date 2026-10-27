@@ -4,7 +4,7 @@ export const portfolioCategoryLabels: Record<PortfolioCategory, string> = {
   performances: 'Performances',
   recordings: 'Recordings',
   outreach: 'Outreach',
-  creation: 'Creation care',
+  empowerment: 'Youth empowerment',
   church: 'Church support',
 }
 
@@ -13,6 +13,6 @@ export const portfolioCategories: { value: 'all' | PortfolioCategory; label: str
   { value: 'performances', label: 'Performances' },
   { value: 'recordings', label: 'Recordings' },
   { value: 'outreach', label: 'Outreach' },
-  { value: 'creation', label: 'Creation care' },
+  { value: 'empowerment', label: 'Youth empowerment' },
   { value: 'church', label: 'Church support' },
 ]

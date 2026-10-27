@@ -14,7 +14,7 @@ function applyFor(roleTitle: string) {
 useSeo({
   title: 'Volunteer',
   description:
-    'Volunteer with Cross-Love Movement — sing, mentor, film, teach recycling, or support street outreach in Accra, Tema, and Bawku.',
+    'Volunteer with Cross-Love Movement — mentor a young person, help run Cross Sessions, design CSL tracts, or film the work in Tema, Accra, and Bawku.',
   path: '/volunteer',
 })
 

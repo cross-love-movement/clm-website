@@ -166,7 +166,7 @@ useSeo({
       <CtaBanner
         eyebrow="Visit the work"
         title="Come and see a programme day."
-        description="With two weeks’ notice we can host you at a Cross Session, a feeding day, or a recycling workshop. It is the most honest introduction there is."
+        description="With two weeks’ notice we can host you at a Cross Session, a Power-Point session, or a CSL outreach day. It is the most honest introduction there is."
         primary-label="Arrange a visit"
         primary-to="/contact"
         secondary-label="See our projects"

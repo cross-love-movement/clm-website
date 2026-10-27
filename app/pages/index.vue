@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { howToHelp } from '~/data/involve'
 import { pillars, stats, vision } from '~/data/about'
+import { homeSlides } from '~/data/slides'
 
 const { site } = useSite()
 const { featured } = await useProjects()
 const { featured: featuredTestimonials } = useTestimonials()
 
 useSeo({
-  title: 'Faith in Christ. Music for change.',
+  title: 'Faith in Christ. Creativity for change.',
   description: site.description,
   path: '/',
 })
@@ -15,7 +16,30 @@ useSeo({
 
 <template>
   <div>
-    <HeroSection />
+    <EventCarousel :slides="homeSlides" />
+
+    <!-- Intro -->
+    <section class="container-page py-14 sm:py-16">
+      <div class="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+        <div>
+          <p class="eyebrow">Who we are</p>
+          <h1 class="mt-3 text-3xl leading-tight sm:text-4xl">
+            Faith in Christ.
+            <em class="font-display italic text-clay-600">Creativity for change.</em>
+          </h1>
+          <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
+            {{ site.description }}
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3 lg:justify-end">
+          <BaseButton to="/donate" size="lg">
+            Give today
+            <template #icon><Icon name="arrow-right" :size="18" /></template>
+          </BaseButton>
+          <BaseButton to="/projects" variant="secondary" size="lg">See our work</BaseButton>
+        </div>
+      </div>
+    </section>
 
     <!-- Facts -->
     <section class="container-page">
@@ -30,7 +54,7 @@ useSeo({
         <SectionHeading
           eyebrow="What we do"
           title="Three commitments, one movement."
-          description="Music, faith, and care for creation — the three strands our constitution keeps bringing us back to."
+          description="Christian Mission Projects, Youth Empowerment Programmes, and Cross Sessions — the three strands our work keeps returning to."
         />
         <BaseButton to="/about" variant="ghost" size="md" class="self-start lg:self-auto">
           More about us
@@ -139,6 +163,7 @@ useSeo({
     </section>
 
     <TestimonialsSection
+      v-if="featuredTestimonials.length"
       :items="featuredTestimonials"
       title="Voices from the work."
       description="The people who host us, serve with us, and take the stage tell it better than we can."
@@ -148,7 +173,7 @@ useSeo({
       <CtaBanner
         eyebrow="Show up with us"
         title="A song can carry what a leaflet cannot."
-        description="Help equip a church, train a recycling volunteer, or put a young gospel artiste in a studio for a day."
+        description="Help equip a church, support a young creative, or put a mentor in front of the next generation."
         primary-label="Donate today"
         primary-to="/donate"
         secondary-label="Talk to us"

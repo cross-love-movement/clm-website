@@ -122,7 +122,7 @@ export default defineContentConfig({
         }),
         title: property(z.string()).editor({ label: 'Title' }),
         category: property(
-          z.enum(['performances', 'recordings', 'outreach', 'creation', 'church']),
+          z.enum(['performances', 'recordings', 'outreach', 'empowerment', 'church']),
         ).editor({ label: 'Category' }),
         year: property(z.string()).editor({ description: 'Year the work happened, e.g. 2026.' }),
         location: property(z.string()).editor({ description: 'Where it happened.' }),
@@ -164,8 +164,10 @@ export default defineContentConfig({
       source: 'projects/*.md',
       schema: z.object({
         title: property(z.string()).editor({ label: 'Project name' }),
-        category: property(z.enum(['gospel', 'artistes', 'environment', 'community'])).editor({
-          label: 'Focus area',
+        category: property(z.enum(['cmp', 'yep'])).editor({
+          label: 'Programme class',
+          description:
+            'Christian Mission Projects are church-specific; Youth Empowerment Programmes build young people.',
         }),
         summary: property(z.string()).editor({
           input: 'textarea',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mission, vision, goal, values, stats, milestones, team, governance } from '~/data/about'
+import { mission, vision, values, stats, milestones, team, governance } from '~/data/about'
 
 const { site } = useSite()
 const { testimonials } = useTestimonials()
@@ -32,41 +32,44 @@ useSeo({
         <div>
           <p class="eyebrow">Our story</p>
           <h2 class="mt-3 text-3xl leading-tight sm:text-4xl">
-            It began with musicians asking what their gift was for.
+            It began with a trained engineer asking what his gift was for.
           </h2>
 
           <blockquote class="mt-8 rounded-2xl border-l-4 border-clay-500 bg-clay-50 p-6">
             <p class="font-display text-xl italic leading-snug text-brand-900">
-              “A dedicated group of musicians and patriots, committed to using the power of music
-              and community engagement to make a positive impact in society.”
+              “After I close my toolbox and hang up my coat, can I use this talent outside my work —
+              not for money, but to create a lasting impact on others’ lives?”
             </p>
             <footer class="mt-3 text-sm font-semibold text-ink-soft">
-              Cross-Love Movement organisational profile
+              The question that began Cross-Love Movement
             </footer>
           </blockquote>
         </div>
 
         <div class="space-y-5 text-[1.05rem] leading-relaxed text-ink-soft">
           <p>
-            Cross-Love Movement, Limited By Guarantee, is a Ghanaian organisation made up of
-            musicians and patriots who believe music can do more than fill a room. It can teach,
-            encourage, and call a community together.
+            A young man who had grown up loving music and writing, but trained as a mechanical
+            engineer, asked himself what to do with a talent that did not fit his profession. He
+            could let it go, or he could use it after hours, with others who felt the same, for
+            something other than money. That question became Cross-Love Movement in 2018.
           </p>
           <p>
-            We are driven by our passion for music, our faith in Christ, and our desire to promote
-            social change and uplift those in need. That is not a slogan — it is why the
-            organisation was formally registered on 18 May 2023.
+            The name carries two mandates. The vertical one — faith in action — comes from the love
+            and sacrifice of Christ on the cross, and pushes belief beyond the pew into sacrificial
+            service. The horizontal one — faith beyond boundaries — bridges social, cultural, and
+            denominational lines so young people can be resourced to live to their full potential.
           </p>
           <p>
-            Today CLM supports Bible-believing communities, helps upcoming and struggling gospel
-            artistes jumpstart their careers, and trains volunteers to care for the environment
-            around us. We are young, registered, and deliberate about staying close to the ground.
+            Today we are a Christian, non-denominational network of young corporate creatives and
+            youthful advocates, formally registered as a company limited by guarantee in 2023. Our
+            projects fall into two classes: Christian Mission Projects with local churches, and
+            Youth Empowerment Programmes for the generation coming after us.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- Mission, vision, goal -->
+    <!-- Mission and vision -->
     <section class="border-y border-sand-200 bg-sand-100 py-20 sm:py-24">
       <div class="container-page grid gap-5 md:grid-cols-2">
         <article class="rounded-3xl bg-brand-900 p-8 text-sand-50 sm:p-10">
@@ -76,12 +79,6 @@ useSeo({
         <article class="rounded-3xl border border-sand-200 bg-white p-8 shadow-soft sm:p-10">
           <p class="eyebrow">Our vision</p>
           <h2 class="mt-3 text-2xl leading-snug text-ink sm:text-[1.6rem]">{{ vision }}</h2>
-        </article>
-        <article class="rounded-3xl border border-sand-200 bg-white p-8 shadow-soft md:col-span-2">
-          <p class="eyebrow">Our goal</p>
-          <p class="mt-3 max-w-4xl font-display text-xl leading-snug text-ink sm:text-2xl">
-            {{ goal }}
-          </p>
         </article>
       </div>
 
@@ -94,7 +91,7 @@ useSeo({
     <section class="container-page py-20 sm:py-24">
       <SectionHeading
         eyebrow="What we hold"
-        title="Six things we will not trade away."
+        title="Five things we will not trade away."
         description="These are not wall posters. They are the tests we apply when a decision is difficult."
         align="center"
       />
@@ -141,6 +138,7 @@ useSeo({
 
     <!-- Voices -->
     <TestimonialsSection
+      v-if="testimonials.length"
       :items="testimonials"
       description="Volunteers, artistes, church partners, and the people who host us."
     />
@@ -177,8 +175,8 @@ useSeo({
           </span>
           <h3 class="mt-5 text-lg text-ink">A volunteer movement</h3>
           <p class="mt-3 text-sm leading-relaxed text-ink-soft">
-            Musicians, media volunteers, recycling educators, and prayer partners do the work
-            alongside the leadership. A full list of officers is available on request.
+            Young creatives, media volunteers, mentors, and prayer partners do the work alongside
+            the leadership. A full list of officers is available on request.
           </p>
           <a
             :href="`mailto:${site.email}?subject=CLM%20officers%20and%20registration`"
