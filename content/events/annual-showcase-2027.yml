@@ -1,19 +1,16 @@
-slug: annual-showcase-2027
 title: CLM Annual Showcase 2027
-category: showcase
-summary: 'Our biggest night: emerging gospel artistes, the CLM choir, and a year
-  of work on one stage.'
-description:
-  - The Annual Showcase is where the artiste development work becomes visible.
-    Performers from our clinic and Cross Sessions share a full evening
-    programme.
-  - Venue and final line-up will be confirmed to registered guests first.
-startsAt: '2027-02-06T17:00:00+00:00'
-endsAt: '2027-02-06T21:00:00+00:00'
-venue: Venue to be confirmed
 address: Accra
-city: Accra
 capacity: 800
+category: showcase
+city: Accra
+description:
+  - The Annual Showcase is where the artiste development work becomes visible. Performers from our clinic and Cross Sessions share a full evening programme.
+  - Venue and final line-up will be confirmed to registered guests first.
+endsAt: '2027-02-06T21:00:00+00:00'
+featured: true
 registered: 512
 registrationDeadline: '2027-02-03T23:59:00+00:00'
-featured: true
+slug: annual-showcase-2027
+startsAt: '2027-02-06T17:00:00+00:00'
+summary: 'Our biggest night: emerging gospel artistes, the CLM choir, and a year of work on one stage.'
+venue: Venue to be confirmed
