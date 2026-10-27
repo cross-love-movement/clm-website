@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PortfolioCategory, PortfolioItem } from '#shared/types/content'
 
-const { items, byCategory, categories, categoryLabels } = usePortfolio()
+const { items, byCategory, categories, categoryLabels } = await usePortfolio()
 
 const active = ref<'all' | PortfolioCategory>('all')
 const filtered = computed(() => byCategory(active.value))
@@ -32,7 +32,7 @@ onBeforeUnmount(() => {
 })
 
 function countFor(category: 'all' | PortfolioCategory) {
-  return category === 'all' ? items.length : byCategory(category).length
+  return category === 'all' ? items.value.length : byCategory(category).length
 }
 
 useSeo({

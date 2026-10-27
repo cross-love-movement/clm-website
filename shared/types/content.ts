@@ -77,13 +77,11 @@ export interface Milestone {
   description: string
 }
 
-export interface Project {
-  slug: string
+export interface ProjectSummary {
+  path: string
   title: string
   category: ProjectCategory
   summary: string
-  /** Paragraphs rendered on the project detail page. */
-  story: string[]
   location: string
   status: ProjectStatus
   timeframe: string
@@ -91,9 +89,14 @@ export interface Project {
   imageAlt: string
   accent: Accent
   featured: boolean
+}
+
+export interface Project extends ProjectSummary {
   goals: string[]
   impact: Stat[]
   needs: string[]
+  /** Rendered Markdown body supplied by Nuxt Content. */
+  body?: unknown
 }
 
 export interface VolunteerRole {
@@ -151,30 +154,20 @@ export interface Event {
 
 export type PostCategory = 'story' | 'update' | 'reflection' | 'event'
 
-export interface PostSection {
-  heading?: string
-  paragraphs: string[]
-}
-
-export interface PostQuote {
-  text: string
-  attribution?: string
-}
-
 export interface Post {
-  slug: string
+  path: string
   title: string
   category: PostCategory
   excerpt: string
-  /** ISO date (time optional) used for ordering and display. */
+  /** ISO date used for ordering and display. */
   publishedAt: string
   author: string
   readingMinutes: number
   image: string
   imageAlt: string
   featured?: boolean
-  quote?: PostQuote
-  sections: PostSection[]
+  /** Rendered Markdown body supplied by Nuxt Content. */
+  body?: unknown
 }
 
 export type PortfolioCategory = 'performances' | 'recordings' | 'outreach' | 'creation' | 'church'
@@ -191,6 +184,8 @@ export interface PortfolioItem {
   imageAlt: string
   tags: string[]
   link?: { label: string; to: string }
+  /** Sort order in the gallery, ascending. */
+  order: number
 }
 
 export type TestimonialAudience = 'church' | 'artiste' | 'volunteer' | 'partner' | 'participant'

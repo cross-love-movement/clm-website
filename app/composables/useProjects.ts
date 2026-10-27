@@ -1,18 +1,36 @@
-import type { MaybeRefOrGetter } from 'vue'
+import type { ProjectCategory, ProjectSummary } from '#shared/types/content'
 
-import { projects, categoryLabels, statusLabels, projectCategories } from '~/data/projects'
+import { categoryLabels, projectCategories, statusLabels } from '~/data/projects'
 
-/**
- * Single access point for project content. When the organisation moves to a
- * CMS, only this composable needs to change — pages keep their current shape.
- */
-export function useProjects() {
-  const featured = computed(() => projects.filter((project) => project.featured))
+export async function useProjects() {
+  const { data } = await useAsyncData('projects', () =>
+    queryCollection('projects')
+      .select(
+        'path',
+        'title',
+        'category',
+        'summary',
+        'location',
+        'status',
+        'timeframe',
+        'image',
+        'imageAlt',
+        'accent',
+        'featured',
+        'order',
+      )
+      .order('order', 'ASC')
+      .all(),
+  )
 
-  function byCategory(category: 'all' | (typeof projects)[number]['category']) {
+  const projects = computed(() => (data.value ?? []) as unknown as ProjectSummary[])
+
+  const featured = computed(() => projects.value.filter((project) => project.featured))
+
+  function byCategory(category: 'all' | ProjectCategory) {
     return category === 'all'
-      ? projects
-      : projects.filter((project) => project.category === category)
+      ? projects.value
+      : projects.value.filter((project) => project.category === category)
   }
 
   return {
@@ -23,11 +41,4 @@ export function useProjects() {
     categoryLabels,
     statusLabels,
   }
-}
-
-export function useProject(slug: MaybeRefOrGetter<string>) {
-  return computed(() => {
-    const value = toValue(slug)
-    return projects.find((project) => project.slug === value) ?? null
-  })
 }

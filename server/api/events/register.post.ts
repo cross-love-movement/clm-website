@@ -1,4 +1,5 @@
-import { getEventBySlug } from '#shared/data/events'
+import type { Event } from '#shared/types/content'
+import { queryCollection } from '@nuxt/content/server'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -10,7 +11,9 @@ export default defineEventHandler(async (event) => {
   rateLimit(`events:${getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'}`, 5)
 
   const data = parseOrThrow(eventRegistrationSchema, body)
-  const selected = getEventBySlug(data.eventSlug)
+  const selected = (await queryCollection(event, 'events')
+    .where('slug', '=', data.eventSlug)
+    .first()) as Event | null
 
   if (!selected) {
     throw createError({

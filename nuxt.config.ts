@@ -8,6 +8,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  modules: ['@nuxt/content'],
+
+  content: {
+    // Node 24 ships node:sqlite, so no native SQLite dependency is needed.
+    experimental: { sqliteConnector: 'native' },
+  },
+
   components: [
     // Flat namespace: `ui/BaseButton.vue` is used as <BaseButton>, not <UiBaseButton>.
     { path: '~/components', pathPrefix: false },

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { PostCategory } from '#shared/types/content'
 
-import { postCategoryLabels } from '~/data/posts'
+import { postCategoryLabels } from '~/data/news'
 
-const { featured, latest, byCategory, categories } = useNews()
+const { featured, latest, byCategory, categories } = await useNews()
 
 const active = ref<'all' | PostCategory>('all')
 
@@ -12,7 +12,7 @@ const showFeatured = computed(() => active.value === 'all' && Boolean(featured.v
 
 const gridPosts = computed(() => {
   if (!showFeatured.value || !featured.value) return filtered.value
-  return filtered.value.filter((post) => post.slug !== featured.value?.slug)
+  return filtered.value.filter((post) => post.path !== featured.value?.path)
 })
 
 function countFor(category: 'all' | PostCategory) {
@@ -44,7 +44,7 @@ useSeo({
     <!-- Featured -->
     <section v-if="showFeatured && featured" class="container-page pt-16 sm:pt-20">
       <NuxtLink
-        :to="`/news/${featured.slug}`"
+        :to="featured.path"
         class="group grid overflow-hidden rounded-4xl border border-sand-200 bg-white shadow-soft transition duration-300 hover:border-clay-200 hover:shadow-lift lg:grid-cols-2"
       >
         <div class="relative aspect-[16/10] overflow-hidden bg-sand-200 lg:aspect-auto">
@@ -128,7 +128,7 @@ useSeo({
       </div>
 
       <div v-if="gridPosts.length" class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <PostCard v-for="post in gridPosts" :key="post.slug" :post="post" />
+        <PostCard v-for="post in gridPosts" :key="post.path" :post="post" />
       </div>
 
       <p

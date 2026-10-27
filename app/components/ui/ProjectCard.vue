@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Project } from '#shared/types/content'
+import type { ProjectSummary } from '#shared/types/content'
 import { categoryLabels, statusLabels } from '~/data/projects'
 
-const props = defineProps<{ project: Project }>()
+const props = defineProps<{ project: ProjectSummary }>()
 
 const statusTone = computed(() => {
   switch (props.project.status) {
@@ -18,7 +18,7 @@ const statusTone = computed(() => {
 
 <template>
   <NuxtLink
-    :to="`/projects/${project.slug}`"
+    :to="project.path"
     class="group flex h-full flex-col overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift"
   >
     <div class="relative aspect-[16/10] overflow-hidden bg-sand-200">

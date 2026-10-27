@@ -2,7 +2,7 @@
 import type { EventCategory } from '#shared/types/content'
 import { eventFaqs } from '~/data/faqs'
 
-const { upcoming, categoryLabels } = useEvents()
+const { upcoming, categoryLabels } = await useEvents()
 const route = useRoute()
 
 const selectedSlug = ref('')

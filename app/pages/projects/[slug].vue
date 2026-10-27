@@ -2,9 +2,11 @@
 import { categoryLabels, statusLabels } from '~/data/projects'
 
 const route = useRoute()
-const { projects } = useProjects()
+const { projects } = await useProjects()
 
-const project = useProject(() => String(route.params.slug))
+const { data: project } = await useAsyncData(`project-${route.path}`, () =>
+  queryCollection('projects').path(route.path).first(),
+)
 
 if (!project.value) {
   throw createError({
@@ -18,11 +20,11 @@ const related = computed(() => {
   const current = project.value
   if (!current) return []
 
-  const sameCategory = projects.filter(
-    (item) => item.slug !== current.slug && item.category === current.category,
+  const sameCategory = projects.value.filter(
+    (item) => item.path !== current.path && item.category === current.category,
   )
-  const others = projects.filter(
-    (item) => item.slug !== current.slug && item.category !== current.category,
+  const others = projects.value.filter(
+    (item) => item.path !== current.path && item.category !== current.category,
   )
 
   return [...sameCategory, ...others].slice(0, 2)
@@ -35,7 +37,7 @@ const impactLabel = computed(() =>
 useSeo({
   title: computed(() => project.value?.title ?? 'Project'),
   description: computed(() => project.value?.summary ?? ''),
-  path: computed(() => `/projects/${project.value?.slug ?? ''}`),
+  path: computed(() => project.value?.path ?? ''),
 })
 </script>
 
@@ -136,8 +138,8 @@ useSeo({
       <div class="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
         <div>
           <h2 class="text-3xl leading-tight">The story</h2>
-          <div class="mt-5 space-y-5 text-[1.03rem] leading-relaxed text-ink-soft">
-            <p v-for="(paragraph, index) in project.story" :key="index">{{ paragraph }}</p>
+          <div class="article-body mt-5">
+            <ContentRenderer :value="project" />
           </div>
 
           <h2 class="mt-12 text-2xl">What we set out to do</h2>
@@ -204,7 +206,7 @@ useSeo({
           </NuxtLink>
         </div>
         <div class="mt-8 grid gap-6 md:grid-cols-2">
-          <ProjectCard v-for="item in related" :key="item.slug" :project="item" />
+          <ProjectCard v-for="item in related" :key="item.path" :project="item" />
         </div>
       </div>
     </section>

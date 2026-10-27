@@ -1,20 +1,26 @@
-import type { PortfolioCategory } from '#shared/types/content'
+import type { PortfolioCategory, PortfolioItem } from '#shared/types/content'
 
-import { portfolioCategories, portfolioCategoryLabels, portfolioItems } from '~/data/portfolio'
+import { portfolioCategories, portfolioCategoryLabels } from '~/data/portfolio'
 
-export function usePortfolio() {
+export async function usePortfolio() {
+  const { data } = await useAsyncData('portfolio', () =>
+    queryCollection('portfolio').order('order', 'ASC').all(),
+  )
+
+  const items = computed(() => (data.value ?? []) as unknown as PortfolioItem[])
+
   function byCategory(category: 'all' | PortfolioCategory) {
     return category === 'all'
-      ? portfolioItems
-      : portfolioItems.filter((item) => item.category === category)
+      ? items.value
+      : items.value.filter((item) => item.category === category)
   }
 
   function bySlug(slug: string) {
-    return portfolioItems.find((item) => item.slug === slug) ?? null
+    return items.value.find((item) => item.slug === slug) ?? null
   }
 
   return {
-    items: portfolioItems,
+    items,
     byCategory,
     bySlug,
     categories: portfolioCategories,

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { postCategoryLabels } from '~/data/posts'
+import { postCategoryLabels } from '~/data/news'
 
 const route = useRoute()
-const { bySlug, related } = useNews()
+const { related } = await useNews()
 const { site } = useSite()
 const { public: config } = useRuntimeConfig()
 
-const post = computed(() => bySlug(String(route.params.slug)))
+const { data: post } = await useAsyncData(`news-${route.path}`, () =>
+  queryCollection('news').path(route.path).first(),
+)
 
 if (!post.value) {
   throw createError({
@@ -16,12 +18,12 @@ if (!post.value) {
   })
 }
 
-const others = computed(() => related(String(route.params.slug), 3))
+const others = computed(() => related(route.path, 3))
 
 useSeo({
   title: computed(() => post.value?.title ?? 'Story'),
   description: computed(() => post.value?.excerpt ?? ''),
-  path: computed(() => `/news/${post.value?.slug ?? ''}`),
+  path: computed(() => post.value?.path ?? ''),
   type: 'article',
 })
 
@@ -49,7 +51,7 @@ useHead(() => {
               url: `${config.siteUrl}/images/clm-mark.png`,
             },
           },
-          mainEntityOfPage: `${config.siteUrl}/news/${current.slug}`,
+          mainEntityOfPage: `${config.siteUrl}${current.path}`,
         }),
       },
     ],
@@ -108,52 +110,27 @@ useHead(() => {
         />
       </div>
 
-      <div class="mx-auto mt-12 max-w-3xl">
-        <template v-for="(section, index) in post.sections" :key="index">
-          <section class="mb-8">
-            <h2 v-if="section.heading" class="mb-3 text-2xl leading-snug sm:text-[1.7rem]">
-              {{ section.heading }}
-            </h2>
-            <p
-              v-for="(paragraph, pIndex) in section.paragraphs"
-              :key="pIndex"
-              class="mb-4 text-[1.05rem] leading-relaxed text-ink-soft last:mb-0"
-            >
-              {{ paragraph }}
-            </p>
-          </section>
+      <div class="article-body mx-auto mt-12 max-w-3xl">
+        <ContentRenderer :value="post" />
+      </div>
 
-          <blockquote
-            v-if="index === 0 && post.quote"
-            class="my-10 rounded-2xl border-l-4 border-clay-500 bg-clay-50 p-6 sm:p-8"
-          >
-            <p class="font-display text-xl italic leading-snug text-brand-900 sm:text-2xl">
-              “{{ post.quote.text }}”
-            </p>
-            <footer v-if="post.quote.attribution" class="mt-3 text-sm font-semibold text-ink-soft">
-              {{ post.quote.attribution }}
-            </footer>
-          </blockquote>
-        </template>
-
-        <div
-          class="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-sand-200 pt-6"
+      <div
+        class="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-between gap-4 border-t border-sand-200 pt-6"
+      >
+        <NuxtLink
+          to="/news"
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-clay-700 hover:text-clay-900"
         >
-          <NuxtLink
-            to="/news"
-            class="inline-flex items-center gap-1.5 text-sm font-semibold text-clay-700 hover:text-clay-900"
-          >
-            <Icon name="arrow-right" :size="15" class="rotate-180" />
-            All news & stories
-          </NuxtLink>
+          <Icon name="arrow-right" :size="15" class="rotate-180" />
+          All news & stories
+        </NuxtLink>
 
-          <a
-            :href="`mailto:${site.email}?subject=${encodeURIComponent(`About the story: ${post.title}`)}`"
-            class="text-sm font-semibold text-ink-soft hover:text-ink"
-          >
-            Something to add? Write to us
-          </a>
-        </div>
+        <a
+          :href="`mailto:${site.email}?subject=${encodeURIComponent(`About the story: ${post.title}`)}`"
+          class="text-sm font-semibold text-ink-soft hover:text-ink"
+        >
+          Something to add? Write to us
+        </a>
       </div>
     </article>
 
@@ -170,7 +147,7 @@ useHead(() => {
           </NuxtLink>
         </div>
         <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <PostCard v-for="item in others" :key="item.slug" :post="item" />
+          <PostCard v-for="item in others" :key="item.path" :post="item" />
         </div>
       </div>
     </section>

@@ -1,8 +1,16 @@
-import { events, categoryLabels } from '#shared/data/events'
+import type { Event } from '#shared/types/content'
 
-export function useEvents() {
+import { eventCategoryLabels } from '~/data/events'
+
+export async function useEvents() {
+  const { data } = await useAsyncData('events', () =>
+    queryCollection('events').order('startsAt', 'ASC').all(),
+  )
+
+  const events = computed(() => (data.value ?? []) as unknown as Event[])
+
   const upcoming = computed(() =>
-    events
+    events.value
       .filter((event) => isUpcoming(event.startsAt))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
   )
@@ -10,8 +18,8 @@ export function useEvents() {
   const featured = computed(() => upcoming.value.filter((event) => event.featured).slice(0, 2))
 
   function bySlug(slug: string) {
-    return events.find((event) => event.slug === slug) ?? null
+    return events.value.find((event) => event.slug === slug) ?? null
   }
 
-  return { events, upcoming, featured, categoryLabels, bySlug }
+  return { events, upcoming, featured, bySlug, categoryLabels: eventCategoryLabels }
 }

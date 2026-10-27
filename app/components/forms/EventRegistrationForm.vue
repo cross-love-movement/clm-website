@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{ initialEvent?: string }>()
 
-const { upcoming } = useEvents()
+const { upcoming } = await useEvents()
 
 const initialSlug = props.initialEvent || upcoming.value[0]?.slug || ''
 

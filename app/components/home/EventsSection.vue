@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { upcoming } = useEvents()
+const { upcoming } = await useEvents()
 
 const next = computed(() => upcoming.value.slice(0, 2))
 </script>

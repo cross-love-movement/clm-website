@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Post, PostCategory } from '#shared/types/content'
 
-import { postCategoryLabels } from '~/data/posts'
+import { postCategoryLabels } from '~/data/news'
 
 defineProps<{ post: Post }>()
 
@@ -21,7 +21,7 @@ function categoryTone(category: PostCategory) {
 
 <template>
   <NuxtLink
-    :to="`/news/${post.slug}`"
+    :to="post.path"
     class="group flex h-full flex-col overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:border-clay-200 hover:shadow-lift"
   >
     <div class="relative aspect-[16/10] overflow-hidden bg-sand-200">

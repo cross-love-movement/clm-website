@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { latest, categoryLabels } = useNews()
+const { latest, categoryLabels } = await useNews()
 
 const next = computed(() => latest.value.slice(0, 3))
 </script>
@@ -21,8 +21,8 @@ const next = computed(() => latest.value.slice(0, 3))
     <div class="mt-10 grid gap-x-8 gap-y-8 md:grid-cols-3">
       <NuxtLink
         v-for="post in next"
-        :key="post.slug"
-        :to="`/news/${post.slug}`"
+        :key="post.path"
+        :to="post.path"
         class="group border-t border-sand-300 pt-5"
       >
         <p class="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-clay-700">

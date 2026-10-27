@@ -8,6 +8,8 @@ Built as a single Nuxt application: server-rendered pages for search and social 
 Nitro API layer for forms, so there is no separate backend to deploy.
 
 - **Nuxt 4** (Vue 3, Nitro) with the `app/` source directory
+- **Nuxt Content 3** — a git-based CMS for projects, news, events, and portfolio content
+  (Markdown and YAML), indexed into SQLite at build time with the native `node:sqlite` connector
 - **Vite+ 1.4** — Nuxt's bundler runs on `@voidzero-dev/vite-plus-core`, and the `vp` CLI
   provides formatting (Oxfmt), linting (Oxlint), and tests (Vitest 5)
 - **Tailwind CSS v4** via `@tailwindcss/vite` — design tokens live in CSS, no `tailwind.config.js`
@@ -84,22 +86,26 @@ clm-website/
 │  │                           # EventRegistration
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
 │  │                           # usePortfolio, useTestimonials, useForm, useSeo
-│  ├─ data/                    # Typed content: site, projects, about, involve, faqs, posts,
-│  │                           # portfolio, testimonials, partners
+│  ├─ data/                    # Code-managed content: site, about, involve, faqs, testimonials,
+│  │                           # partners (plus category labels for content collections)
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
 │  ├─ pages/                   # File-based routes, including /events, /news, /portfolio
 │  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
+├─ content/                    # Editorial content (Nuxt Content)
+│  ├─ projects/*.md            # Project pages with frontmatter + Markdown body
+│  ├─ news/*.md                # Articles with frontmatter + Markdown/MDC body
+│  ├─ events/*.yml             # Event records (one file per event)
+│  └─ portfolio/*.yml          # Portfolio pieces (one file per piece)
 ├─ server/
 │  ├─ api/                     # contact, volunteer, partnership, newsletter, donate,
 │  │                           # events/register
 │  └─ utils/                   # schemas (Zod), validation, mailer, rate-limit
-├─ shared/
-│  ├─ types/content.ts         # Types used by both app and server
-│  └─ data/events.ts           # Event calendar (shared so the API can validate slugs)
+├─ shared/types/content.ts     # Types used by both app and server
 ├─ tests/                      # Vitest: content integrity + server schema tests
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
+├─ content.config.ts           # Nuxt Content collections and schemas
 ├─ nuxt.config.ts
 ├─ vite.config.ts              # Vite+ format/lint/test config (not Nuxt's build config)
 └─ .env.example
@@ -134,30 +140,35 @@ Each page sets its own title, description, Open Graph tags, and canonical URL vi
 
 ## Content model
 
-All copy lives in `app/data/` as typed modules:
+Content is split by how often it changes.
+
+**Editorial content (Nuxt Content)** lives in `content/` and is validated by `content.config.ts`:
+
+- `content/projects/*.md` — project pages with structured frontmatter and a Markdown body
+- `content/news/*.md` — articles with frontmatter and a Markdown/MDC body
+- `content/events/*.yml` — one file per event
+- `content/portfolio/*.yml` — one file per portfolio piece
+
+Each is declared as a collection with a Zod schema, so missing or malformed fields fail
+`nuxt build`. Pages query through async composables (`useProjects()`, `useNews()`, `useEvents()`,
+`usePortfolio()`), and Markdown bodies render with `<ContentRenderer>` into the `.article-body`
+prose styles. The content database is generated at build time with Node's native SQLite connector
+and is read-only at runtime.
+
+**Code-managed content** stays in `app/data/` as typed modules:
 
 ```ts
-// app/data/projects.ts
-export const projects: Project[] = [{ slug, title, category, story, impact, needs, … }]
+// app/data/testimonials.ts
+export const testimonials: Testimonial[] = [{ name, role, location, quote, … }]
 ```
 
-Pages never import content directly from components; they go through `useProjects()`,
-`useSite()`, etc. When the organisation outgrows flat files, only those composables need to change
-— swap the implementation for Nuxt Content (`.md` + MDC) or a headless CMS and the page templates
-keep working. That is the intended upgrade path.
+That covers site settings, about, donate/partnership options, FAQs, testimonials, and partners —
+content that changes rarely or depends on deeply nested structures. Pages access it through
+`useSite()`, `useTestimonials()`, and friends.
 
-Events live in `shared/data/events.ts` because both sides need them: the events page renders the
-calendar, and the registration API validates that a submitted slug exists and that registration is
-still open. `useEvents()` exposes the sorted upcoming list to the app.
-
-News posts live in `app/data/posts.ts` with structured sections (`heading` + `paragraphs`), an
-optional pull quote, and reading time. `useNews()` provides the date-sorted list, the featured post,
-category filtering, and related posts. `/news/[slug]` adds `BlogPosting` JSON-LD on top of the
-standard SEO metadata.
-
-Portfolio pieces live in `app/data/portfolio.ts` and drive a filterable gallery. Each tile opens an
-accessible native `<dialog>` with the full write-up and an optional link to a related story or
-event.
+To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
+and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
+is hosted, and the public pages keep the same layout, components, and theme.
 
 Testimonials live in `app/data/testimonials.ts` and appear on the home page (three featured) and the
 about page (all of them). They are attributed with a name, role, location, and the programme they
@@ -200,12 +211,15 @@ invented to fill them. These items are **editorial placeholders** and need sign-
 - Bank / mobile-money details and international giving routes
 - Officer list beyond the Executive Director
 - Photography, social media links, and any impact figures
-- **Event calendar** — all dates, venues, capacities, and registration deadlines are dummy data;
-  "free to attend" and the confirmation-reminder promise are editorial assumptions
-- **News posts** — all six articles are illustrative composites; names and details are changed or
-  invented, and they should be replaced with real reporting before launch
-- **Portfolio pieces** — titles, years, locations, and write-ups are illustrative, and the images
-  are abstract artwork rather than photographs of the actual work
+- **Project copy** — the entries in `content/projects/` include illustrative impact figures and
+  programme details; confirm each against actual delivery before launch
+- **Event calendar** — the events in `content/events/` are dummy data, including dates, venues,
+  capacities, and registration deadlines; "free to attend" and the confirmation-reminder promise are
+  editorial assumptions
+- **News posts** — the articles in `content/news/` are illustrative composites; names and details
+  are changed or invented, and they should be replaced with real reporting before launch
+- **Portfolio pieces** — the entries in `content/portfolio/` are illustrative, and the images are
+  abstract artwork rather than photographs of the actual work
 - **Testimonials** — the six quotes are illustrative composites attributed to invented names. They
   are not statements from real people and must be replaced with consented, attributable quotes
 - **Partner logos** — only the three named churches/ministries are documented; the dashed entries
@@ -287,19 +301,22 @@ international cards) that creates a transaction and returns a checkout URL, then
 ## Validation performed
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
-- `npm run check` — passes (format, lint, type-aware checks across 56 files)
-- `npm test` — 34 tests passing (content integrity, events, news, portfolio, testimonials,
-  partners, server validation)
-- `npm run build` — passes through Vite+ core
+- `npm run check` — passes (format, lint, type-aware checks across 81 files)
+- `npm test` — 37 tests passing (content files, testimonials, partners, server validation)
+- `npm run build` — passes, including Nuxt Content database generation with `node:sqlite`
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
+- Nuxt Content verified end to end: 6 project pages, 6 Markdown articles, 6 event YAML files, and 9
+  portfolio YAML files are indexed and served through `/projects`, `/news`, `/events`, and
+  `/portfolio`
+- Project listing, project detail (Markdown body, goals, impact, needs), and related projects verified
 - News index, article pages, and the home news strip verified; article pages include `BlogPosting`
   JSON-LD, and unknown slugs return `404`
 - Portfolio page, filters markup, and detail dialog verified server-side; artwork assets return `200`
 - Home page verified to include the partner strip, repeated marquee groups, and pause control
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
-- Event registration verified for a valid event (`200`), unknown slug (`404`), and invalid attendee
-  count (`400`), with the confirmation email present in the development mail log
+- Event registration verified against the content collection: valid event (`200`), unknown slug
+  (`404`), and invalid attendee count (`400`), with the confirmation email in the development log
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
 
 ---

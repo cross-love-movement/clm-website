@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vite-plus/test'
+/// <reference types="vite/client" />
 
+import { describe, expect, it } from 'vite-plus/test'
+import { parse as parseYaml } from 'yaml'
+
+import { eventCategoryLabels } from '../app/data/events'
 import { contactFaqs, donateFaqs, partnershipFaqs, volunteerFaqs } from '../app/data/faqs'
-import { primaryNav, footerNav, site } from '../app/data/site'
-import { projectCategories, projects } from '../app/data/projects'
-import { categoryLabels, eventSlugs, events, getEventBySlug } from '../shared/data/events'
-import { postCategories, postCategoryLabels, posts } from '../app/data/posts'
-import { portfolioCategories, portfolioCategoryLabels, portfolioItems } from '../app/data/portfolio'
-import { testimonialAudiences, testimonials } from '../app/data/testimonials'
+import { postCategories, postCategoryLabels } from '../app/data/news'
 import { partners } from '../app/data/partners'
+import { portfolioCategories, portfolioCategoryLabels } from '../app/data/portfolio'
+import { projectCategories } from '../app/data/projects'
+import { footerNav, primaryNav, site } from '../app/data/site'
+import { testimonialAudiences, testimonials } from '../app/data/testimonials'
+import type { Event, PortfolioItem } from '../shared/types/content'
 import {
   contactSchema,
   donationSchema,
@@ -15,6 +19,94 @@ import {
   newsletterSchema,
   volunteerSchema,
 } from '../server/utils/schemas'
+
+const newsFiles = import.meta.glob('../content/news/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+const eventFiles = import.meta.glob('../content/events/*.yml', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+const portfolioFiles = import.meta.glob('../content/portfolio/*.yml', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+const projectFiles = import.meta.glob('../content/projects/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+interface NewsFrontmatter {
+  title: string
+  category: string
+  excerpt: string
+  publishedAt: string
+  author: string
+  readingMinutes: number
+  image: string
+  imageAlt: string
+  featured?: boolean
+}
+
+interface ProjectFrontmatter {
+  title: string
+  category: string
+  summary: string
+  location: string
+  status: string
+  timeframe: string
+  image: string
+  imageAlt: string
+  accent: string
+  featured?: boolean
+  goals: string[]
+  impact: { value: string; label: string }[]
+  needs: string[]
+  order: number
+}
+
+const slugFromFile = (file: string) =>
+  file
+    .split('/')
+    .pop()!
+    .replace(/\.\w+$/, '')
+
+function parseMarkdown<T>(raw: string) {
+  const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/)
+
+  return {
+    data: (parseYaml(match?.[1] ?? '') ?? {}) as T,
+    body: match?.[2] ?? '',
+  }
+}
+
+const news = Object.entries(newsFiles).map(([file, raw]) => ({
+  slug: slugFromFile(file),
+  ...parseMarkdown<NewsFrontmatter>(raw),
+}))
+
+const events = Object.entries(eventFiles).map(([file, raw]) => ({
+  slugFromFile: slugFromFile(file),
+  data: parseYaml(raw) as Event,
+}))
+
+const portfolio = Object.entries(portfolioFiles).map(([file, raw]) => ({
+  slugFromFile: slugFromFile(file),
+  data: parseYaml(raw) as PortfolioItem,
+}))
+
+const projects = Object.entries(projectFiles).map(([file, raw]) => ({
+  slug: slugFromFile(file),
+  ...parseMarkdown<ProjectFrontmatter>(raw),
+}))
 
 const validContact = {
   name: 'Ama Mensah',
@@ -55,30 +147,6 @@ const validEventRegistration = {
 }
 
 describe('content', () => {
-  it('uses unique project slugs', () => {
-    const slugs = projects.map((project) => project.slug)
-    expect(new Set(slugs).size).toBe(slugs.length)
-  })
-
-  it('fills every field the pages rely on', () => {
-    const categories = projectCategories.map((category) => category.value)
-
-    for (const project of projects) {
-      expect(project.title.trim()).not.toBe('')
-      expect(project.summary.trim()).not.toBe('')
-      expect(project.story.length).toBeGreaterThan(0)
-      expect(project.goals.length).toBeGreaterThan(0)
-      expect(project.impact.length).toBeGreaterThan(0)
-      expect(project.needs.length).toBeGreaterThan(0)
-      expect(categories).toContain(project.category)
-      expect(project.image.startsWith('/images/')).toBe(true)
-    }
-  })
-
-  it('has at least one featured project for the home page', () => {
-    expect(projects.filter((project) => project.featured).length).toBeGreaterThan(0)
-  })
-
   it('keeps navigation links internal and unique', () => {
     const links = [...primaryNav, ...footerNav.flatMap((group) => group.links)]
 
@@ -105,15 +173,106 @@ describe('content', () => {
   })
 })
 
-describe('events', () => {
+describe('project content', () => {
+  it('finds the markdown files', () => {
+    expect(projects.length).toBeGreaterThan(0)
+  })
+
   it('uses unique slugs', () => {
-    expect(new Set(eventSlugs).size).toBe(eventSlugs.length)
+    const slugs = projects.map((project) => project.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('fills every field the project pages rely on', () => {
+    const categories = projectCategories.map((category) => category.value)
+    const orders = projects.map((project) => project.data.order)
+    expect(new Set(orders).size).toBe(orders.length)
+
+    for (const project of projects) {
+      expect(project.data.title.trim()).not.toBe('')
+      expect(project.data.summary.trim()).not.toBe('')
+      expect(project.data.location.trim()).not.toBe('')
+      expect(project.data.timeframe.trim()).not.toBe('')
+      expect(project.data.goals.length).toBeGreaterThan(0)
+      expect(project.data.impact.length).toBeGreaterThan(0)
+      expect(project.data.needs.length).toBeGreaterThan(0)
+      expect(categories).toContain(project.data.category)
+      expect(['active', 'completed', 'upcoming']).toContain(project.data.status)
+      expect(project.data.image.startsWith('/images/')).toBe(true)
+      expect(project.data.order).toBeGreaterThanOrEqual(0)
+      expect(project.body.trim().length).toBeGreaterThan(100)
+    }
+  })
+
+  it('has at least one featured project for the home page', () => {
+    expect(projects.filter((project) => project.data.featured).length).toBeGreaterThan(0)
+  })
+
+  it('offers a filter for every category used', () => {
+    const filterValues = projectCategories.map((category) => category.value)
+
+    for (const project of projects) {
+      expect(filterValues).toContain(project.data.category)
+    }
+  })
+})
+
+describe('news content', () => {
+  it('finds the markdown files', () => {
+    expect(news.length).toBeGreaterThan(0)
+  })
+
+  it('uses unique slugs', () => {
+    const slugs = news.map((post) => post.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('has complete, publishable frontmatter and a body', () => {
+    const categories = Object.keys(postCategoryLabels)
+
+    for (const post of news) {
+      expect(post.data.title?.trim()).not.toBe('')
+      expect(post.data.excerpt?.trim()).not.toBe('')
+      expect(post.data.author?.trim()).not.toBe('')
+      expect(post.data.readingMinutes).toBeGreaterThan(0)
+      expect(categories).toContain(post.data.category)
+      expect(Number.isNaN(new Date(post.data.publishedAt).getTime())).toBe(false)
+      expect(post.data.image.startsWith('/images/')).toBe(true)
+      expect(post.body.trim().length).toBeGreaterThan(200)
+    }
+  })
+
+  it('marks at most one post as featured', () => {
+    expect(news.filter((post) => post.data.featured).length).toBeLessThanOrEqual(1)
+  })
+
+  it('offers a filter for every category used', () => {
+    const filterValues = postCategories.map((category) => category.value)
+
+    for (const post of news) {
+      expect(filterValues).toContain(post.data.category)
+    }
+  })
+})
+
+describe('event content', () => {
+  it('finds the YAML files', () => {
+    expect(events.length).toBeGreaterThan(0)
+  })
+
+  it('uses unique slugs and keeps the file name in sync', () => {
+    const slugs = events.map((event) => event.data.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+
+    for (const event of events) {
+      expect(event.data.slug).toBe(event.slugFromFile)
+    }
   })
 
   it('has a complete, coherent timetable', () => {
-    const categories = Object.keys(categoryLabels)
+    const categories = Object.keys(eventCategoryLabels)
 
-    for (const event of events) {
+    for (const { data: event } of events) {
       expect(event.title.trim()).not.toBe('')
       expect(event.summary.trim()).not.toBe('')
       expect(event.venue.trim()).not.toBe('')
@@ -129,64 +288,28 @@ describe('events', () => {
       }
     }
   })
-
-  it('looks events up by slug', () => {
-    expect(getEventBySlug(eventSlugs[0]!)).toBeDefined()
-    expect(getEventBySlug('does-not-exist')).toBeUndefined()
-  })
 })
 
-describe('news', () => {
-  it('uses unique slugs', () => {
-    const slugs = posts.map((post) => post.slug)
+describe('portfolio content', () => {
+  it('finds the YAML files', () => {
+    expect(portfolio.length).toBeGreaterThan(0)
+  })
+
+  it('uses unique slugs and keeps the file name in sync', () => {
+    const slugs = portfolio.map((item) => item.data.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
-  })
 
-  it('has complete, publishable posts', () => {
-    const categories = Object.keys(postCategoryLabels)
-
-    for (const post of posts) {
-      expect(post.title.trim()).not.toBe('')
-      expect(post.excerpt.trim()).not.toBe('')
-      expect(post.author.trim()).not.toBe('')
-      expect(post.readingMinutes).toBeGreaterThan(0)
-      expect(categories).toContain(post.category)
-      expect(Number.isNaN(new Date(post.publishedAt).getTime())).toBe(false)
-      expect(post.image.startsWith('/images/')).toBe(true)
-      expect(post.sections.length).toBeGreaterThan(0)
-
-      for (const section of post.sections) {
-        expect(section.paragraphs.length).toBeGreaterThan(0)
-        for (const paragraph of section.paragraphs) {
-          expect(paragraph.trim().length).toBeGreaterThan(40)
-        }
-      }
+    for (const item of portfolio) {
+      expect(item.data.slug).toBe(item.slugFromFile)
     }
-  })
-
-  it('marks at most one post as featured', () => {
-    expect(posts.filter((post) => post.featured).length).toBeLessThanOrEqual(1)
-  })
-
-  it('offers a filter for every category used', () => {
-    const filterValues = postCategories.map((category) => category.value)
-
-    for (const post of posts) {
-      expect(filterValues).toContain(post.category)
-    }
-  })
-})
-
-describe('portfolio', () => {
-  it('uses unique slugs', () => {
-    const slugs = portfolioItems.map((item) => item.slug)
-    expect(new Set(slugs).size).toBe(slugs.length)
   })
 
   it('has complete portfolio pieces', () => {
     const categories = Object.keys(portfolioCategoryLabels)
+    const orders = portfolio.map((item) => item.data.order)
+    expect(new Set(orders).size).toBe(orders.length)
 
-    for (const item of portfolioItems) {
+    for (const { data: item } of portfolio) {
       expect(item.title.trim()).not.toBe('')
       expect(item.summary.trim()).not.toBe('')
       expect(item.year.trim()).not.toBe('')
@@ -195,19 +318,15 @@ describe('portfolio', () => {
       expect(item.image.startsWith('/images/')).toBe(true)
       expect(item.description.length).toBeGreaterThan(0)
       expect(item.tags.length).toBeGreaterThan(0)
+      expect(item.order).toBeGreaterThanOrEqual(0)
     }
   })
 
-  it('offers a filter for every category used', () => {
+  it('offers a filter for every category used and only internal links', () => {
     const filterValues = portfolioCategories.map((category) => category.value)
 
-    for (const item of portfolioItems) {
+    for (const { data: item } of portfolio) {
       expect(filterValues).toContain(item.category)
-    }
-  })
-
-  it('links only to internal pages', () => {
-    for (const item of portfolioItems) {
       if (item.link) expect(item.link.to.startsWith('/')).toBe(true)
     }
   })
@@ -294,7 +413,7 @@ describe('server validation', () => {
   })
 
   it('validates newsletter addresses', () => {
-    expect(newsletterSchema.safeParse({ email: 'ama@example.com' }).success).toBe(true)
+    expect(newsletterSchema.safeParse({ email: 'ada@example.com' }).success).toBe(true)
     expect(newsletterSchema.safeParse({ email: 'ada' }).success).toBe(false)
   })
 

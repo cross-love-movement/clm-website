@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import type { ProjectCategory } from '#shared/types/content'
 
-const { projects, categories } = useProjects()
+const { projects, categories } = await useProjects()
 
 const active = ref<'all' | ProjectCategory>('all')
 
 const filtered = computed(() =>
   active.value === 'all'
-    ? projects
-    : projects.filter((project) => project.category === active.value),
+    ? projects.value
+    : projects.value.filter((project) => project.category === active.value),
 )
 
 const countFor = (category: 'all' | ProjectCategory) =>
   category === 'all'
-    ? projects.length
-    : projects.filter((project) => project.category === category).length
+    ? projects.value.length
+    : projects.value.filter((project) => project.category === category).length
 
 useSeo({
   title: 'Our projects',
@@ -77,7 +77,7 @@ useSeo({
       </div>
 
       <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <ProjectCard v-for="project in filtered" :key="project.slug" :project="project" />
+        <ProjectCard v-for="project in filtered" :key="project.path" :project="project" />
       </div>
 
       <p

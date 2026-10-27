@@ -1,0 +1,24 @@
+slug: tudu-market-feeding
+title: Tudu Market feeding day
+category: outreach
+year: '2026'
+location: Accra Central
+summary: A volunteer-led morning of food, conversation, and practical follow-up.
+description:
+  - Volunteers prepared and served meals at Tudu Market, then stayed to talk
+    with people instead of packing up as soon as the pots were empty.
+  - We came away with a list of requests we could not meet — a hospital bill, a
+    school fee, a place to sleep — and a commitment to follow up on the ones we
+    could.
+  - 'The morning also exposed what we got wrong: too much rice, not enough
+    water, and a queue that kept volunteers too busy to listen.'
+image: /images/portfolio-market.svg
+imageAlt: Abstract artwork of market stalls under a warm sun
+tags:
+  - Street feeding
+  - Volunteers
+  - Accra
+link:
+  label: Read the story
+  to: /news/a-morning-at-tudu-market
+order: 4

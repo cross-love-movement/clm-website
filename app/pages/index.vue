@@ -3,7 +3,7 @@ import { howToHelp } from '~/data/involve'
 import { pillars, stats, vision } from '~/data/about'
 
 const { site } = useSite()
-const { featured } = useProjects()
+const { featured } = await useProjects()
 const { featured: featuredTestimonials } = useTestimonials()
 
 useSeo({
@@ -74,7 +74,7 @@ useSeo({
         </div>
 
         <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <ProjectCard v-for="project in featured" :key="project.slug" :project="project" />
+          <ProjectCard v-for="project in featured" :key="project.path" :project="project" />
         </div>
       </div>
     </section>
