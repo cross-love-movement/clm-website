@@ -451,7 +451,8 @@ The repository ships a multi-stage `Dockerfile` that builds with Node 24 and run
 as an unprivileged user.
 
 1. **Create the resource** — Coolify → your project → **+ New** → **Application** → **Private
-   repository (with GitHub App)** → `oaedward/clm-website`, branch `main`.
+   repository (with GitHub App)** → `cross-love-movement/clm-website`, branch `main`. The GitHub App
+   must be installed on the `cross-love-movement` organization, not just your personal account.
 2. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
    `npm run build` and runs `node .output/server/index.mjs`.
 3. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.

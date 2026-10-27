@@ -24,7 +24,7 @@ export default defineNuxtConfig({
     route: '/_studio',
     repository: {
       provider: 'github',
-      owner: 'oaedward',
+      owner: 'cross-love-movement',
       repo: 'clm-website',
       branch: 'main',
       // The repository is public, so editors never need private-repo scope.
