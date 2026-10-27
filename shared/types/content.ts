@@ -177,5 +177,47 @@ export interface Post {
   sections: PostSection[]
 }
 
+export type PortfolioCategory = 'performances' | 'recordings' | 'outreach' | 'creation' | 'church'
+
+export interface PortfolioItem {
+  slug: string
+  title: string
+  category: PortfolioCategory
+  year: string
+  location: string
+  summary: string
+  description: string[]
+  image: string
+  imageAlt: string
+  tags: string[]
+  link?: { label: string; to: string }
+}
+
+export type TestimonialAudience = 'church' | 'artiste' | 'volunteer' | 'partner' | 'participant'
+
+export interface Testimonial {
+  name: string
+  role: string
+  location: string
+  audience: TestimonialAudience
+  programme?: string
+  quote: string
+  featured?: boolean
+}
+
+export type PartnerType = 'church' | 'ministry' | 'community' | 'school' | 'corporate'
+
+export interface Partner {
+  slug: string
+  name: string
+  detail: string
+  /** Short monogram used when no logo file is supplied. */
+  mark: string
+  type: PartnerType
+  logo?: string
+  /** Renders as an open slot rather than an existing partner. */
+  placeholder?: boolean
+}
+
 /** Field-level errors keyed by form field name. */
 export type FieldErrors = Record<string, string>

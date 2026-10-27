@@ -46,7 +46,7 @@ onBeforeUnmount(() => {
         </span>
       </NuxtLink>
 
-      <nav class="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+      <nav class="hidden items-center gap-1 xl:flex" aria-label="Main navigation">
         <NuxtLink
           v-for="link in primaryNav"
           :key="link.to"
@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
 
         <button
           type="button"
-          class="inline-flex size-10 items-center justify-center rounded-full border border-sand-300 text-brand-800 transition hover:bg-sand-100 lg:hidden"
+          class="inline-flex size-10 items-center justify-center rounded-full border border-sand-300 text-brand-800 transition hover:bg-sand-100 xl:hidden"
           :aria-expanded="mobileOpen"
           aria-controls="mobile-navigation"
           aria-label="Open menu"
@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
     </div>
 
     <Transition name="mobile-nav">
-      <div v-if="mobileOpen" class="fixed inset-0 z-50 lg:hidden">
+      <div v-if="mobileOpen" class="fixed inset-0 z-50 xl:hidden">
         <div
           class="absolute inset-0 bg-brand-950/45 backdrop-blur-sm"
           @click="mobileOpen = false"

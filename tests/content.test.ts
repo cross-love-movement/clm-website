@@ -5,6 +5,9 @@ import { primaryNav, footerNav, site } from '../app/data/site'
 import { projectCategories, projects } from '../app/data/projects'
 import { categoryLabels, eventSlugs, events, getEventBySlug } from '../shared/data/events'
 import { postCategories, postCategoryLabels, posts } from '../app/data/posts'
+import { portfolioCategories, portfolioCategoryLabels, portfolioItems } from '../app/data/portfolio'
+import { testimonialAudiences, testimonials } from '../app/data/testimonials'
+import { partners } from '../app/data/partners'
 import {
   contactSchema,
   donationSchema,
@@ -171,6 +174,87 @@ describe('news', () => {
     for (const post of posts) {
       expect(filterValues).toContain(post.category)
     }
+  })
+})
+
+describe('portfolio', () => {
+  it('uses unique slugs', () => {
+    const slugs = portfolioItems.map((item) => item.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('has complete portfolio pieces', () => {
+    const categories = Object.keys(portfolioCategoryLabels)
+
+    for (const item of portfolioItems) {
+      expect(item.title.trim()).not.toBe('')
+      expect(item.summary.trim()).not.toBe('')
+      expect(item.year.trim()).not.toBe('')
+      expect(item.location.trim()).not.toBe('')
+      expect(categories).toContain(item.category)
+      expect(item.image.startsWith('/images/')).toBe(true)
+      expect(item.description.length).toBeGreaterThan(0)
+      expect(item.tags.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('offers a filter for every category used', () => {
+    const filterValues = portfolioCategories.map((category) => category.value)
+
+    for (const item of portfolioItems) {
+      expect(filterValues).toContain(item.category)
+    }
+  })
+
+  it('links only to internal pages', () => {
+    for (const item of portfolioItems) {
+      if (item.link) expect(item.link.to.startsWith('/')).toBe(true)
+    }
+  })
+})
+
+describe('testimonials', () => {
+  it('has complete quotes with attribution', () => {
+    for (const testimonial of testimonials) {
+      expect(testimonial.quote.trim().length).toBeGreaterThan(40)
+      expect(testimonial.name.trim()).not.toBe('')
+      expect(testimonial.role.trim()).not.toBe('')
+      expect(testimonial.location.trim()).not.toBe('')
+      expect(testimonialAudiences).toContain(testimonial.audience)
+    }
+  })
+
+  it('uses unique people', () => {
+    const names = testimonials.map((testimonial) => testimonial.name)
+    expect(new Set(names).size).toBe(names.length)
+  })
+
+  it('features exactly three quotes for the home page', () => {
+    expect(testimonials.filter((testimonial) => testimonial.featured).length).toBe(3)
+  })
+})
+
+describe('partners', () => {
+  it('uses unique slugs', () => {
+    const slugs = partners.map((partner) => partner.slug)
+    expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('has complete partner entries', () => {
+    const types = ['church', 'ministry', 'community', 'school', 'corporate']
+
+    for (const partner of partners) {
+      expect(partner.name.trim()).not.toBe('')
+      expect(partner.detail.trim()).not.toBe('')
+      expect(partner.mark.trim()).not.toBe('')
+      expect(types).toContain(partner.type)
+      if (partner.logo) expect(partner.logo.startsWith('/images/')).toBe(true)
+    }
+  })
+
+  it('includes at least one documented partner and one open slot', () => {
+    expect(partners.some((partner) => !partner.placeholder)).toBe(true)
+    expect(partners.some((partner) => partner.placeholder)).toBe(true)
   })
 })
 

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Abstract artwork of market stalls under a warm sun">
+  <defs>
+    <linearGradient id="market-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf5ec"/>
+      <stop offset="1" stop-color="#f2e8d7"/>
+    </linearGradient>
+    <pattern id="market-red" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="40" height="80" fill="#b81828"/>
+      <rect x="40" width="40" height="80" fill="#fdfbf7"/>
+    </pattern>
+    <pattern id="market-ink" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="40" height="80" fill="#332a23"/>
+      <rect x="40" width="40" height="80" fill="#fdfbf7"/>
+    </pattern>
+    <pattern id="market-gold" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="40" height="80" fill="#e0a33e"/>
+      <rect x="40" width="40" height="80" fill="#fdfbf7"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#market-bg)"/>
+
+  <circle cx="1050" cy="130" r="82" fill="#e0a33e" opacity="0.9"/>
+  <circle cx="1050" cy="130" r="122" fill="none" stroke="#e0a33e" stroke-opacity="0.35" stroke-width="2"/>
+
+  <!-- stall one -->
+  <rect x="90" y="205" width="280" height="86" rx="10" fill="url(#market-red)"/>
+  <rect x="80" y="291" width="300" height="12" rx="6" fill="#332a23"/>
+  <rect x="100" y="360" width="260" height="122" rx="6" fill="#e6d5bb"/>
+  <rect x="100" y="360" width="260" height="10" fill="#332a23" opacity="0.85"/>
+  <rect x="110" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <rect x="338" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <circle cx="170" cy="398" r="20" fill="#b81828"/>
+  <circle cx="218" cy="398" r="16" fill="#e0a33e"/>
+  <circle cx="262" cy="398" r="19" fill="#332a23" opacity="0.8"/>
+  <circle cx="310" cy="398" r="15" fill="#b81828" opacity="0.75"/>
+
+  <!-- stall two -->
+  <rect x="460" y="205" width="280" height="86" rx="10" fill="url(#market-ink)"/>
+  <rect x="450" y="291" width="300" height="12" rx="6" fill="#332a23"/>
+  <rect x="470" y="360" width="260" height="122" rx="6" fill="#e6d5bb"/>
+  <rect x="470" y="360" width="260" height="10" fill="#332a23" opacity="0.85"/>
+  <rect x="480" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <rect x="708" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <circle cx="540" cy="398" r="18" fill="#e0a33e"/>
+  <circle cx="588" cy="398" r="21" fill="#b81828"/>
+  <circle cx="638" cy="398" r="15" fill="#332a23" opacity="0.8"/>
+  <circle cx="684" cy="398" r="18" fill="#e0a33e" opacity="0.8"/>
+
+  <!-- stall three -->
+  <rect x="830" y="205" width="280" height="86" rx="10" fill="url(#market-gold)"/>
+  <rect x="820" y="291" width="300" height="12" rx="6" fill="#332a23"/>
+  <rect x="840" y="360" width="260" height="122" rx="6" fill="#e6d5bb"/>
+  <rect x="840" y="360" width="260" height="10" fill="#332a23" opacity="0.85"/>
+  <rect x="850" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <rect x="1078" y="482" width="12" height="90" fill="#332a23" opacity="0.45"/>
+  <circle cx="910" cy="398" r="19" fill="#b81828"/>
+  <circle cx="958" cy="398" r="15" fill="#332a23" opacity="0.8"/>
+  <circle cx="1002" cy="398" r="20" fill="#e0a33e"/>
+  <circle cx="1050" cy="398" r="16" fill="#b81828" opacity="0.75"/>
+
+  <path d="M0 596h1200v154H0Z" fill="#e6d5bb" opacity="0.55"/>
+  <path d="M0 596h1200" stroke="#332a23" stroke-opacity="0.15" stroke-width="2"/>
+
+  <g fill="#332a23" opacity="0.25">
+    <circle cx="230" cy="160" r="4"/>
+    <circle cx="330" cy="120" r="2.5"/>
+    <circle cx="70" cy="640" r="3"/>
+  </g>
+</svg>

@@ -77,17 +77,18 @@ clm-website/
 │  ├─ assets/css/main.css      # Tailwind import + @theme design tokens + base layer
 │  ├─ components/
 │  │  ├─ layout/               # SiteHeader, SiteFooter
-│  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard,
-│  │  │                        # StatGrid, FaqList, AlertBox, Icon, BrandMark, fields…
+│  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard, PostCard,
+│  │  │                        # TestimonialsSection, PartnersCarousel, StatGrid, FaqList, fields…
 │  │  ├─ home/                 # HeroSection, EventsSection, NewsSection
 │  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter,
 │  │                           # EventRegistration
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
-│  │                           # useForm, useSeo
-│  ├─ data/                    # Typed content: site, projects, about, involve, faqs, posts
+│  │                           # usePortfolio, useTestimonials, useForm, useSeo
+│  ├─ data/                    # Typed content: site, projects, about, involve, faqs, posts,
+│  │                           # portfolio, testimonials, partners
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
-│  ├─ pages/                   # File-based routes, including /events
-│  ├─ utils/                   # form.ts (control styles), events.ts (date formatting)
+│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio
+│  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
 ├─ server/
@@ -120,6 +121,7 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 | `/events`          | Events         | `POST /api/events/register` |
 | `/news`            | News index     | —                           |
 | `/news/[slug]`     | Article        | —                           |
+| `/portfolio`       | Portfolio      | —                           |
 | `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
 | `/partnership`     | Partnership    | `POST /api/partnership`     |
 | `/contact`         | Contact        | `POST /api/contact`         |
@@ -152,6 +154,19 @@ News posts live in `app/data/posts.ts` with structured sections (`heading` + `pa
 optional pull quote, and reading time. `useNews()` provides the date-sorted list, the featured post,
 category filtering, and related posts. `/news/[slug]` adds `BlogPosting` JSON-LD on top of the
 standard SEO metadata.
+
+Portfolio pieces live in `app/data/portfolio.ts` and drive a filterable gallery. Each tile opens an
+accessible native `<dialog>` with the full write-up and an optional link to a related story or
+event.
+
+Testimonials live in `app/data/testimonials.ts` and appear on the home page (three featured) and the
+about page (all of them). They are attributed with a name, role, location, and the programme they
+relate to — no anonymous floating quotes.
+
+Partner strip data lives in `app/data/partners.ts` and drives the infinite logo carousel on the home
+page. Entries render as typographic wordmarks (monogram + name + detail) until an authorised logo
+file is supplied — set `logo` to an image path to use the real mark. Dashed tiles are open slots for
+new partners, not existing relationships.
 
 > Event registration currently **emails the team**; it does not persist a booking or increment
 > `capacity`/`registered`. Connect a database or sheet before relying on it for headcounts.
@@ -189,6 +204,12 @@ invented to fill them. These items are **editorial placeholders** and need sign-
   "free to attend" and the confirmation-reminder promise are editorial assumptions
 - **News posts** — all six articles are illustrative composites; names and details are changed or
   invented, and they should be replaced with real reporting before launch
+- **Portfolio pieces** — titles, years, locations, and write-ups are illustrative, and the images
+  are abstract artwork rather than photographs of the actual work
+- **Testimonials** — the six quotes are illustrative composites attributed to invented names. They
+  are not statements from real people and must be replaced with consented, attributable quotes
+- **Partner logos** — only the three named churches/ministries are documented; the dashed entries
+  are invitations, not partners. Do not add a logo without written permission from that organisation
 
 Programme statuses are honest: `active` is used only for activities the profile documents, and
 stated constitutional aims are marked **In development**.
@@ -267,11 +288,14 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
 - `npm run check` — passes (format, lint, type-aware checks across 56 files)
-- `npm test` — 24 tests passing (content integrity, event calendar, news posts, server validation)
+- `npm test` — 34 tests passing (content integrity, events, news, portfolio, testimonials,
+  partners, server validation)
 - `npm run build` — passes through Vite+ core
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
 - News index, article pages, and the home news strip verified; article pages include `BlogPosting`
   JSON-LD, and unknown slugs return `404`
+- Portfolio page, filters markup, and detail dialog verified server-side; artwork assets return `200`
+- Home page verified to include the partner strip, repeated marquee groups, and pause control
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
 - Event registration verified for a valid event (`200`), unknown slug (`404`), and invalid attendee
@@ -283,8 +307,9 @@ international cards) that creates a transaction and returns a checkout URL, then
 ## Before launch
 
 1. **Sign off the placeholder content** listed under “Not yet confirmed” above.
-2. **Add real photography** at 16:10 for programme cards and a portrait hero image, replacing the
-   SVGs in `public/images/`. Add a 1200×630 OG image and reference it in `nuxt.config.ts`.
+2. **Add real photography** at 16:10 for programme cards and portfolio pieces, plus a portrait hero
+   image, replacing the SVGs in `public/images/`. Add a 1200×630 OG image and reference it in
+   `nuxt.config.ts`.
 3. **Legal pages** — privacy policy, safeguarding policy, and the latest report. Only link to real
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
@@ -298,6 +323,10 @@ international cards) that creates a transaction and returns a checkout URL, then
 10. **SEO** — add `@nuxtjs/sitemap` + `robots.txt` once the final domain is live.
 11. **Accessibility** — run axe/Lighthouse and a keyboard pass, especially the mobile menu.
 12. **CI** — run `npm run check`, `npm run typecheck`, `npm test`, and `npm run build` on every push.
+13. **Testimonial consent** — collect written permission for every quote, name, role, and location
+    before publishing. If consent is withdrawn, remove the quote and its attribution together.
+14. **Partner logos** — replace wordmarks with authorised logo files (`logo` field), and keep the
+    dashed open slots only while you are actively recruiting partners.
 
 ## Deployment
 

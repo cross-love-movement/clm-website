@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" role="img" aria-label="Abstract artwork of stage lights and a microphone">
+  <defs>
+    <linearGradient id="stage-bg" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#241d18"/>
+      <stop offset="1" stop-color="#0c0908"/>
+    </linearGradient>
+    <clipPath id="stage-grille">
+      <rect x="560" y="250" width="80" height="130" rx="40"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#stage-bg)"/>
+
+  <g fill="#b81828" opacity="0.18">
+    <path d="M240 0h130L520 640H60Z"/>
+    <path d="M830 0h130L1140 640H680Z"/>
+  </g>
+  <g fill="#e0a33e" opacity="0.2">
+    <path d="M555 0h90L700 640H500Z"/>
+  </g>
+
+  <g fill="none" stroke="#b81828" stroke-opacity="0.35">
+    <circle cx="600" cy="420" r="240" stroke-width="1.5"/>
+    <circle cx="600" cy="420" r="310" stroke-width="1.5" stroke-dasharray="3 12"/>
+  </g>
+
+  <rect x="560" y="250" width="80" height="130" rx="40" fill="#fdfbf7"/>
+  <g clip-path="url(#stage-grille)" stroke="#17120f" stroke-opacity="0.35" stroke-width="4">
+    <path d="M548 274h104M548 298h104M548 322h104M548 346h104"/>
+  </g>
+  <path d="M564 380h72v98a36 36 0 0 1-72 0Z" fill="#fdfbf7" opacity="0.94"/>
+  <rect x="564" y="404" width="72" height="13" fill="#b81828"/>
+
+  <rect x="597" y="540" width="6" height="100" fill="#fdfbf7" opacity="0.75"/>
+  <ellipse cx="600" cy="645" rx="64" ry="10" fill="#fdfbf7" opacity="0.7"/>
+
+  <path d="M0 648h1200v102H0Z" fill="#0c0908"/>
+  <path d="M0 648h1200" stroke="#e0a33e" stroke-opacity="0.45" stroke-width="2"/>
+
+  <g fill="#e0a33e">
+    <circle cx="200" cy="150" r="4" opacity="0.7"/>
+    <circle cx="1000" cy="500" r="3.5" opacity="0.55"/>
+    <circle cx="960" cy="548" r="2" opacity="0.35"/>
+  </g>
+</svg>

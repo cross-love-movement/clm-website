@@ -2,6 +2,7 @@
 import { mission, vision, goal, values, stats, milestones, team, governance } from '~/data/about'
 
 const { site } = useSite()
+const { testimonials } = useTestimonials()
 
 useSeo({
   title: 'About us',
@@ -9,14 +10,6 @@ useSeo({
     'Cross-Love Movement is a Ghanaian company limited by guarantee, formed in 2023 by musicians using music and community engagement to share the Gospel and serve communities.',
   path: '/about',
 })
-
-const initials = (fullName: string) =>
-  fullName
-    .split(' ')
-    .map((part) => part[0] ?? '')
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
 </script>
 
 <template>
@@ -145,6 +138,12 @@ const initials = (fullName: string) =>
         </ol>
       </div>
     </section>
+
+    <!-- Voices -->
+    <TestimonialsSection
+      :items="testimonials"
+      description="Volunteers, artistes, church partners, and the people who host us."
+    />
 
     <!-- Leadership -->
     <section class="container-page py-20 sm:py-24">

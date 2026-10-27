@@ -4,6 +4,7 @@ import { pillars, stats, vision } from '~/data/about'
 
 const { site } = useSite()
 const { featured } = useProjects()
+const { featured: featuredTestimonials } = useTestimonials()
 
 useSeo({
   title: 'Faith in Christ. Music for change.',
@@ -20,6 +21,8 @@ useSeo({
     <section class="container-page">
       <StatGrid :stats="stats" />
     </section>
+
+    <PartnersCarousel class="mt-14 sm:mt-16" />
 
     <!-- Focus areas -->
     <section class="container-page py-20 sm:py-24">
@@ -134,6 +137,12 @@ useSeo({
         </NuxtLink>
       </div>
     </section>
+
+    <TestimonialsSection
+      :items="featuredTestimonials"
+      title="Voices from the work."
+      description="The people who host us, serve with us, and take the stage tell it better than we can."
+    />
 
     <div class="mt-20 sm:mt-24">
       <CtaBanner
