@@ -9,7 +9,7 @@ export async function useNews() {
         'path',
         'title',
         'category',
-        'excerpt',
+        'summary',
         'publishedAt',
         'author',
         'readingMinutes',

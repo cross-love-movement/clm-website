@@ -32,7 +32,7 @@ const next = computed(() => latest.value.slice(0, 3))
         <h3 class="mt-2 text-xl leading-snug text-ink transition group-hover:text-clay-700">
           {{ post.title }}
         </h3>
-        <p class="mt-2 text-sm leading-relaxed text-ink-soft">{{ post.excerpt }}</p>
+        <p class="mt-2 text-sm leading-relaxed text-ink-soft">{{ post.summary }}</p>
         <span
           class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-clay-700 transition group-hover:gap-2.5"
         >

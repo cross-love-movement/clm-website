@@ -158,7 +158,7 @@ export interface Post {
   path: string
   title: string
   category: PostCategory
-  excerpt: string
+  summary: string
   /** ISO date used for ordering and display. */
   publishedAt: string
   author: string

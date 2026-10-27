@@ -20,7 +20,11 @@ export default defineContentConfig({
           label: 'Section',
           description: 'Which tab of the newsroom this story appears under.',
         }),
-        excerpt: property(z.string()).editor({
+        // NOT `excerpt`: that name is reserved by Nuxt Content. Its markdown
+        // transformer overwrites `excerpt` with the auto-generated first paragraph
+        // (`excerpt: parsed.excerpt ? … : undefined`), so a frontmatter `excerpt`
+        // is silently dropped and lands in the database as NULL.
+        summary: property(z.string()).editor({
           input: 'textarea',
           description:
             'One or two sentences. Shown on cards, in search results, and in social previews.',
@@ -49,7 +53,7 @@ export default defineContentConfig({
           description: 'Featured stories are promoted on the home page.',
         }),
         // Built into `type: 'page'` collections. Nuxt Content derives it from the
-        // first paragraph and this site never renders it (it uses `excerpt`),
+        // first paragraph and this site never renders it (it uses `summary`),
         // so keep it out of the Studio form instead of offering a field that
         // silently does nothing.
         description: property(z.string()).editor({ hidden: true }),

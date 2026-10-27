@@ -1,7 +1,7 @@
 ---
 title: Three voices from the artiste clinic
 category: story
-excerpt: A songwriter, a worship leader, and someone who almost quit. Notes from
+summary: A songwriter, a worship leader, and someone who almost quit. Notes from
   the first Gospel Artiste Clinic.
 publishedAt: 2026-09-21T09:30:00+00:00
 author: CLM Team

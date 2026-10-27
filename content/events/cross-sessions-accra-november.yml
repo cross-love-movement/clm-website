@@ -9,12 +9,12 @@ description:
   - CLM musicians lead worship, emerging artistes take the stage, and the host
     church closes the night in prayer. Come early — seating is first come, first
     served once registration closes.
-startsAt: 2026-11-14T18:00:00+00:00
-endsAt: 2026-11-14T20:30:00+00:00
+startsAt: '2026-11-14T18:00:00+00:00'
+endsAt: '2026-11-14T20:30:00+00:00'
 venue: The Church of Pentecost, Community 12 District
 address: Paradise Assembly, Community 12
 city: Tema
 capacity: 400
 registered: 286
-registrationDeadline: 2026-11-12T23:59:00+00:00
+registrationDeadline: '2026-11-12T23:59:00+00:00'
 featured: true

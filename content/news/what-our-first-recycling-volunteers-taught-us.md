@@ -1,7 +1,7 @@
 ---
 title: What our first recycling volunteers taught us
 category: story
-excerpt: We ran our first creation care training for volunteers. Most of what we
+summary: We ran our first creation care training for volunteers. Most of what we
   learned had nothing to do with bins.
 publishedAt: 2026-10-05T10:00:00+00:00
 author: CLM Team

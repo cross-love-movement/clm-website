@@ -1,7 +1,7 @@
 ---
 title: Why we sing about plastic
 category: reflection
-excerpt: Creation care is not a side project for us. It is part of what it means
+summary: Creation care is not a side project for us. It is part of what it means
   to worship.
 publishedAt: 2026-09-02T08:00:00+00:00
 author: Edward Opoku-Agyemang

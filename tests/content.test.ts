@@ -47,7 +47,7 @@ const projectFiles = import.meta.glob('../content/projects/*.md', {
 interface NewsFrontmatter {
   title: string
   category: string
-  excerpt: string
+  summary: string
   publishedAt: string
   author: string
   readingMinutes: number
@@ -232,13 +232,31 @@ describe('news content', () => {
 
     for (const post of news) {
       expect(post.data.title?.trim()).not.toBe('')
-      expect(post.data.excerpt?.trim()).not.toBe('')
+      expect(post.data.summary?.trim()).not.toBe('')
       expect(post.data.author?.trim()).not.toBe('')
       expect(post.data.readingMinutes).toBeGreaterThan(0)
       expect(categories).toContain(post.data.category)
       expect(Number.isNaN(new Date(post.data.publishedAt).getTime())).toBe(false)
       expect(post.data.image.startsWith('/images/')).toBe(true)
       expect(post.body.trim().length).toBeGreaterThan(200)
+    }
+  })
+
+  // Nuxt Content's markdown transformer owns `excerpt`: it overwrites the key with
+  // the auto-generated first paragraph, so a frontmatter `excerpt` is dropped and
+  // stored as NULL. Keep using `summary` instead.
+  it('avoids frontmatter keys that Nuxt Content reserves', () => {
+    const reserved = ['excerpt', 'body', 'path', 'stem', 'extension', 'meta', 'rawbody']
+
+    for (const [file, raw] of Object.entries(newsFiles)) {
+      const frontmatter = raw.slice(3, raw.indexOf('\n---', 3))
+
+      for (const key of reserved) {
+        expect(
+          new RegExp(`^${key}:`, 'm').test(frontmatter),
+          `${file} uses reserved key ${key}`,
+        ).toBe(false)
+      }
     }
   })
 
@@ -266,6 +284,22 @@ describe('event content', () => {
 
     for (const event of events) {
       expect(event.data.slug).toBe(event.slugFromFile)
+    }
+  })
+
+  // Nuxt Studio parses YAML with the timestamp tag, so an unquoted ISO value
+  // becomes a `Date` object. The content database holds a string, the two can
+  // never compare equal, and every edit of the file reports "Conflict Detected".
+  // Quoting the value keeps it a string on both sides.
+  it('keeps timestamps quoted so Studio can compare them', () => {
+    const timestampKeys = ['startsAt', 'endsAt', 'registrationDeadline']
+
+    for (const [file, raw] of Object.entries(eventFiles)) {
+      for (const key of timestampKeys) {
+        const value = raw.match(new RegExp(`^${key}: (.+)$`, 'm'))?.[1]
+        if (!value) continue
+        expect(value.startsWith("'"), `${file}: ${key} must be single-quoted`).toBe(true)
+      }
     }
   })
 

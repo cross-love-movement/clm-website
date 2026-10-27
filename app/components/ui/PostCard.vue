@@ -45,7 +45,7 @@ function categoryTone(category: PostCategory) {
       </p>
 
       <h3 class="mt-2 text-xl leading-snug text-ink">{{ post.title }}</h3>
-      <p class="mt-2 text-sm leading-relaxed text-ink-soft">{{ post.excerpt }}</p>
+      <p class="mt-2 text-sm leading-relaxed text-ink-soft">{{ post.summary }}</p>
 
       <span
         class="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-clay-700 transition group-hover:gap-2.5"

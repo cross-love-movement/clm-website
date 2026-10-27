@@ -1,7 +1,7 @@
 ---
 title: What a church in Bawku asked us for
 category: story
-excerpt: When we visited Bakanga Assembly, we expected to talk about music.
+summary: When we visited Bakanga Assembly, we expected to talk about music.
   Their list was more practical.
 publishedAt: 2026-08-15T11:00:00+00:00
 author: CLM Team

@@ -22,7 +22,7 @@ const others = computed(() => related(route.path, 3))
 
 useSeo({
   title: computed(() => post.value?.title ?? 'Story'),
-  description: computed(() => post.value?.excerpt ?? ''),
+  description: computed(() => post.value?.summary ?? ''),
   path: computed(() => post.value?.path ?? ''),
   type: 'article',
 })
@@ -39,7 +39,7 @@ useHead(() => {
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',
           headline: current.title,
-          description: current.excerpt,
+          description: current.summary,
           datePublished: current.publishedAt,
           dateModified: current.publishedAt,
           author: { '@type': 'Person', name: current.author },
@@ -85,7 +85,7 @@ useHead(() => {
         </div>
 
         <h1 class="mt-5 text-4xl leading-[1.08] sm:text-5xl">{{ post.title }}</h1>
-        <p class="mt-5 text-lg leading-relaxed text-ink-soft sm:text-xl">{{ post.excerpt }}</p>
+        <p class="mt-5 text-lg leading-relaxed text-ink-soft sm:text-xl">{{ post.summary }}</p>
 
         <div class="mt-7 flex items-center gap-3 border-y border-sand-200 py-4">
           <span

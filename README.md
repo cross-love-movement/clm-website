@@ -203,6 +203,23 @@ enable it:
 Studio needs a server-side route for the OAuth callback, so the site must be deployed with
 `npm run build` on a Node-capable host. Static-only hosting is not enough.
 
+**Keep YAML timestamps quoted.** Studio reads YAML with the `timestamp` tag applied, so an unquoted
+ISO value parses as a `Date` object while the content database holds a string. Those two can never
+compare equal, and every edit of that file reports **Conflict Detected** — with no content actually
+differing. Write:
+
+```yaml
+startsAt: '2026-11-14T18:00:00+00:00'
+```
+
+not `startsAt: 2026-11-14T18:00:00+00:00`. `tests/content.test.ts` enforces this for event files.
+
+**Never name a frontmatter field `excerpt`.** Nuxt Content reserves it: its Markdown transformer replaces the
+author's value with an auto-generated excerpt (or `undefined`), so the field silently lands in the
+database as `NULL` — the article page renders a blank summary and Studio reports every news file as
+conflicted. News posts use `summary` instead. `tests/content.test.ts` blocks the reserved keys from
+coming back.
+
 Testimonials live in `app/data/testimonials.ts` and appear on the home page (three featured) and the
 about page (all of them). They are attributed with a name, role, location, and the programme they
 relate to — no anonymous floating quotes.

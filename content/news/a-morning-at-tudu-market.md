@@ -1,7 +1,7 @@
 ---
 title: A morning at Tudu Market
 category: story
-excerpt: What street feeding looks like when you stop moving long enough to talk.
+summary: What street feeding looks like when you stop moving long enough to talk.
 publishedAt: 2026-07-28T12:00:00+00:00
 author: CLM Team
 readingMinutes: 4

@@ -1,7 +1,7 @@
 ---
 title: Cross Sessions returns to Tema this November
 category: update
-excerpt: Our next worship night is at Paradise Assembly on 14 November. Here is
+summary: Our next worship night is at Paradise Assembly on 14 November. Here is
   what to expect and how to register.
 publishedAt: 2026-10-18T09:00:00+00:00
 author: CLM Team

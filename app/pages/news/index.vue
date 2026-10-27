@@ -74,7 +74,7 @@ useSeo({
           </p>
 
           <h2 class="mt-2 text-3xl leading-tight text-ink sm:text-4xl">{{ featured.title }}</h2>
-          <p class="mt-4 text-[1rem] leading-relaxed text-ink-soft">{{ featured.excerpt }}</p>
+          <p class="mt-4 text-[1rem] leading-relaxed text-ink-soft">{{ featured.summary }}</p>
 
           <p class="mt-5 text-sm font-semibold text-ink">By {{ featured.author }}</p>
 
