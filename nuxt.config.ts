@@ -8,11 +8,31 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  modules: ['@nuxt/content'],
+  modules: ['@nuxt/content', 'nuxt-studio'],
 
   content: {
     // Node 24 ships node:sqlite, so no native SQLite dependency is needed.
     experimental: { sqliteConnector: 'native' },
+  },
+
+  /**
+   * Visual CMS for non-technical editors.
+   * In development it writes straight to the local files in `content/`.
+   * In production it commits to GitHub and the host rebuilds the site.
+   */
+  studio: {
+    route: '/_studio',
+    repository: {
+      provider: 'github',
+      owner: 'oaedward',
+      repo: 'clm-website',
+      branch: 'main',
+      // The repository is public, so editors never need private-repo scope.
+      private: false,
+    },
+    git: {
+      commit: { messagePrefix: 'content:' },
+    },
   },
 
   components: [
