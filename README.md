@@ -107,6 +107,7 @@ clm-website/
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
 ├─ content.config.ts           # Nuxt Content collections, schemas, Studio form metadata
 ├─ nuxt.config.ts              # Nuxt, Tailwind, Nuxt Content, Nuxt Studio (`studio.route`)
+├─ Dockerfile                  # Multi-stage build for Coolify / any container host
 ├─ vite.config.ts              # Vite+ format/lint/test config (not Nuxt's build config)
 └─ .env.example
 ```
@@ -192,7 +193,10 @@ enable it:
    - Authorization callback URL: `https://www.clmnative.com/__nuxt_studio/auth/github`
    - For local production-mode testing, add `http://localhost:3000/__nuxt_studio/auth/github`
 2. Set `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID` and `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` in the
-   deployment environment (and in `.env` if testing locally).
+   deployment environment (and in `.env` if testing locally). GitHub generates the secret — 40 hex
+   characters — and displays it **once**, on the page where you click *Generate a new client secret*.
+   Nothing to invent or hash yourself. If it is lost, generate a new one; rotating it also ends every
+   current Studio session, because the cookie-signing key is derived from the credentials.
 3. Optionally set `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` to a comma-separated list of GitHub account
    emails. Without it, **anyone who can authorise the OAuth app can edit** — set it before launch.
 
@@ -354,6 +358,10 @@ international cards) that creates a transaction and returns a checkout URL, then
   `404 No authentication provider found` without credentials, and with credentials set it returns
   `302 → /__nuxt_studio/auth/github`, which in turn redirects to GitHub with
   `scope=user:email public_repo` and the callback `…/__nuxt_studio/auth/github`
+- Container verified: `docker build` succeeds on `node:24-alpine`, the image runs healthy as uid
+  1000, every route returns `200`, `/_studio` returns `404` without OAuth env vars, a valid
+  `POST /api/contact` returns `200`, and with OAuth credentials plus a proxy-style `Host` header the
+  authorize redirect carries `redirect_uri=https://www.clmnative.com/__nuxt_studio/auth/github`
 
 ---
 
@@ -386,13 +394,63 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 ## Deployment
 
+### Any Node host
+
 ```bash
 npm run build
 node .output/server/index.mjs    # PORT defaults to 3000
 ```
 
+`.output` is self-contained — traced dependencies, the generated content database, and the client
+assets are all inside it, so nothing else needs to ship. **Node 24 is required**; `@nuxt/content`
+uses the built-in `node:sqlite` module.
+
 Nitro presets (`vercel`, `netlify`, `cloudflare-pages`) can be set in `nuxt.config.ts` if you
 prefer a platform-managed runtime. Keep the server target — the form endpoints and the Studio OAuth
 route both need it. Publishing from Studio creates a Git commit, so connect the host to the
-repository (Vercel, Netlify, or a GitHub Actions deploy) or editors will write to GitHub and see
-nothing change on the live site.
+repository or editors will write to GitHub and see nothing change on the live site.
+
+### Coolify (Docker)
+
+The repository ships a multi-stage `Dockerfile` that builds with Node 24 and runs the Nitro server
+as an unprivileged user.
+
+1. **Create the resource** — Coolify → your project → **+ New** → **Application** → **Private
+   repository (with GitHub App)** → `oaedward/clm-website`, branch `main`.
+2. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
+   `npm run build` and runs `node .output/server/index.mjs`.
+3. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
+4. **Domain** — add `https://www.clmnative.com`, enable HTTPS. Coolify's Traefik forwards
+   `X-Forwarded-Proto`, which Studio uses to build the OAuth callback URL.
+5. **Environment variables** — see the table below.
+6. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
+   committing to `main`, and that commit is what triggers the rebuild that makes the edit public.
+7. **Healthcheck** — the image defines a `HEALTHCHECK` hitting `/`. Coolify's own setting can be
+   left at its default, or set to GET `/`.
+
+**No persistent volume is needed.** The content database is generated during the build and shipped
+read-only inside the image at `server/contents.sqlite`. Studio's drafts live in the editor's browser
+and are published to Git, not to the container's disk. Add a volume only if you later switch media
+storage to a local disk driver.
+
+**Environment variables** (Coolify → Configuration → Environment Variables):
+
+| Variable                                | Required | Value                                      |
+| --------------------------------------- | -------- | ------------------------------------------ |
+| `NUXT_PUBLIC_SITE_URL`                  | yes      | `https://www.clmnative.com`                |
+| `NUXT_MAIL_TO`                          | yes      | Inbox that receives form submissions       |
+| `NUXT_MAIL_FROM`                        | no       | `Cross-Love Movement <info@clmnative.com>` |
+| `NUXT_RESEND_API_KEY`                   | for mail | Resend API key (omit to log to container)  |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS  | GitHub OAuth app client ID                 |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS  | GitHub OAuth app secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS  | Comma-separated editor emails (allowlist)  |
+
+Mark the Studio secrets as **Build Variable: no** — they are only read at runtime.
+
+Set the GitHub OAuth app's callback URL to `https://www.clmnative.com/__nuxt_studio/auth/github`.
+If the domain ever changes, or if Coolify sits behind another proxy that rewrites `Host`, set
+`NUXT_STUDIO_AUTH_GITHUB_REDIRECT_URL` to the same URL explicitly.
+
+**Building without Docker** — if you prefer Coolify's Nixpacks build pack: build command
+`npm ci && npm run build`, start command `node .output/server/index.mjs`, port `3000`. Pin the
+Node version with `NIXPACKS_NODE_VERSION=24` so the `node:sqlite` import resolves.
