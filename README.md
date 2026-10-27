@@ -105,8 +105,9 @@ clm-website/
 ├─ shared/types/content.ts     # Types used by both app and server
 ├─ tests/                      # Vitest: content integrity + server schema tests
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
-├─ content.config.ts           # Nuxt Content collections and schemas
-├─ nuxt.config.ts
+├─ content.config.ts           # Nuxt Content collections, schemas, Studio form metadata
+├─ nuxt.config.ts              # Nuxt, Tailwind, Nuxt Content, Nuxt Studio (`studio.route`)
+├─ Dockerfile                  # Multi-stage build for Coolify / any container host
 ├─ vite.config.ts              # Vite+ format/lint/test config (not Nuxt's build config)
 └─ .env.example
 ```
@@ -133,6 +134,7 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 | `/contact`         | Contact        | `POST /api/contact`         |
 | `/donate`          | Donate         | `POST /api/donate`          |
 | footer newsletter  | —              | `POST /api/newsletter`      |
+| `/_studio`         | —              | Nuxt Studio (GitHub OAuth)  |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -169,6 +171,37 @@ content that changes rarely or depends on deeply nested structures. Pages access
 To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
 and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
 is hosted, and the public pages keep the same layout, components, and theme.
+
+Each schema field also carries `property(...).editor(...)` metadata — labels, helper text, media
+pickers, textareas. That metadata is invisible to the site and only shapes the Nuxt Studio form, so
+an editor sees “Cover image” with a picture picker instead of a raw `image: /images/…` string path.
+
+### Editing content with Nuxt Studio
+
+The [`nuxt-studio`](https://nuxt.studio) module is installed and mounted at `/_studio`.
+
+**Local development** — run `npm run dev` and click the floating pencil in the bottom-left corner.
+Studio writes straight to files in `content/` and `public/`, so your normal Git workflow still
+applies. No OAuth is needed, and publishing is disabled in dev.
+
+**Production** — editors sign in with GitHub and Studio commits to `main` through the GitHub API.
+A commit triggers the host's rebuild, and the change goes live with the rest of the deploy. To
+enable it:
+
+1. Create a GitHub OAuth app at <https://github.com/settings/developers> → **New OAuth App**.
+   - Homepage URL: `https://www.clmnative.com`
+   - Authorization callback URL: `https://www.clmnative.com/__nuxt_studio/auth/github`
+   - For local production-mode testing, add `http://localhost:3000/__nuxt_studio/auth/github`
+2. Set `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID` and `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` in the
+   deployment environment (and in `.env` if testing locally). GitHub generates the secret — 40 hex
+   characters — and displays it **once**, on the page where you click *Generate a new client secret*.
+   Nothing to invent or hash yourself. If it is lost, generate a new one; rotating it also ends every
+   current Studio session, because the cookie-signing key is derived from the credentials.
+3. Optionally set `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` to a comma-separated list of GitHub account
+   emails. Without it, **anyone who can authorise the OAuth app can edit** — set it before launch.
+
+Studio needs a server-side route for the OAuth callback, so the site must be deployed with
+`npm run build` on a Node-capable host. Static-only hosting is not enough.
 
 Testimonials live in `app/data/testimonials.ts` and appear on the home page (three featured) and the
 about page (all of them). They are attributed with a name, role, location, and the programme they
@@ -289,12 +322,15 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 ## Environment variables
 
-| Variable               | Default                                    | Purpose                     |
-| ---------------------- | ------------------------------------------ | --------------------------- |
-| `NUXT_PUBLIC_SITE_URL` | `https://www.clmnative.com`                | Canonical + OG URLs         |
-| `NUXT_RESEND_API_KEY`  | _(empty — logs to console)_                | Mail delivery               |
-| `NUXT_MAIL_FROM`       | `Cross-Love Movement <info@clmnative.com>` | Sender                      |
-| `NUXT_MAIL_TO`         | `info@clmnative.com`                       | Inbox receiving submissions |
+| Variable                                | Default                                    | Purpose                                |
+| --------------------------------------- | ------------------------------------------ | -------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | `https://www.clmnative.com`                | Canonical + OG URLs                    |
+| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                | Mail delivery                          |
+| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@clmnative.com>` | Sender                                 |
+| `NUXT_MAIL_TO`                          | `info@clmnative.com`                       | Inbox receiving submissions            |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_          | GitHub OAuth app for Studio editors    |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                  | GitHub OAuth secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_    | Comma-separated editor email allowlist |
 
 ---
 
@@ -318,6 +354,14 @@ international cards) that creates a transaction and returns a checkout URL, then
 - Event registration verified against the content collection: valid event (`200`), unknown slug
   (`404`), and invalid attendee count (`400`), with the confirmation email in the development log
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
+- Nuxt Studio verified: client plugin registers in dev, `/_studio` in a production build returns
+  `404 No authentication provider found` without credentials, and with credentials set it returns
+  `302 → /__nuxt_studio/auth/github`, which in turn redirects to GitHub with
+  `scope=user:email public_repo` and the callback `…/__nuxt_studio/auth/github`
+- Container verified: `docker build` succeeds on `node:24-alpine`, the image runs healthy as uid
+  1000, every route returns `200`, `/_studio` returns `404` without OAuth env vars, a valid
+  `POST /api/contact` returns `200`, and with OAuth credentials plus a proxy-style `Host` header the
+  authorize redirect carries `redirect_uri=https://www.clmnative.com/__nuxt_studio/auth/github`
 
 ---
 
@@ -344,13 +388,69 @@ international cards) that creates a transaction and returns a checkout URL, then
     before publishing. If consent is withdrawn, remove the quote and its attribution together.
 14. **Partner logos** — replace wordmarks with authorised logo files (`logo` field), and keep the
     dashed open slots only while you are actively recruiting partners.
+15. **Studio access** — create the GitHub OAuth app, set the client ID/secret, and set
+    `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` before sharing `/_studio` with anyone. Without the
+    allowlist, anyone who can authorise the OAuth app can commit to `main`.
 
 ## Deployment
+
+### Any Node host
 
 ```bash
 npm run build
 node .output/server/index.mjs    # PORT defaults to 3000
 ```
 
+`.output` is self-contained — traced dependencies, the generated content database, and the client
+assets are all inside it, so nothing else needs to ship. **Node 24 is required**; `@nuxt/content`
+uses the built-in `node:sqlite` module.
+
 Nitro presets (`vercel`, `netlify`, `cloudflare-pages`) can be set in `nuxt.config.ts` if you
-prefer a platform-managed runtime. Keep the server target — the form endpoints need it.
+prefer a platform-managed runtime. Keep the server target — the form endpoints and the Studio OAuth
+route both need it. Publishing from Studio creates a Git commit, so connect the host to the
+repository or editors will write to GitHub and see nothing change on the live site.
+
+### Coolify (Docker)
+
+The repository ships a multi-stage `Dockerfile` that builds with Node 24 and runs the Nitro server
+as an unprivileged user.
+
+1. **Create the resource** — Coolify → your project → **+ New** → **Application** → **Private
+   repository (with GitHub App)** → `oaedward/clm-website`, branch `main`.
+2. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
+   `npm run build` and runs `node .output/server/index.mjs`.
+3. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
+4. **Domain** — add `https://www.clmnative.com`, enable HTTPS. Coolify's Traefik forwards
+   `X-Forwarded-Proto`, which Studio uses to build the OAuth callback URL.
+5. **Environment variables** — see the table below.
+6. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
+   committing to `main`, and that commit is what triggers the rebuild that makes the edit public.
+7. **Healthcheck** — the image defines a `HEALTHCHECK` hitting `/`. Coolify's own setting can be
+   left at its default, or set to GET `/`.
+
+**No persistent volume is needed.** The content database is generated during the build and shipped
+read-only inside the image at `server/contents.sqlite`. Studio's drafts live in the editor's browser
+and are published to Git, not to the container's disk. Add a volume only if you later switch media
+storage to a local disk driver.
+
+**Environment variables** (Coolify → Configuration → Environment Variables):
+
+| Variable                                | Required | Value                                      |
+| --------------------------------------- | -------- | ------------------------------------------ |
+| `NUXT_PUBLIC_SITE_URL`                  | yes      | `https://www.clmnative.com`                |
+| `NUXT_MAIL_TO`                          | yes      | Inbox that receives form submissions       |
+| `NUXT_MAIL_FROM`                        | no       | `Cross-Love Movement <info@clmnative.com>` |
+| `NUXT_RESEND_API_KEY`                   | for mail | Resend API key (omit to log to container)  |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS  | GitHub OAuth app client ID                 |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS  | GitHub OAuth app secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS  | Comma-separated editor emails (allowlist)  |
+
+Mark the Studio secrets as **Build Variable: no** — they are only read at runtime.
+
+Set the GitHub OAuth app's callback URL to `https://www.clmnative.com/__nuxt_studio/auth/github`.
+If the domain ever changes, or if Coolify sits behind another proxy that rewrites `Host`, set
+`NUXT_STUDIO_AUTH_GITHUB_REDIRECT_URL` to the same URL explicitly.
+
+**Building without Docker** — if you prefer Coolify's Nixpacks build pack: build command
+`npm ci && npm run build`, start command `node .output/server/index.mjs`, port `3000`. Pin the
+Node version with `NIXPACKS_NODE_VERSION=24` so the `node:sqlite` import resolves.

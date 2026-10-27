@@ -1,19 +1,15 @@
 ---
 title: Artiste Development
-category: artistes
-summary: Skills, stages, and support for upcoming gospel artistes who are trying
-  to begin well.
-location: Accra, Ghana
-status: upcoming
-timeframe: Programme in development
-image: /images/project-artistes.svg
-imageAlt: Abstract artwork of a microphone lit by a warm spotlight
 accent: brand
+category: artistes
+description: There is no shortage of gifted gospel musicians in Ghana. There is a shortage of studios, mentors, stages, and people willing to invest before the first hit.
 featured: true
 goals:
   - Create a skill development programme for musicians and artists
   - Showcase emerging talent at CLM’s annual musical events
   - Support the recording and distribution of socially conscious gospel music
+image: /images/project-artistes.svg
+imageAlt: Abstract artwork of a microphone lit by a warm spotlight
 impact:
   - value: Skills
     label: Training track
@@ -21,11 +17,15 @@ impact:
     label: At CLM events
   - value: Releases
     label: Music support
+location: Accra, Ghana
 needs:
   - Mentors and producers
   - Studio time
   - Instruments
 order: 2
+status: upcoming
+summary: Skills, stages, and support for upcoming gospel artistes who are trying to begin well.
+timeframe: Programme in development
 ---
 
 There is no shortage of gifted gospel musicians in Ghana. There is a shortage of studios, mentors, stages, and people willing to invest before the first hit.
