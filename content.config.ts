@@ -48,6 +48,11 @@ export default defineContentConfig({
         featured: property(z.boolean().default(false)).editor({
           description: 'Featured stories are promoted on the home page.',
         }),
+        // Built into `type: 'page'` collections. Nuxt Content derives it from the
+        // first paragraph and this site never renders it (it uses `excerpt`),
+        // so keep it out of the Studio form instead of offering a field that
+        // silently does nothing.
+        description: property(z.string()).editor({ hidden: true }),
       }),
     }),
 
@@ -204,6 +209,10 @@ export default defineContentConfig({
         order: property(z.number().int().nonnegative()).editor({
           description: 'Lower numbers appear first on the projects page.',
         }),
+        // Built into `type: 'page'` collections. Derived from the first
+        // paragraph and never rendered by this site (it uses `summary`), so
+        // hide it rather than offering an inert field.
+        description: property(z.string()).editor({ hidden: true }),
       }),
     }),
   },

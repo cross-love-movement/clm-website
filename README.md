@@ -194,7 +194,7 @@ enable it:
    - For local production-mode testing, add `http://localhost:3000/__nuxt_studio/auth/github`
 2. Set `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID` and `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` in the
    deployment environment (and in `.env` if testing locally). GitHub generates the secret — 40 hex
-   characters — and displays it **once**, on the page where you click *Generate a new client secret*.
+   characters — and displays it **once**, on the page where you click _Generate a new client secret_.
    Nothing to invent or hash yourself. If it is lost, generate a new one; rotating it also ends every
    current Studio session, because the cookie-signing key is derived from the credentials.
 3. Optionally set `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` to a comma-separated list of GitHub account

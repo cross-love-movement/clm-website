@@ -2,7 +2,6 @@
 title: Artiste Development
 accent: brand
 category: artistes
-description: There is no shortage of gifted gospel musicians in Ghana. There is a shortage of studios, mentors, stages, and people willing to invest before the first hit.
 featured: true
 goals:
   - Create a skill development programme for musicians and artists
