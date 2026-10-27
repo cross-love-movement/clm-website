@@ -82,10 +82,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private: server-only. Override with NUXT_RESEND_API_KEY etc.
     resendApiKey: '',
-    mailFrom: 'Cross-Love Movement <info@clmnative.com>',
-    mailTo: 'info@clmnative.com',
+    mailFrom: 'Cross-Love Movement <info@clmnative.ovahol.com>',
+    mailTo: 'info@clmnative.ovahol.com',
     public: {
-      siteUrl: 'https://www.clmnative.com',
+      siteUrl: 'https://www.clmnative.ovahol.com',
     },
   },
 
