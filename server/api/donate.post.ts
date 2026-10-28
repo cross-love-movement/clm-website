@@ -1,3 +1,7 @@
+import { sanitizeSubject } from '../emails/catalog'
+import { donationVariables } from '../emails/notifications'
+import { MAILBOXES } from '../utils/mailboxes'
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -17,8 +21,9 @@ export default defineEventHandler(async (event) => {
 
   await sendMail({
     tag: 'donation',
+    to: MAILBOXES.donate,
     replyTo: data.email,
-    subject: `Giving interest — ${amount} ${data.frequency} — ${data.name}`,
+    subject: sanitizeSubject(`Giving interest — ${amount} ${data.frequency} — ${data.name}`),
     text: [
       'Someone has registered giving interest on the website.',
       '',
@@ -32,6 +37,13 @@ export default defineEventHandler(async (event) => {
       '',
       'Send transfer details and confirm the giving schedule.',
     ].join('\n'),
+    variables: donationVariables({
+      name: data.name,
+      email: data.email,
+      amount,
+      frequency: data.frequency,
+      note: data.note,
+    }),
   })
 
   return {

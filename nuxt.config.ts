@@ -8,7 +8,7 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  modules: ['@nuxt/content', 'nuxt-studio'],
+  modules: ['@nuxt/content', 'nuxt-studio', 'nuxt-auth-utils'],
 
   content: {
     // Node 24 ships node:sqlite, so no native SQLite dependency is needed.
@@ -38,6 +38,9 @@ export default defineNuxtConfig({
   components: [
     // Flat namespace: `ui/BaseButton.vue` is used as <BaseButton>, not <UiBaseButton>.
     { path: '~/components', pathPrefix: false },
+    // Feature-owned components keep their own folder but the same flat names.
+    { path: '~/features/events/components', pathPrefix: false },
+    { path: '~/features/volunteers/components', pathPrefix: false },
   ],
 
   vite: {
@@ -80,16 +83,36 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Private: server-only. Override with NUXT_RESEND_API_KEY etc.
+    // Private: server-only. Never read `process.env` here — Nuxt inlines the
+    // value into the server bundle at build time, secrets included. The static
+    // defaults below are safe; `NUXT_RESEND_API_KEY`, `NUXT_MAIL_FROM`, and
+    // `NUXT_MAIL_TO` replace them at runtime.
     resendApiKey: '',
-    mailFrom: 'Cross-Love Movement <info@clmnative.ovahol.com>',
-    mailTo: 'info@clmnative.ovahol.com',
+    mailFrom: 'Cross-Love Movement <info@crosslovemovement.org>',
+    mailTo: 'info@crosslovemovement.org',
     public: {
-      siteUrl: 'https://www.clmnative.ovahol.com',
+      // Replaced at runtime by `NUXT_PUBLIC_SITE_URL`.
+      siteUrl: 'https://www.crosslovemovement.org',
     },
   },
 
   nitro: {
     compressPublicAssets: true,
+
+    // Branded mail templates, copied into the build and read at send time.
+    serverAssets: [{ baseName: 'emails', dir: './server/emails/templates' }],
+
+    // Baseline hardening. A full Content-Security-Policy is deliberately not
+    // set here: Studio, Google Fonts, and Vue's inline styles would all need
+    // auditing first.
+    routeRules: {
+      '/**': {
+        headers: {
+          'x-content-type-options': 'nosniff',
+          'x-frame-options': 'SAMEORIGIN',
+          'referrer-policy': 'strict-origin-when-cross-origin',
+        },
+      },
+    },
   },
 })

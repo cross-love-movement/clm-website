@@ -1,3 +1,7 @@
+import { sanitizeSubject } from '../emails/catalog'
+import { partnershipVariables } from '../emails/notifications'
+import { MAILBOXES } from '../utils/mailboxes'
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -11,8 +15,9 @@ export default defineEventHandler(async (event) => {
 
   await sendMail({
     tag: 'partnership',
+    to: MAILBOXES.info,
     replyTo: data.email,
-    subject: `Partnership enquiry — ${data.organisation}`,
+    subject: sanitizeSubject(`Partnership enquiry — ${data.organisation}`),
     text: [
       'New partnership enquiry from the website.',
       '',
@@ -25,6 +30,14 @@ export default defineEventHandler(async (event) => {
       'Message:',
       data.message,
     ].join('\n'),
+    variables: partnershipVariables({
+      organisation: data.organisation,
+      contactName: data.contactName,
+      email: data.email,
+      phone: data.phone,
+      type: data.type,
+      message: data.message,
+    }),
   })
 
   return {

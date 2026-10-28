@@ -39,5 +39,13 @@ export function rateLimit(key: string, limit = MAX_REQUESTS, windowMs = WINDOW_M
     for (const [existingKey, existing] of buckets) {
       if (existing.resetAt <= now) buckets.delete(existingKey)
     }
+
+    // If every bucket is still live, drop the oldest so a flood of unique keys
+    // cannot grow the map without bound.
+    while (buckets.size > MAX_KEYS) {
+      const oldest = buckets.keys().next()
+      if (oldest.done) break
+      buckets.delete(oldest.value)
+    }
   }
 }

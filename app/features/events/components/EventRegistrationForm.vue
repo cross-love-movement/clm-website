@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const props = defineProps<{ initialEvent?: string }>()
 
-const { upcoming } = await useEvents()
+const emit = defineEmits<{ registered: [] }>()
+
+const { upcoming, refresh } = await useEvents()
 
 const initialSlug = props.initialEvent || upcoming.value[0]?.slug || ''
 
@@ -29,18 +31,41 @@ watch(
 const eventOptions = computed(() =>
   upcoming.value.map((event) => ({
     value: event.slug,
-    label: `${event.title} — ${formatEventDate(event.startsAt)}`,
+    label: `${event.title} — ${formatEventDate(event.startsAt)}${
+      event.availability.open ? '' : ' — fully booked'
+    }`,
   })),
 )
-
-const attendeeOptions = [1, 2, 3, 4, 5, 6].map((count) => ({
-  value: String(count),
-  label: count === 1 ? 'Just me' : `${count} people`,
-}))
 
 const selectedEvent = computed(
   () => upcoming.value.find((event) => event.slug === values.eventSlug) ?? null,
 )
+
+const selectedAvailability = computed(() => selectedEvent.value?.availability ?? null)
+
+const remaining = computed(() => selectedAvailability.value?.remaining ?? 0)
+
+const canRegister = computed(() => selectedAvailability.value?.open ?? false)
+
+const maxAttendees = computed(() => Math.max(1, remaining.value))
+
+const seatsHint = computed(() => {
+  if (!selectedAvailability.value) return 'Places are confirmed when we receive your registration.'
+
+  return selectedAvailability.value.remaining === 0
+    ? 'This event is fully booked. You will be added to the waitlist.'
+    : `${selectedAvailability.value.remaining} of ${selectedAvailability.value.capacity} places left.`
+})
+
+watch(remaining, (left) => {
+  const chosen = Number(values.attendees)
+
+  if (!Number.isFinite(chosen) || chosen < 1) {
+    values.attendees = '1'
+  } else if (chosen > left && left > 0) {
+    values.attendees = String(left)
+  }
+})
 
 const selectedWhen = computed(() => {
   const event = selectedEvent.value
@@ -48,11 +73,20 @@ const selectedWhen = computed(() => {
 
   return `${formatEventDateLong(event.startsAt)} · ${formatEventTime(event.startsAt, event.endsAt)}`
 })
+
+async function onSubmit() {
+  const ok = await submit()
+
+  if (ok) {
+    emit('registered')
+    await refresh()
+  }
+}
 </script>
 
 <template>
   <div>
-    <AlertBox v-if="isSuccess" tone="success" title="You are registered">
+    <AlertBox v-if="isSuccess" tone="success" title="Check your email">
       <p class="mt-1">{{ message }}</p>
       <button
         type="button"
@@ -63,7 +97,7 @@ const selectedWhen = computed(() => {
       </button>
     </AlertBox>
 
-    <form v-else novalidate class="space-y-5" @submit.prevent="submit">
+    <form v-else novalidate class="space-y-5" @submit.prevent="onSubmit">
       <SelectField
         v-model="values.eventSlug"
         label="Which event?"
@@ -78,6 +112,12 @@ const selectedWhen = computed(() => {
         <p class="text-sm font-semibold text-ink">{{ selectedWhen }}</p>
         <p class="mt-1 text-sm text-ink-soft">
           {{ selectedEvent.venue }} · {{ selectedEvent.address }}, {{ selectedEvent.city }}
+        </p>
+        <p
+          class="mt-2 text-sm font-semibold"
+          :class="canRegister ? 'text-clay-700' : 'text-red-700'"
+        >
+          {{ seatsHint }}
         </p>
       </div>
 
@@ -112,12 +152,17 @@ const selectedWhen = computed(() => {
           placeholder="Optional"
           :error="errors.phone"
         />
-        <SelectField
+        <TextField
           v-model="values.attendees"
           label="How many are coming?"
           name="attendees"
-          :options="attendeeOptions"
-          placeholder="Choose a number"
+          type="number"
+          inputmode="numeric"
+          :min="1"
+          :max="maxAttendees"
+          :step="1"
+          :hint="seatsHint"
+          placeholder="1"
           required
           :error="errors.attendees"
         />
@@ -151,10 +196,12 @@ const selectedWhen = computed(() => {
 
       <div class="flex flex-wrap items-center gap-4">
         <BaseButton type="submit" size="lg" :disabled="isSubmitting || !eventOptions.length">
-          {{ isSubmitting ? 'Registering…' : 'Register' }}
+          {{ isSubmitting ? 'Sending…' : canRegister ? 'Register' : 'Join the waitlist' }}
           <template #icon><Icon name="calendar" :size="17" /></template>
         </BaseButton>
-        <p class="text-xs text-ink-soft">We will email a confirmation and a reminder.</p>
+        <p class="text-xs text-ink-soft">
+          We will email your reference code and a reminder before the day.
+        </p>
       </div>
 
       <input

@@ -3,7 +3,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 import { parse as parseYaml } from 'yaml'
 
-import { eventCategoryLabels } from '../app/data/events'
 import { contactFaqs, donateFaqs, partnershipFaqs, volunteerFaqs } from '../app/data/faqs'
 import { postCategories, postCategoryLabels } from '../app/data/news'
 import { partners } from '../app/data/partners'
@@ -12,22 +11,16 @@ import { projectCategories } from '../app/data/projects'
 import { footerNav, primaryNav, site } from '../app/data/site'
 import { homeSlides } from '../app/data/slides'
 import { testimonialAudiences, testimonials } from '../app/data/testimonials'
-import type { Event, PortfolioItem } from '../shared/types/content'
+import type { PortfolioItem } from '../shared/types/content'
+import { applicationSchema } from '../server/features/volunteers/schemas'
 import {
   contactSchema,
   donationSchema,
   eventRegistrationSchema,
   newsletterSchema,
-  volunteerSchema,
 } from '../server/utils/schemas'
 
 const newsFiles = import.meta.glob('../content/news/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
-const eventFiles = import.meta.glob('../content/events/*.yml', {
   query: '?raw',
   import: 'default',
   eager: true,
@@ -92,11 +85,6 @@ function parseMarkdown<T>(raw: string) {
 const news = Object.entries(newsFiles).map(([file, raw]) => ({
   slug: slugFromFile(file),
   ...parseMarkdown<NewsFrontmatter>(raw),
-}))
-
-const events = Object.entries(eventFiles).map(([file, raw]) => ({
-  slugFromFile: slugFromFile(file),
-  data: parseYaml(raw) as Event,
 }))
 
 const portfolio = Object.entries(portfolioFiles).map(([file, raw]) => ({
@@ -288,57 +276,6 @@ describe('news content', () => {
   })
 })
 
-describe('event content', () => {
-  it('finds the YAML files', () => {
-    expect(events.length).toBeGreaterThan(0)
-  })
-
-  it('uses unique slugs and keeps the file name in sync', () => {
-    const slugs = events.map((event) => event.data.slug)
-    expect(new Set(slugs).size).toBe(slugs.length)
-
-    for (const event of events) {
-      expect(event.data.slug).toBe(event.slugFromFile)
-    }
-  })
-
-  // Nuxt Studio parses YAML with the timestamp tag, so an unquoted ISO value
-  // becomes a `Date` object. The content database holds a string, the two can
-  // never compare equal, and every edit of the file reports "Conflict Detected".
-  // Quoting the value keeps it a string on both sides.
-  it('keeps timestamps quoted so Studio can compare them', () => {
-    const timestampKeys = ['startsAt', 'endsAt', 'registrationDeadline']
-
-    for (const [file, raw] of Object.entries(eventFiles)) {
-      for (const key of timestampKeys) {
-        const value = raw.match(new RegExp(`^${key}: (.+)$`, 'm'))?.[1]
-        if (!value) continue
-        expect(value.startsWith("'"), `${file}: ${key} must be single-quoted`).toBe(true)
-      }
-    }
-  })
-
-  it('has a complete, coherent timetable', () => {
-    const categories = Object.keys(eventCategoryLabels)
-
-    for (const { data: event } of events) {
-      expect(event.title.trim()).not.toBe('')
-      expect(event.summary.trim()).not.toBe('')
-      expect(event.venue.trim()).not.toBe('')
-      expect(event.city.trim()).not.toBe('')
-      expect(categories).toContain(event.category)
-      expect(event.registered).toBeLessThanOrEqual(event.capacity)
-      expect(new Date(event.endsAt).getTime()).toBeGreaterThan(new Date(event.startsAt).getTime())
-
-      if (event.registrationDeadline) {
-        expect(new Date(event.registrationDeadline).getTime()).toBeLessThan(
-          new Date(event.startsAt).getTime(),
-        )
-      }
-    }
-  })
-})
-
 describe('portfolio content', () => {
   it('finds the YAML files', () => {
     expect(portfolio.length).toBeGreaterThan(0)
@@ -446,11 +383,11 @@ describe('server validation', () => {
   })
 
   it('accepts a complete volunteer application', () => {
-    expect(volunteerSchema.safeParse(validVolunteer).success).toBe(true)
+    expect(applicationSchema.safeParse(validVolunteer).success).toBe(true)
   })
 
   it('requires a known availability for volunteers', () => {
-    const unknown = volunteerSchema.safeParse({ ...validVolunteer, availability: 'whenever' })
+    const unknown = applicationSchema.safeParse({ ...validVolunteer, availability: 'whenever' })
     expect(unknown.success).toBe(false)
   })
 

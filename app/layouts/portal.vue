@@ -1,0 +1,25 @@
+<template>
+  <div class="flex min-h-dvh flex-col bg-sand-50">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-brand-800 focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <PortalHeader label="Volunteer portal" />
+
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="border-t border-sand-200 bg-white/60">
+      <div
+        class="container-page flex flex-wrap items-center justify-between gap-2 py-4 text-xs text-ink-soft"
+      >
+        <p>Cross-Love Movement · Volunteer portal</p>
+        <p class="text-ink-soft/70">Registered company limited by guarantee in Ghana</p>
+      </div>
+    </footer>
+  </div>
+</template>

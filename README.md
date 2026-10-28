@@ -1,6 +1,6 @@
 # Cross-Love Movement — website
 
-Website for **Cross-Love Movement, Limited By Guarantee** — a Ghanaian NGO of musicians and
+Website for **Cross-Love Movement Limited By Guarantee** — a Ghanaian NGO of musicians and
 patriots using music and community engagement to share the Gospel, support gospel artistes, and
 care for people and the planet.
 
@@ -81,32 +81,50 @@ clm-website/
 │  │  ├─ layout/               # SiteHeader, SiteFooter
 │  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard, PostCard,
 │  │  │                        # TestimonialsSection, PartnersCarousel, StatGrid, FaqList, fields…
-│  │  ├─ home/                 # EventCarousel, EventsSection, NewsSection
-│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter,
-│  │                           # EventRegistration
+│  │  ├─ home/                 # EventsSection, NewsSection
+│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter
+│  ├─ features/
+│  │  └─ events/               # The event app: components + composables (see below)
+│  │     ├─ components/        # EventCarousel, EventRegistrationForm, EventForm (admin)
+│  │     └─ composables/       # useEventAvailability
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
 │  │                           # usePortfolio, useTestimonials, useForm, useSeo
 │  ├─ data/                    # Code-managed content: site, about, involve, faqs, testimonials,
-│  │                           # partners (plus category labels for content collections)
+│  │                           # partners, home slides (plus category labels)
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
-│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio
-│  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts
+│  ├─ middleware/              # guest, admin (staff), manager (people), volunteer (portal)
+│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio,
+│  │                           # /login, /portal, /admin, /admin/events (CRUD + registrations)
+│  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts, admin.ts
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
 ├─ content/                    # Editorial content (Nuxt Content)
 │  ├─ projects/*.md            # Project pages with frontmatter + Markdown body
 │  ├─ news/*.md                # Articles with frontmatter + Markdown/MDC body
-│  ├─ events/*.yml             # Event records (one file per event)
 │  └─ portfolio/*.yml          # Portfolio pieces (one file per piece)
 ├─ server/
-│  ├─ api/                     # contact, volunteer, partnership, newsletter, donate,
-│  │                           # events/register
+│  ├─ api/                     # public, auth, and admin routes
+│  │  ├─ auth/                 # login, logout, session, reset-request, reset-confirm
+│  │  ├─ admin/users/          # list, invite, role/status changes
+│  │  ├─ admin/events/         # event CRUD + registrations: list, CSV, cancel, check-in
+│  │  ├─ events/               # public list + register
+│  │  └─ health.get.ts
+│  ├─ database/                # Postgres: client, schema, migrations, seeds
+│  ├─ features/
+│  │  ├─ auth/                 # password hashing, tokens, service, guards, mail
+│  │  ├─ events/               # repository, reference codes, email templates
+│  │  └─ mail/                 # outbox drain (background sender)
+│  ├─ plugins/database.ts      # Boot: apply migrations, seed the first superadmin
 │  └─ utils/                   # schemas (Zod), validation, mailer, rate-limit
-├─ shared/types/content.ts     # Types used by both app and server
-├─ tests/                      # Vitest: content integrity + server schema tests
+├─ shared/
+│  ├─ types/content.ts         # Types used by both app and server
+│  └─ utils/events.ts          # Availability maths shared by both sides
+├─ docs/architecture.md        # Content vs operations planes, roles, portals, phases
+├─ tests/                      # Vitest: content integrity, schemas, registrations
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
 ├─ content.config.ts           # Nuxt Content collections, schemas, Studio form metadata
 ├─ nuxt.config.ts              # Nuxt, Tailwind, Nuxt Content, Nuxt Studio (`studio.route`)
+├─ drizzle.config.ts           # Drizzle schema + migration output paths
 ├─ Dockerfile                  # Multi-stage build for Coolify / any container host
 ├─ vite.config.ts              # Vite+ format/lint/test config (not Nuxt's build config)
 └─ .env.example
@@ -119,22 +137,29 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route              | Page           | Server route                |
-| ------------------ | -------------- | --------------------------- |
-| `/`                | Home           | —                           |
-| `/about`           | About          | —                           |
-| `/projects`        | Projects index | —                           |
-| `/projects/[slug]` | Project detail | —                           |
-| `/events`          | Events         | `POST /api/events/register` |
-| `/news`            | News index     | —                           |
-| `/news/[slug]`     | Article        | —                           |
-| `/portfolio`       | Portfolio      | —                           |
-| `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
-| `/partnership`     | Partnership    | `POST /api/partnership`     |
-| `/contact`         | Contact        | `POST /api/contact`         |
-| `/donate`          | Donate         | `POST /api/donate`          |
-| footer newsletter  | —              | `POST /api/newsletter`      |
-| `/_studio`         | —              | Nuxt Studio (GitHub OAuth)  |
+| Route               | Page             | Server route                  |
+| ------------------- | ---------------- | ----------------------------- |
+| `/`                 | Home             | —                             |
+| `/about`            | About            | —                             |
+| `/projects`         | Projects index   | —                             |
+| `/projects/[slug]`  | Project detail   | —                             |
+| `/events`           | Events           | `POST /api/events/register`   |
+| `/news`             | News index       | —                             |
+| `/news/[slug]`      | Article          | —                             |
+| `/portfolio`        | Portfolio        | —                             |
+| `/volunteer`        | Volunteer        | `POST /api/volunteer`         |
+| `/partnership`      | Partnership      | `POST /api/partnership`       |
+| `/contact`          | Contact          | `POST /api/contact`           |
+| `/donate`           | Donate           | `POST /api/donate`            |
+| footer newsletter   | —                | `POST /api/newsletter`        |
+| `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
+| `/login`            | Sign in          | `POST /api/auth/login`        |
+| `/admin`            | Staff overview   | —                             |
+| `/admin/events`     | Event management | `/api/admin/events`           |
+| `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
+| `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
+| `/admin/users`      | People           | `/api/admin/users`            |
+| `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -148,8 +173,9 @@ Content is split by how often it changes.
 
 - `content/projects/*.md` — project pages with structured frontmatter and a Markdown body
 - `content/news/*.md` — articles with frontmatter and a Markdown/MDC body
-- `content/events/*.yml` — one file per event
 - `content/portfolio/*.yml` — one file per portfolio piece
+
+Events and volunteer records are no longer content: they live in Postgres and are managed by the event and volunteer apps (see below).
 
 Each is declared as a collection with a Zod schema, so missing or malformed fields fail
 `nuxt build`. Pages query through async composables (`useProjects()`, `useNews()`, `useEvents()`,
@@ -180,9 +206,144 @@ and dot navigation, and stops auto-advancing entirely under `prefers-reduced-mot
 images are the abstract SVG artwork — replace them with photographs when they arrive; the caption is
 written to stand on its own if an image fails to load.
 
-To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
-and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
-is hosted, and the public pages keep the same layout, components, and theme.
+### Event app
+
+Events are an application inside the site, and that is how the code is arranged:
+
+```
+app/features/events/       carousel, registration form, admin event form
+app/pages/admin/events/    list, create, detail + registrations, edit
+server/features/events/    repository (SQL + transactions), mail templates, references
+server/features/mail/      outbox drain (background sender)
+server/api/events/         public list + register
+server/api/admin/events/   CRUD, registrations list, CSV, cancel, check-in
+shared/utils/events.ts     availability maths used by both sides
+```
+
+**Events live in Postgres**, not in `content/`. A public request returns published events with live
+capacity:
+
+```json
+{
+  "slug": "people-like-you-2027",
+  "capacity": 1000,
+  "availability": { "registered": 3, "remaining": 997, "open": true }
+}
+```
+
+`GET /api/events` is the single source for the listing, the registration form, the home strip, and
+the homepage carousel — so “places left” cannot disagree between them.
+
+**No overbooking.** `registerForEvent()` locks the event row (`SELECT … FOR UPDATE`), re-counts
+confirmed attendees, and inserts in the same transaction. Two simultaneous group bookings cannot
+both pass the check.
+
+**Waitlist.** If the requested places do not fit, the booking is stored as `waitlisted` instead of
+failing — it still gets a reference and an email. Cancelling a confirmed booking promotes waitlisted
+bookings first-come-first-served inside the same transaction, and emails each promoted registrant.
+
+**Reference codes.** `PEO-7K4M2Q` — event prefix plus Crockford base32 (no `I`, `L`, `O`, `U`).
+Emailed only: the confirmation screen tells the registrant to check their inbox.
+
+**Email outbox.** The booking commits first and writes a `mail_outbox` row; a background worker
+sends it and retries up to five times. A mail outage cannot lose a booking, and a retry cannot send
+twice.
+
+**Admin screens** live under `/admin/events` and use the same endpoints, guarded by the staff
+session. `/admin/events` lists every event with live counts, `/admin/events/new` creates one,
+`/admin/events/:id` shows the registration table (search, check-in, cancel, CSV), and
+`/admin/events/:id/edit` edits the record. Reading needs staff access; writing needs the
+`canEdit` permission and registrations need `canManageRegistrations`.
+
+**Admin endpoints** (staff session required — see Accounts and portals):
+
+| Route                                               | Purpose                       |
+| --------------------------------------------------- | ----------------------------- |
+| `GET/POST /api/admin/events`                        | list every event, create one  |
+| `GET/PATCH /api/admin/events/:id`                   | read or edit one event        |
+| `GET /api/admin/events/registrations?event=slug`    | list bookings                 |
+| `GET …?format=csv`                                  | spreadsheet download          |
+| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived     |
+| `DELETE /api/admin/events/registrations/:id`        | cancel + promote the waitlist |
+
+**Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
+disables it) so the site has something to show.
+
+**Not built yet:** per-email duplicate prevention, a public event detail page, reminder emails,
+and an audit log. Registrations store name, email, and phone, so agree a retention period before
+collecting them in earnest.
+
+### Volunteer app
+
+Volunteers are the second operational entity. The code mirrors events:
+
+```
+app/pages/admin/programmes/   programme list, create, edit, roles
+app/pages/admin/volunteers/   applications, safeguarding, placements
+app/features/volunteers/      programme form and future shared components
+server/features/volunteers/   repository, schemas, application mail
+server/api/volunteer/         public opportunities
+server/api/admin/             programmes, opportunities, volunteers, assignments
+server/api/portal/            a volunteer's own placements
+```
+
+The model separates the person, the work, and the placement:
+
+| Entity                    | Purpose                                                                    |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `programmes`              | The work volunteers can join, with an optional link to a content story     |
+| `volunteer_opportunities` | Roles inside a programme, with slots and requirements                      |
+| `volunteers`              | The person, including safeguarding fields and an optional linked `user_id` |
+| `volunteer_applications`  | Every public submission, kept for history                                  |
+| `volunteer_assignments`   | Who is placed in which programme/role                                      |
+
+**Roles are data, not code.** Admins create and close them under `/admin/programmes`; the public
+`/volunteer` page and the application form read the open ones from
+`/api/volunteer/opportunities`. Adding or changing a role does not require a deploy. If no roles
+are open, the page still accepts a general application.
+
+**Flow.** The public `/volunteer` form stores an application, queues a notification to
+`apply@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
+fails, the row is retried by the background worker. Staff do not need to be signed in to learn
+that someone applied.
+Staff review at `/admin/volunteers`, invite the volunteer (creating a `volunteer` account), then
+place them into a programme at `/admin/programmes`. Volunteers see their placements at `/portal`.
+Assigning to an opportunity with slots locks the row and refuses to overfill.
+
+**Safeguarding** lives on the volunteer row: date of birth, emergency contact, consent timestamp,
+briefing date, background-check status, and internal notes. It is only visible with
+`canManageVolunteers`.
+
+**Bootstrap data.** On a fresh database one programme (People Like You 2027) and five roles are
+seeded (`SEED_VOLUNTEER_PROGRAMMES=false` disables it) so the public form is not empty.
+
+**Not built yet:** approval/decline emails, shifts and hours logging, reports, and volunteer content
+grants. Content editing stays with developers/GitHub or Nuxt Studio for now; if scoped editors are
+added later, draft/publish approval belongs with that work.
+
+### Mail routing
+
+| Trigger                                    | Inbox                                         |
+| ------------------------------------------ | --------------------------------------------- |
+| Volunteer application                      | `apply@crosslovemovement.org`                 |
+| Contact form — volunteering                | `apply@crosslovemovement.org`                 |
+| Donation form                              | `donate@crosslovemovement.org`                |
+| Contact form — donation                    | `donate@crosslovemovement.org`                |
+| Contact form — complaint                   | `admin@crosslovemovement.org`                 |
+| Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
+| Partnership form                           | `info@crosslovemovement.org`                  |
+| Newsletter signup                          | `info@crosslovemovement.org`                  |
+| Invite and password-reset replies          | `support@crosslovemovement.org` (Reply-To)    |
+| Unrouted fallback                          | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
+
+The mailboxes are defined once in `server/utils/mailboxes.ts`. These are recipients; the sending
+address still has to live on the domain verified in Resend. All inboxes must be routed in Cloudflare
+Email Routing or they will accept mail into a void.
+
+To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
+site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
+and the public pages keep the same layout, components, and theme. Events and volunteers are the
+exception: they are records in Postgres, edited at `/admin/events` and `/admin/volunteers`.
 
 Each schema field also carries `property(...).editor(...)` metadata — labels, helper text, media
 pickers, textareas. That metadata is invisible to the site and only shapes the Nuxt Studio form, so
@@ -201,8 +362,8 @@ A commit triggers the host's rebuild, and the change goes live with the rest of 
 enable it:
 
 1. Create a GitHub OAuth app at <https://github.com/settings/developers> → **New OAuth App**.
-   - Homepage URL: `https://www.clmnative.com`
-   - Authorization callback URL: `https://www.clmnative.com/__nuxt_studio/auth/github`
+   - Homepage URL: `https://www.crosslovemovement.org`
+   - Authorization callback URL: `https://www.crosslovemovement.org/__nuxt_studio/auth/github`
    - For local production-mode testing, add `http://localhost:3000/__nuxt_studio/auth/github`
 2. Set `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID` and `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` in the
    deployment environment (and in `.env` if testing locally). GitHub generates the secret — 40 hex
@@ -260,7 +421,7 @@ those documents:
   (YEPs) — and every initiative now in `content/projects/`
 - Cross Sessions (Easter Sundays, nine editions since 2018), Power-Point, Today Is Us, CSL
   Evangelism, People Like You (12 June 2027), and the church support work in Community 12 and Bawku
-- Contact details: `crosslovemovement.lbg@gmail.com`, `+233 55 175 7842`, WhatsApp
+- Contact details: `info@crosslovemovement.org`, `+233 53 050 2774`, WhatsApp
   `+233 53 050 2774`, and the temporary site `cross-lovemovement.my.canva.site`
 
 The **logo mark** (`public/images/clm-mark.png`, `public/favicon.png`) was extracted from the 2023
@@ -312,6 +473,13 @@ Tokens are declared once in `app/assets/css/main.css`:
 Add a colour by extending `@theme`; it immediately becomes available as `bg-*`, `text-*`, etc.
 Global reduced-motion handling and focus-visible styling are in the base layer.
 
+**Brand lockup.** `BrandLockup.vue` is the official signature: the heart-and-cross mark beside
+`CROSS-LOVE MOVEMENT` over `LIMITED BY GUARANTEE`, both in the logo red. It sizes from one `size`
+prop and is used in `SiteHeader`, `PortalHeader`, `SiteFooter` (with `tile` and `on-dark`), the error
+page, and the email header in `server/emails/templates/*.html`. Change it there once rather than editing
+individual headers; if the organisation supplies the lockup as a single SVG, swap the component
+body for that image.
+
 ---
 
 ## Forms and backend
@@ -340,9 +508,83 @@ Server protections:
 
 ### Mail
 
-`server/utils/mailer.ts` sends through the [Resend](https://resend.com) HTTP API. With no
-`NUXT_RESEND_API_KEY` the message is printed to the server console, so local testing works without
-an account. In production, verify the sending domain in Resend and set the env vars below.
+`server/utils/mailer.ts` sends through the [Resend](https://resend.com) HTTP API. The markup lives in
+`server/emails/templates` as standalone HTML files — the **single source** for each mail — and is used
+two ways:
+
+- **In this app** for previews and as the fallback, rendered with `escapeHtml`.
+- **In Resend** by pasting the same file into a template; `{{{VARIABLE}}}` is the syntax both sides use.
+
+With no `NUXT_RESEND_API_KEY` the message is printed to the server console, so local testing works
+without an account.
+
+| File                             | Covers                                                              |
+| -------------------------------- | ------------------------------------------------------------------- |
+| `server/emails/templates/*.html` | One branded file per kind, ready to paste into Resend               |
+| `server/emails/catalog.ts`       | Kind → file/env map, renderer, escaping, subject and length helpers |
+| `server/emails/notifications.ts` | Variable builders for the four staff notifications                  |
+| `server/emails/types.ts`         | `ComposedMail`, `TemplateVariables` — what `mail_outbox` stores     |
+| `server/features/*/mail.ts`      | Subject lines, plain-text bodies, and variables per workflow        |
+| `server/emails/layout.ts`        | _Removed_ — there is no second copy of the markup in TypeScript     |
+
+The shell is a 600px table card with a white header carrying the official lockup, the clay rule, the
+reference code block, and a footer with the legal name, RGD number, address, and reply address.
+`tests/email.test.ts` checks that every kind has a file, that each file carries the brand, that the
+app supplies every placeholder the file uses, and that rendering escapes interpolated values.
+
+**Preview them in development.** `/api/email-preview` lists every kind;
+`/api/email-preview?kind=confirmation` renders one with sample data. It returns `404` outside
+development.
+
+**Event mail is queued first.** The message row is written inside the booking transaction, so a mail
+outage can never lose a booking. `mail_outbox.variables` holds the values; the worker renders the
+template (or sends the Resend template) immediately and retries up to five times. Rows queued without
+variables send as plain text.
+
+**Using Resend-hosted templates.** Create the template in Resend, paste the matching file from
+`server/emails/templates`, publish it, then set the kind's environment variable to the template **id
+or alias**. Leave it blank to keep rendering the file in the app. Sending still supplies `from`,
+`to`, `subject`, and `Reply-To`, so routing and subject lines stay in the repository.
+
+| Kind                    | Environment variable                    | Variables                                                                                                                                                  |
+| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                 |
+| `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                       |
+| `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                       |
+| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                              |
+| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                  |
+| `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
+| `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
+| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
+| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
+| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`                                                                                                                                         |
+
+Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
+**published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
+placeholder its file uses, so drift shows up in CI rather than in a customer's inbox. Aliases
+(`clm-event-registration`) are worth using over raw ids: staging and production can share one value.
+
+To seed a dashboard template, open the matching `/api/email-preview?kind=…` output, paste the markup,
+and replace the sample values with `{{{ VARIABLE }}}` placeholders from the table above.
+
+**Which path is used?** A kind uses Resend only when its env var is non-empty **and** the composer
+supplies variables. At boot the server prints one line, e.g.
+
+```
+[mail] 7/11 kinds use a Resend template: event-registration → clm-event-registration, …
+```
+
+Every send then logs the path it took:
+
+```
+[mail] event-registration delivered via Resend template "clm-event-registration"
+[mail] newsletter delivered via server/emails/templates/newsletter.html
+```
+
+A configured alias that is wrong, unpublished, or missing a variable makes Resend reject the send —
+the row stays in `mail_outbox` and `last_error` names the cause. It deliberately does **not** fall
+back to the local file, so a misconfiguration is visible rather than silently sending different copy.
 
 ### Donations
 
@@ -355,25 +597,109 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 ---
 
+## Database
+
+The operations side of the app runs on **Postgres** (Drizzle ORM). The content site is unaffected: Nuxt Content still builds its own read-only SQLite at deploy time.
+
+```bash
+npm run db:generate   # after changing server/database/schema
+npm run db:migrate    # apply pending migrations (needs DATABASE_URL)
+```
+
+Migrations are generated into `server/database/migrations` and committed. The server also applies them at boot (`DB_MIGRATE_ON_START`, default on), which is safe with the single replica this deployment runs.
+
+The first superadmin is seeded from `SEED_SUPERADMIN_EMAIL` / `SEED_SUPERADMIN_NAME`. Seeding is idempotent and never overwrites an existing account.
+
+**Local development** against a throwaway database:
+
+```bash
+docker run -d --name clm-pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clm -p 5433:5432 postgres:18-alpine
+
+export DATABASE_URL=postgres://postgres:postgres@localhost:5433/clm
+export SEED_SUPERADMIN_EMAIL=you@example.com
+npm run dev
+```
+
+`GET /api/health` reports `database: up`, `not-configured`, or `503`. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+
+See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
+
+---
+
+## Accounts and portals
+
+Accounts are **invite-only** — there is no public signup. A superadmin or an admin with
+`canManagePeople` invites an address; the invitee sets a password from the emailed link (7-day
+expiry). Password resets use the same mechanism (1-hour expiry).
+
+| Route                                 | Who                          |
+| ------------------------------------- | ---------------------------- |
+| `/login`                              | Everyone                     |
+| `/forgot-password`, `/reset-password` | Everyone with a link         |
+| `/portal`                             | `volunteer`                  |
+| `/admin`                              | `superadmin`, `admin`        |
+| `/admin/users`                        | `canManagePeople` permission |
+
+Roles: `superadmin`, `admin`, `volunteer`. Operational permissions are assigned per account at
+invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV),
+`canManagePeople` (people screen, invite volunteers), `canManageVolunteers` (applications,
+safeguarding, placements), and `canManageProgrammes` (programmes and roles). An admin starts with
+all five; a superadmin implicitly has everything, plus changing roles, editing permissions, and
+suspending accounts. Volunteers have no staff access. Guards run in route middleware (`admin`,
+`manager`, `programme-manager`, `volunteer-manager`, `volunteer`) and again in the API, so a
+volunteer hitting `/api/admin/*` gets `403`.
+
+**Volunteer portal.** `/portal` shows a volunteer their profile, status, and current placements. It is only reachable by `volunteer` accounts; staff are redirected to `/admin`. Volunteers are invited after an application is approved, so an account without a linked volunteer profile sees a prompt to apply.
+
+**First sign-in.** The seeded superadmin has no password: open `/forgot-password`, enter the seeded email, and follow the link from the server log (or the inbox once Resend is configured).
+
+**Sessions** are sealed cookies signed by `NUXT_SESSION_PASSWORD` — set it to 32+ random characters in production (`openssl rand -base64 32`). Without it, sign-in logs an error and sessions will not persist.
+
+| Endpoint                       | Purpose                                                      |
+| ------------------------------ | ------------------------------------------------------------ |
+| `POST /api/auth/login`         | Email + password → session, returns the landing portal       |
+| `POST /api/auth/logout`        | Clear the session                                            |
+| `GET /api/auth/session`        | Current user                                                 |
+| `POST /api/auth/reset-request` | Always generic; emails a link if the account exists          |
+| `POST /api/auth/reset-confirm` | Accept invite or reset token, set password, sign in          |
+| `GET /api/admin/users`         | List accounts (`canManagePeople`)                            |
+| `POST /api/admin/users/invite` | Invite a volunteer (`canManagePeople`) or staff (superadmin) |
+| `PATCH /api/admin/users/:id`   | Change role/permissions or suspend (superadmin)              |
+
+Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-256 hashes and are single-use. Login and reset responses are deliberately generic so the endpoints cannot be used to discover who has an account.
+
+---
+
 ## Environment variables
 
-| Variable                                | Default                                    | Purpose                                |
-| --------------------------------------- | ------------------------------------------ | -------------------------------------- |
-| `NUXT_PUBLIC_SITE_URL`                  | `https://www.clmnative.com`                | Canonical + OG URLs                    |
-| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                | Mail delivery                          |
-| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@clmnative.com>` | Sender                                 |
-| `NUXT_MAIL_TO`                          | `info@clmnative.com`                       | Inbox receiving submissions            |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_          | GitHub OAuth app for Studio editors    |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                  | GitHub OAuth secret                    |
-| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_    | Comma-separated editor email allowlist |
+| Variable                                | Default                                            | Purpose                                |
+| --------------------------------------- | -------------------------------------------------- | -------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | `https://www.crosslovemovement.org`                | Canonical + OG URLs                    |
+| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                        | Mail delivery                          |
+| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>` | Sender                                 |
+| `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                       | General fallback inbox                 |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                  | GitHub OAuth app for Studio editors    |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                          | GitHub OAuth secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_            | Comma-separated editor email allowlist |
+| `SEED_EVENTS`                           | `true`                                             | Seed one event on an empty database    |
+| `SEED_VOLUNTEER_PROGRAMMES`             | `true`                                             | Seed one programme + roles on empty DB |
+| `DATABASE_URL`                          | _(empty — database features off)_                  | Postgres connection string             |
+| `DATABASE_SSL`                          | `false`                                            | Enable TLS to the database             |
+| `DATABASE_POOL_SIZE`                    | `10`                                               | Postgres pool size                     |
+| `DB_MIGRATE_ON_START`                   | `true`                                             | Apply migrations at boot               |
+| `MIGRATIONS_DIR`                        | `server/database/migrations`                       | `/app/migrations` in the image         |
+| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                             | First superadmin's email               |
+| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                                      | First superadmin's name                |
+| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                         | Signs the session cookie (32+ chars)   |
 
 ---
 
 ## Validation performed
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
-- `npm run check` — passes (format, lint, type-aware checks across 81 files)
-- `npm test` — 37 tests passing (content files, testimonials, partners, server validation)
+- `npm run check` — passes (format, lint, type-aware checks across 178 files)
+- `npm test` — 60 tests passing (content files, event availability and references, permissions, template contract, email rendering, and Resend payload shape)
 - `npm run build` — passes, including Nuxt Content database generation with `node:sqlite`
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
 - Nuxt Content verified end to end: 6 project pages, 6 Markdown articles, 6 event YAML files, and 9
@@ -386,9 +712,15 @@ international cards) that creates a transaction and returns a checkout URL, then
 - Home page verified to include the partner strip, repeated marquee groups, and pause control
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
-- Event registration verified against the content collection: valid event (`200`), unknown slug
-  (`404`), and invalid attendee count (`400`), with the confirmation email in the development log
+- Event flow verified end to end on Postgres: booking returns the new availability, a booking beyond
+  capacity is stored as `waitlisted` with its own reference, cancelling a confirmed booking promotes
+  the waitlist inside the same transaction and emails the promoted registrant, CSV export and
+  check-in work, and staff-only endpoints return `401` without a session
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
+- Branded mail verified end to end: a registration stores its variables in `mail_outbox`, the worker
+  renders the template file (8.2 KB) and sends it, cancellation queues and sends the cancellation
+  template, the Resend-template path is selected when its env var is set, and `/api/email-preview`
+  returns `200` in development and `404` in the production build
 - Nuxt Studio verified: client plugin registers in dev, `/_studio` in a production build returns
   `404 No authentication provider found` without credentials, and with credentials set it returns
   `302 → /__nuxt_studio/auth/github`, which in turn redirects to GitHub with
@@ -396,7 +728,7 @@ international cards) that creates a transaction and returns a checkout URL, then
 - Container verified: `docker build` succeeds on `node:24-alpine`, the image runs healthy as uid
   1000, every route returns `200`, `/_studio` returns `404` without OAuth env vars, a valid
   `POST /api/contact` returns `200`, and with OAuth credentials plus a proxy-style `Host` header the
-  authorize redirect carries `redirect_uri=https://www.clmnative.com/__nuxt_studio/auth/github`
+  authorize redirect carries `redirect_uri=https://<deployment-domain>/__nuxt_studio/auth/github`
 
 ---
 
@@ -410,8 +742,9 @@ international cards) that creates a transaction and returns a checkout URL, then
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
 5. **Payments** — connect a gateway if online giving is required (see above).
-6. **Event registrations** — replace the dummy calendar and connect registration to a real store
-   (database, Google Sheet, or event platform) so capacities and headcounts stay accurate.
+6. **Event data** — events and registrations live in `DATABASE_URL`. Keep one replica, schedule
+   nightly Postgres backups, and agree a retention period for registrant names, emails, and phone
+   numbers. The admin CRUD screens are the next phase; until then, events are created with SQL.
 7. **News** — replace the illustrative posts, agree an editorial cadence, and add an RSS feed
    (`/rss.xml`) if people want to subscribe outside email.
 8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.
@@ -453,37 +786,49 @@ as an unprivileged user.
 1. **Create the resource** — Coolify → your project → **+ New** → **Application** → **Private
    repository (with GitHub App)** → `cross-love-movement/clm-website`, branch `main`. The GitHub App
    must be installed on the `cross-love-movement` organization, not just your personal account.
-2. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
+2. **Database** — add a **PostgreSQL 18** resource to the same project, then copy its _internal_
+   connection URL into `DATABASE_URL` on the application. The app applies migrations and seeds the
+   first superadmin on boot (`DB_MIGRATE_ON_START=true`).
+3. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
    `npm run build` and runs `node .output/server/index.mjs`.
-3. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
-4. **Domain** — add `https://www.clmnative.com`, enable HTTPS. Coolify's Traefik forwards
+4. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
+5. **Domain** — add `https://www.crosslovemovement.org`, enable HTTPS. Coolify's Traefik forwards
    `X-Forwarded-Proto`, which Studio uses to build the OAuth callback URL.
-5. **Environment variables** — see the table below.
-6. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
+6. **Environment variables** — see the table below.
+7. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
    committing to `main`, and that commit is what triggers the rebuild that makes the edit public.
-7. **Healthcheck** — the image defines a `HEALTHCHECK` hitting `/`. Coolify's own setting can be
-   left at its default, or set to GET `/`.
+8. **Healthcheck** — the image defines a `HEALTHCHECK` against `/api/health`, which returns `503`
+   when Postgres is unreachable. Point Coolify's own healthcheck at the same path.
 
 **No persistent volume is needed.** The content database is generated during the build and shipped
-read-only inside the image at `server/contents.sqlite`. Studio's drafts live in the editor's browser
-and are published to Git, not to the container's disk. Add a volume only if you later switch media
-storage to a local disk driver.
+read-only inside the image. Studio's drafts live in the editor's browser and are published to Git,
+not to the container's disk. Postgres holds every operational record; back that up instead. Add a
+volume only if you later switch media storage to a local disk driver.
 
 **Environment variables** (Coolify → Configuration → Environment Variables):
 
-| Variable                                | Required | Value                                      |
-| --------------------------------------- | -------- | ------------------------------------------ |
-| `NUXT_PUBLIC_SITE_URL`                  | yes      | `https://www.clmnative.com`                |
-| `NUXT_MAIL_TO`                          | yes      | Inbox that receives form submissions       |
-| `NUXT_MAIL_FROM`                        | no       | `Cross-Love Movement <info@clmnative.com>` |
-| `NUXT_RESEND_API_KEY`                   | for mail | Resend API key (omit to log to container)  |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS  | GitHub OAuth app client ID                 |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS  | GitHub OAuth app secret                    |
-| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS  | Comma-separated editor emails (allowlist)  |
+| Variable                                | Required   | Value                                              |
+| --------------------------------------- | ---------- | -------------------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | yes        | `https://www.crosslovemovement.org`                |
+| `DATABASE_URL`                          | yes        | Internal Postgres URL from the Coolify service     |
+| `NUXT_SESSION_PASSWORD`                 | yes        | 32+ random chars (`openssl rand -base64 32`)       |
+| `SEED_SUPERADMIN_EMAIL`                 | first boot | Address that becomes the first superadmin          |
+| `SEED_SUPERADMIN_NAME`                  | no         | Display name for that account                      |
+| `NUXT_MAIL_TO`                          | yes        | Inbox that receives form submissions               |
+| `NUXT_MAIL_FROM`                        | no         | `Cross-Love Movement <info@crosslovemovement.org>` |
+| `NUXT_RESEND_API_KEY`                   | for mail   | Resend API key (omit to log to container)          |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS    | GitHub OAuth app client ID                         |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS    | GitHub OAuth app secret                            |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS    | Comma-separated editor emails (allowlist)          |
 
-Mark the Studio secrets as **Build Variable: no** — they are only read at runtime.
+Mark every secret as **Build Variable: no** — they are only read at runtime.
 
-Set the GitHub OAuth app's callback URL to `https://www.clmnative.com/__nuxt_studio/auth/github`.
+**Before the first deploy:** verify `crosslovemovement.org` in Resend. `NUXT_MAIL_FROM` must use a
+verified domain or every transactional email (form notifications, event confirmations, invites,
+password resets) is rejected. Set `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` too — without it any GitHub
+account that authorises the OAuth app can commit to `main`.
+
+Set the GitHub OAuth app's callback URL to `https://www.crosslovemovement.org/__nuxt_studio/auth/github`.
 If the domain ever changes, or if Coolify sits behind another proxy that rewrites `Host`, set
 `NUXT_STUDIO_AUTH_GITHUB_REDIRECT_URL` to the same URL explicitly.
 

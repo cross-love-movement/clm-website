@@ -1,11 +1,34 @@
 <script setup lang="ts">
-import { volunteerRoles } from '~/data/involve'
+import type { PublicProgramme } from '#shared/types/volunteers'
+
 import { volunteerFaqs } from '~/data/faqs'
 
-const selectedRole = ref('')
+const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
+  key: 'public-volunteer-programmes',
+  default: () => [],
+})
 
-function applyFor(roleTitle: string) {
-  selectedRole.value = roleTitle
+const openRoles = computed(() =>
+  programmes.value.flatMap((programme) =>
+    programme.opportunities.map((opportunity) => ({
+      id: opportunity.id,
+      title: opportunity.title,
+      commitment: opportunity.commitment,
+      location: opportunity.location || programme.location,
+      description: opportunity.description,
+      requirements: opportunity.requirements,
+      programmeId: programme.id,
+      programmeTitle: programme.title,
+    })),
+  ),
+)
+
+const selectedProgrammeId = ref('')
+const selectedOpportunityId = ref('')
+
+function applyFor(role: { programmeId: string; id: string }) {
+  selectedProgrammeId.value = role.programmeId
+  selectedOpportunityId.value = role.id
   nextTick(() => {
     document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
@@ -91,26 +114,36 @@ const steps = [
       <div class="container-page">
         <SectionHeading
           eyebrow="Open roles"
-          title="Six ways to be useful."
-          description="Pick the one that fits your life. If you are unsure, choose the role closest to what you already enjoy."
+          title="Roles that are open now."
+          description="Posted by the team. If nothing fits your life today, send a general application and we will match you when something opens."
         />
 
-        <div class="mt-12 grid gap-5 lg:grid-cols-2">
+        <div v-if="openRoles.length" class="mt-12 grid gap-5 lg:grid-cols-2">
           <article
-            v-for="role in volunteerRoles"
-            :key="role.title"
+            v-for="role in openRoles"
+            :key="role.id"
             class="flex flex-col rounded-3xl border border-sand-200 bg-white p-7 shadow-soft transition hover:border-brand-200"
           >
             <div class="flex flex-wrap items-start justify-between gap-3">
-              <h3 class="text-xl text-ink">{{ role.title }}</h3>
-              <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
+              <div>
+                <h3 class="text-xl text-ink">{{ role.title }}</h3>
+                <p class="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-clay-700">
+                  {{ role.programmeTitle }}
+                </p>
+              </div>
+              <span
+                v-if="role.commitment"
+                class="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800"
+              >
                 {{ role.commitment }}
               </span>
             </div>
 
-            <p class="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">{{ role.description }}</p>
+            <p v-if="role.description" class="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">
+              {{ role.description }}
+            </p>
 
-            <ul class="mt-5 flex-1 space-y-2">
+            <ul v-if="role.requirements.length" class="mt-4 space-y-2">
               <li
                 v-for="requirement in role.requirements"
                 :key="requirement"
@@ -124,11 +157,17 @@ const steps = [
               </li>
             </ul>
 
-            <div class="mt-6 flex items-center justify-between gap-3 border-t border-sand-200 pt-5">
+            <p v-if="role.location" class="mt-4 text-sm text-ink-soft">
+              {{ role.location }}
+            </p>
+
+            <div
+              class="mt-auto flex items-center justify-between gap-3 border-t border-sand-200 pt-5"
+            >
               <button
                 type="button"
                 class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-900"
-                @click="applyFor(role.title)"
+                @click="applyFor(role)"
               >
                 Apply for this role
                 <Icon name="arrow-right" :size="15" />
@@ -136,6 +175,19 @@ const steps = [
               <span class="text-xs text-ink-soft/70">Training provided</span>
             </div>
           </article>
+        </div>
+
+        <div
+          v-else
+          class="mt-12 rounded-3xl border border-dashed border-sand-300 bg-white p-8 text-center"
+        >
+          <Icon name="sprout" :size="28" class="mx-auto text-clay-600" />
+          <h3 class="mt-3 text-lg text-ink">No roles are open at the moment.</h3>
+          <p class="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+            The team updates this list from the staff portal. Send a general application below and
+            we will contact you when something opens.
+          </p>
+          <BaseButton href="#apply" size="sm" class="mt-5">Apply anyway</BaseButton>
         </div>
       </div>
     </section>
@@ -171,7 +223,10 @@ const steps = [
         </div>
 
         <div class="rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
-          <VolunteerForm :initial-area="selectedRole" />
+          <VolunteerForm
+            :initial-programme-id="selectedProgrammeId"
+            :initial-opportunity-id="selectedOpportunityId"
+          />
         </div>
       </div>
     </section>

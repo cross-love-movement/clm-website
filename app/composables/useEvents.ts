@@ -2,12 +2,18 @@ import type { Event } from '#shared/types/content'
 
 import { eventCategoryLabels } from '~/data/events'
 
+/**
+ * Published events with live capacity, from the operations database.
+ * `useFetch` shares one key, so the page, the form, and the home strip all
+ * read the same payload and refresh together.
+ */
 export async function useEvents() {
-  const { data } = await useAsyncData('events', () =>
-    queryCollection('events').order('startsAt', 'ASC').all(),
-  )
+  const { data, refresh } = await useFetch<Event[]>('/api/events', {
+    key: 'events',
+    default: () => [],
+  })
 
-  const events = computed(() => (data.value ?? []) as unknown as Event[])
+  const events = computed(() => data.value ?? [])
 
   const upcoming = computed(() =>
     events.value
@@ -21,5 +27,5 @@ export async function useEvents() {
     return events.value.find((event) => event.slug === slug) ?? null
   }
 
-  return { events, upcoming, featured, bySlug, categoryLabels: eventCategoryLabels }
+  return { events, upcoming, featured, bySlug, refresh, categoryLabels: eventCategoryLabels }
 }

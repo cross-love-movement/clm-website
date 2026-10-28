@@ -1,3 +1,7 @@
+import { sanitizeSubject } from '../emails/catalog'
+import { contactVariables } from '../emails/notifications'
+import { mailboxForContactTopic } from '../utils/mailboxes'
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -11,8 +15,9 @@ export default defineEventHandler(async (event) => {
 
   await sendMail({
     tag: 'contact',
+    to: mailboxForContactTopic(data.topic),
     replyTo: data.email,
-    subject: `Contact form — ${data.topic} — ${data.name}`,
+    subject: sanitizeSubject(`Contact form — ${data.topic} — ${data.name}`),
     text: [
       'New message from the website contact form.',
       '',
@@ -24,6 +29,13 @@ export default defineEventHandler(async (event) => {
       'Message:',
       data.message,
     ].join('\n'),
+    variables: contactVariables({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      topic: data.topic,
+      message: data.message,
+    }),
   })
 
   return {

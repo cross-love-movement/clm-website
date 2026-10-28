@@ -1,6 +1,20 @@
 <script setup lang="ts">
+import { isStaffRole, portalPathFor, type SessionUser } from '#shared/types/auth'
+
 const { site, footerNav, socials } = useSite()
+const { loggedIn, user } = useUserSession()
 const year = new Date().getFullYear()
+
+const accountLink = computed(() => {
+  if (!loggedIn.value) return { to: '/login', label: 'Sign in' }
+
+  const role = (user.value as SessionUser | null)?.role
+
+  return {
+    to: portalPathFor(role),
+    label: isStaffRole(role) ? 'Staff portal' : 'Volunteer portal',
+  }
+})
 </script>
 
 <template>
@@ -8,9 +22,8 @@ const year = new Date().getFullYear()
     <div class="container-page pt-16 pb-10">
       <div class="grid gap-12 lg:grid-cols-12 lg:gap-8">
         <div class="lg:col-span-5">
-          <NuxtLink to="/" class="flex items-center gap-2.5">
-            <BrandMark tile :size="46" />
-            <span class="font-display text-lg font-semibold text-sand-50">Cross-Love Movement</span>
+          <NuxtLink to="/" class="flex items-center">
+            <BrandLockup :size="46" tile on-dark />
           </NuxtLink>
           <p class="mt-5 max-w-sm text-[0.95rem] leading-relaxed text-sand-200/75">
             {{ site.description }}
@@ -83,7 +96,12 @@ const year = new Date().getFullYear()
         class="mt-14 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-sand-200/55 sm:flex-row sm:items-center sm:justify-between"
       >
         <p>© {{ year }} Cross-Love Movement. Registered company limited by guarantee in Ghana.</p>
-        <p>Registration CG041650523 · TIN C0062926586</p>
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>Registration CG041650523 · TIN C0062926586</span>
+          <NuxtLink :to="accountLink.to" class="font-semibold text-sand-100/80 hover:text-sand-50">
+            {{ accountLink.label }}
+          </NuxtLink>
+        </p>
       </div>
     </div>
   </footer>

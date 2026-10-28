@@ -5,7 +5,7 @@ withDefaults(
   defineProps<{
     label: string
     name: string
-    type?: 'text' | 'email' | 'tel' | 'number'
+    type?: 'text' | 'email' | 'tel' | 'number' | 'password' | 'datetime-local' | 'date'
     error?: string
     hint?: string
     required?: boolean
@@ -13,6 +13,9 @@ withDefaults(
     autocomplete?: string
     inputmode?: 'text' | 'email' | 'tel' | 'numeric' | 'decimal'
     maxlength?: number
+    min?: number
+    max?: number
+    step?: number
   }>(),
   { type: 'text' },
 )
@@ -35,6 +38,9 @@ withDefaults(
       :autocomplete="autocomplete"
       :inputmode="inputmode"
       :maxlength="maxlength"
+      :min="min"
+      :max="max"
+      :step="step"
       :required="required"
       :aria-invalid="invalid"
       :aria-describedby="describedBy"

@@ -1,7 +1,18 @@
 <script setup lang="ts">
-import { volunteerAreas } from '~/data/involve'
+import type { PublicProgramme } from '#shared/types/volunteers'
 
-const props = defineProps<{ initialArea?: string }>()
+const props = withDefaults(
+  defineProps<{
+    initialProgrammeId?: string
+    initialOpportunityId?: string
+  }>(),
+  { initialProgrammeId: '', initialOpportunityId: '' },
+)
+
+const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
+  key: 'public-volunteer-programmes',
+  default: () => [],
+})
 
 const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useForm(
   '/api/volunteer',
@@ -10,20 +21,59 @@ const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useF
     email: '',
     phone: '',
     city: '',
-    area: '',
     availability: '',
+    programmeId: 'none',
+    opportunityId: 'none',
+    message: '',
     experience: '',
     consent: false,
     company: '',
   },
 )
 
-const roleOptions = volunteerAreas.map((area) => ({ value: area, label: area }))
+const programmeOptions = computed(() => [
+  { value: 'none', label: 'No preference — place me where I am needed' },
+  ...programmes.value.map((programme) => ({
+    value: programme.id,
+    label: `${programme.title}${programme.location ? ` — ${programme.location}` : ''}`,
+  })),
+])
+
+const selectedProgramme = computed(
+  () => programmes.value.find((programme) => programme.id === values.programmeId) ?? null,
+)
+
+const opportunityOptions = computed(() => {
+  const base = [{ value: 'none', label: 'No specific role' }]
+  const programme = selectedProgramme.value
+
+  if (!programme) return base
+
+  return [
+    ...base,
+    ...programme.opportunities.map((opportunity) => ({
+      value: opportunity.id,
+      label: `${opportunity.title}${opportunity.commitment ? ` — ${opportunity.commitment}` : ''}`,
+    })),
+  ]
+})
 
 watch(
-  () => props.initialArea,
-  (area) => {
-    if (area) values.area = area
+  () => values.programmeId,
+  (programmeId) => {
+    const programme = programmes.value.find((item) => item.id === programmeId)
+
+    if (!programme?.opportunities.some((item) => item.id === values.opportunityId)) {
+      values.opportunityId = 'none'
+    }
+  },
+)
+
+watch(
+  () => [props.initialProgrammeId, props.initialOpportunityId] as const,
+  ([programmeId, opportunityId]) => {
+    if (programmeId) values.programmeId = programmeId
+    if (opportunityId) values.opportunityId = opportunityId
   },
   { immediate: true },
 )
@@ -91,13 +141,19 @@ const availabilityOptions = [
           :error="errors.city"
         />
         <SelectField
-          v-model="values.area"
-          label="Which role interests you?"
-          name="area"
-          :options="roleOptions"
-          placeholder="Choose a role"
-          required
-          :error="errors.area"
+          v-model="values.programmeId"
+          label="Programme"
+          name="programmeId"
+          :options="programmeOptions"
+          hint="Choose a programme, or let us place you."
+          :error="errors.programmeId"
+        />
+        <SelectField
+          v-model="values.opportunityId"
+          label="Role"
+          name="opportunityId"
+          :options="opportunityOptions"
+          :error="errors.opportunityId"
         />
         <SelectField
           v-model="values.availability"
@@ -118,6 +174,15 @@ const availabilityOptions = [
         placeholder="Optional — music, media, mentoring, evangelism, administration…"
         hint="No experience is required for most roles. This just helps us place you well."
         :error="errors.experience"
+      />
+
+      <TextareaField
+        v-model="values.message"
+        label="Anything else we should know?"
+        name="message"
+        :rows="3"
+        placeholder="Optional"
+        :error="errors.message"
       />
 
       <div>
