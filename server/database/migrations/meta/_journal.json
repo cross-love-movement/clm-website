@@ -15,6 +15,13 @@
       "when": 1793189185931,
       "tag": "0001_normal_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793190737800,
+      "tag": "0002_clever_star_brand",
+      "breakpoints": true
     }
   ]
 }

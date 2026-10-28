@@ -1,154 +1,283 @@
-import { useEventsDb } from './db'
+import { and, asc, desc, eq, sum } from 'drizzle-orm'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-export interface EventRegistration {
-  id: number
-  eventSlug: string
-  name: string
-  email: string
-  phone: string
-  attendees: number
-  notes: string
-  status: 'confirmed' | 'cancelled'
-  createdAt: string
-}
+import type { Event } from '#shared/types/content'
+import { buildAvailability, registrationDeadlinePassed } from '#shared/utils/events'
 
-interface RegistrationRow {
-  id: number
-  event_slug: string
-  name: string
-  email: string
-  phone: string
-  attendees: number
-  notes: string
-  status: 'confirmed' | 'cancelled'
-  created_at: string
-}
+import { useDatabase } from '../../database/client'
+import * as schema from '../../database/schema'
+import {
+  eventRegistrations,
+  events,
+  mailOutbox,
+  type EventRow,
+  type RegistrationRow,
+} from '../../database/schema'
+import { confirmationMail, promotionMail, waitlistMail } from './mail'
+import { generateReference } from './references'
 
-function mapRow(row: RegistrationRow): EventRegistration {
+type Db = NodePgDatabase<typeof schema>
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+
+function toPublicEvent(row: EventRow, registered: number): Event {
   return {
-    id: row.id,
-    eventSlug: row.event_slug,
-    name: row.name,
-    email: row.email,
-    phone: row.phone,
-    attendees: row.attendees,
-    notes: row.notes,
-    status: row.status,
-    createdAt: row.created_at,
+    slug: row.slug,
+    title: row.title,
+    category: row.category,
+    summary: row.summary,
+    description: row.description,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    venue: row.venue,
+    address: row.address,
+    city: row.city,
+    capacity: row.capacity,
+    registrationDeadline: row.registrationDeadline ? row.registrationDeadline.toISOString() : null,
+    featured: row.featured,
+    image: row.image,
+    imageAlt: row.imageAlt,
+    availability: buildAvailability({
+      capacity: row.capacity,
+      registered,
+      registrationDeadline: row.registrationDeadline,
+    }),
   }
 }
 
-/** Seats taken through the website for one event. */
-export function confirmedSeats(eventSlug: string): number {
-  const db = useEventsDb()
-  const row = db
-    .prepare(
-      `SELECT COALESCE(SUM(attendees), 0) AS total
-         FROM event_registrations
-        WHERE event_slug = ? AND status = 'confirmed'`,
-    )
-    .get(eventSlug) as { total: number } | undefined
+async function confirmedSeats(db: Db | Tx, eventId: string) {
+  const [row] = await db
+    .select({ total: sum(eventRegistrations.attendees) })
+    .from(eventRegistrations)
+    .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, 'confirmed')))
 
   return Number(row?.total ?? 0)
 }
 
-/** Newest first. Pass a slug to narrow to one event. */
-export function listRegistrations(eventSlug?: string): EventRegistration[] {
-  const db = useEventsDb()
-  const statement = eventSlug
-    ? db.prepare(
-        `SELECT * FROM event_registrations WHERE event_slug = ? ORDER BY created_at DESC, id DESC`,
-      )
-    : db.prepare(`SELECT * FROM event_registrations ORDER BY created_at DESC, id DESC`)
+async function totalsByEvent(db: Db | Tx) {
+  const rows = await db
+    .select({ eventId: eventRegistrations.eventId, total: sum(eventRegistrations.attendees) })
+    .from(eventRegistrations)
+    .where(eq(eventRegistrations.status, 'confirmed'))
+    .groupBy(eventRegistrations.eventId)
 
-  const rows = (eventSlug
-    ? statement.all(eventSlug)
-    : statement.all()) as unknown as RegistrationRow[]
-
-  return rows.map(mapRow)
+  return new Map(rows.map((row) => [row.eventId, Number(row.total ?? 0)]))
 }
 
-export interface ReserveSeatsInput {
-  eventSlug: string
-  capacity: number
-  registeredOffline: number
-  attendees: number
+export async function listPublishedEvents(): Promise<Event[]> {
+  const db = useDatabase()
+  const rows = await db
+    .select()
+    .from(events)
+    .where(eq(events.status, 'published'))
+    .orderBy(asc(events.startsAt))
+
+  const totals = await totalsByEvent(db)
+
+  return rows.map((row) => toPublicEvent(row, totals.get(row.id) ?? 0))
+}
+
+export async function getPublishedEvent(slug: string): Promise<Event | null> {
+  const db = useDatabase()
+  const [row] = await db
+    .select()
+    .from(events)
+    .where(and(eq(events.slug, slug), eq(events.status, 'published')))
+    .limit(1)
+
+  if (!row) return null
+
+  return toPublicEvent(row, await confirmedSeats(db, row.id))
+}
+
+async function nextReference(tx: Tx, slug: string) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = generateReference(slug)
+    const [existing] = await tx
+      .select({ id: eventRegistrations.id })
+      .from(eventRegistrations)
+      .where(eq(eventRegistrations.reference, candidate))
+      .limit(1)
+
+    if (!existing) return candidate
+  }
+
+  throw new Error('Could not allocate a unique reference code')
+}
+
+export interface RegisterInput {
+  slug: string
   name: string
   email: string
   phone?: string
+  attendees: number
   notes?: string
 }
 
-export type ReserveSeatsResult =
-  | { ok: true; registration: EventRegistration; registeredOnline: number }
-  | { ok: false; registered: number; remaining: number }
+export type RegisterResult =
+  | { ok: true; status: 'confirmed' | 'waitlisted'; event: Event; registration: RegistrationRow }
+  | { ok: false; reason: 'not-found' | 'closed' }
 
 /**
- * Check capacity and insert in one write transaction.
- *
- * `BEGIN IMMEDIATE` takes the write lock before the read, so two simultaneous
- * group bookings cannot both pass the capacity check with too few seats left.
+ * Locks the event row, counts confirmed seats, and inserts the booking in one
+ * transaction. If the requested places do not fit, the booking becomes a
+ * waitlist entry instead of failing — the user still gets a reference.
  */
-export function reserveSeats(input: ReserveSeatsInput): ReserveSeatsResult {
-  const db = useEventsDb()
-  db.exec('BEGIN IMMEDIATE')
+export async function registerForEvent(input: RegisterInput): Promise<RegisterResult> {
+  const db = useDatabase()
 
-  try {
-    const registeredOnline = confirmedSeats(input.eventSlug)
-    const registered = input.registeredOffline + registeredOnline
-    const remaining = Math.max(0, input.capacity - registered)
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await db.transaction(async (tx) => {
+        const [event] = await tx
+          .select()
+          .from(events)
+          .where(and(eq(events.slug, input.slug), eq(events.status, 'published')))
+          .for('update')
 
-    if (input.attendees > remaining) {
-      db.exec('ROLLBACK')
-      return { ok: false, registered, remaining }
+        if (!event) return { ok: false, reason: 'not-found' } as const
+        if (registrationDeadlinePassed(event.registrationDeadline)) {
+          return { ok: false, reason: 'closed' } as const
+        }
+
+        const taken = await confirmedSeats(tx, event.id)
+        const remaining = Math.max(0, event.capacity - taken)
+        const status = input.attendees <= remaining ? 'confirmed' : 'waitlisted'
+        const reference = await nextReference(tx, event.slug)
+
+        const [registration] = await tx
+          .insert(eventRegistrations)
+          .values({
+            reference,
+            eventId: event.id,
+            name: input.name,
+            email: input.email,
+            phone: input.phone ?? '',
+            attendees: input.attendees,
+            notes: input.notes ?? '',
+            status,
+            consentAt: new Date(),
+          })
+          .returning()
+
+        if (!registration) throw new Error('Insert returned no row')
+
+        await tx
+          .insert(mailOutbox)
+          .values(
+            status === 'confirmed'
+              ? confirmationMail(event, registration)
+              : waitlistMail(event, registration),
+          )
+
+        return {
+          ok: true,
+          status,
+          event: toPublicEvent(event, status === 'confirmed' ? taken + input.attendees : taken),
+          registration,
+        } as const
+      })
+    } catch (error) {
+      // 23505 = unique violation: the reference collided, so try a new one.
+      if ((error as { code?: string }).code === '23505' && attempt < 2) continue
+      throw error
     }
-
-    const result = db
-      .prepare(
-        `INSERT INTO event_registrations
-           (event_slug, name, email, phone, attendees, notes)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        input.eventSlug,
-        input.name,
-        input.email,
-        input.phone ?? '',
-        input.attendees,
-        input.notes ?? '',
-      )
-
-    db.exec('COMMIT')
-
-    return {
-      ok: true,
-      registration: {
-        id: Number(result.lastInsertRowid),
-        eventSlug: input.eventSlug,
-        name: input.name,
-        email: input.email,
-        phone: input.phone ?? '',
-        attendees: input.attendees,
-        notes: input.notes ?? '',
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-      },
-      registeredOnline: registeredOnline + input.attendees,
-    }
-  } catch (error) {
-    db.exec('ROLLBACK')
-    throw error
   }
+
+  throw createError({ statusCode: 500, statusMessage: 'Could not create the booking' })
 }
 
-/** Cancelling keeps the record but releases the seats. */
-export function cancelRegistration(id: number): boolean {
-  const db = useEventsDb()
-  const result = db
-    .prepare(
-      `UPDATE event_registrations SET status = 'cancelled' WHERE id = ? AND status = 'confirmed'`,
-    )
-    .run(id)
+async function promoteWaitlist(tx: Tx, eventId: string) {
+  const [event] = await tx.select().from(events).where(eq(events.id, eventId)).for('update')
+  if (!event) return [] as RegistrationRow[]
 
-  return Number(result.changes) > 0
+  let remaining = Math.max(0, event.capacity - (await confirmedSeats(tx, eventId)))
+
+  const waiting = await tx
+    .select()
+    .from(eventRegistrations)
+    .where(
+      and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, 'waitlisted')),
+    )
+    .orderBy(asc(eventRegistrations.createdAt))
+    .for('update')
+
+  const promoted: RegistrationRow[] = []
+
+  for (const booking of waiting) {
+    if (booking.attendees > remaining) continue
+
+    const [updated] = await tx
+      .update(eventRegistrations)
+      .set({ status: 'confirmed' })
+      .where(eq(eventRegistrations.id, booking.id))
+      .returning()
+
+    if (!updated) continue
+
+    remaining -= booking.attendees
+    promoted.push(updated)
+    await tx.insert(mailOutbox).values(promotionMail(event, updated))
+  }
+
+  return promoted
+}
+
+/** Cancels a booking and offers the freed seats to the waitlist, FIFO. */
+export async function cancelRegistration(id: string) {
+  const db = useDatabase()
+
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(eventRegistrations)
+      .where(eq(eventRegistrations.id, id))
+      .for('update')
+
+    if (!row || row.status === 'cancelled') return { ok: false as const, promoted: [] }
+
+    await tx
+      .update(eventRegistrations)
+      .set({ status: 'cancelled', cancelledAt: new Date() })
+      .where(eq(eventRegistrations.id, id))
+
+    const promoted = row.status === 'confirmed' ? await promoteWaitlist(tx, row.eventId) : []
+
+    return { ok: true as const, promoted }
+  })
+}
+
+export interface AdminRegistration extends RegistrationRow {
+  eventTitle: string
+  eventSlug: string
+}
+
+export async function listRegistrations(options: { eventSlug?: string } = {}) {
+  const db = useDatabase()
+  const rows = await db
+    .select({
+      registration: eventRegistrations,
+      eventTitle: events.title,
+      eventSlug: events.slug,
+    })
+    .from(eventRegistrations)
+    .innerJoin(events, eq(events.id, eventRegistrations.eventId))
+    .where(options.eventSlug ? eq(events.slug, options.eventSlug) : undefined)
+    .orderBy(desc(eventRegistrations.createdAt))
+
+  return rows.map<AdminRegistration>((row) => ({
+    ...row.registration,
+    eventTitle: row.eventTitle,
+    eventSlug: row.eventSlug,
+  }))
+}
+
+export async function checkInRegistration(id: string) {
+  const db = useDatabase()
+  const [row] = await db
+    .update(eventRegistrations)
+    .set({ checkedInAt: new Date() })
+    .where(and(eq(eventRegistrations.id, id), eq(eventRegistrations.status, 'confirmed')))
+    .returning()
+
+  return row ?? null
 }

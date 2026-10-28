@@ -305,16 +305,16 @@ A true monorepo is unnecessary while there is one Nuxt app. These folders alread
 
 ## 6. Delivery plan
 
-| Phase                       | Scope                                                                                                                           | Outcome                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                            |
-| **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | Working booking flow on Postgres                      |
-| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Members and staff sign in and land in the right place |
-| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | Event management, no more git edits                   |
-| **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                              |
-| **5. Volunteers**           | Applications, skills, availability, statuses                                                                                    | Second entity on the same foundations                 |
-| **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                       |
-| **7. Projects**             | Operational rows linked to Content stories                                                                                      | Only when reporting needs them                        |
+| Phase                       | Scope                                                                                                                           | Outcome                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                                                                      |
+| **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | **Done** — events live in Postgres, bookings return references, waitlist promotes automatically |
+| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Members and staff sign in and land in the right place                                           |
+| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | Event management, no more git edits                                                             |
+| **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                        |
+| **5. Volunteers**           | Applications, skills, availability, statuses                                                                                    | Second entity on the same foundations                                                           |
+| **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                                                                 |
+| **7. Projects**             | Operational rows linked to Content stories                                                                                      | Only when reporting needs them                                                                  |
 
 Phases 0–3 are the real scope for "event management". Phase 4 is what makes it trustworthy.
 
@@ -341,7 +341,6 @@ Phases 0–3 are the real scope for "event management". Phase 4 is what makes it
 
 ## 8. Migration notes
 
-- The current SQLite event store is a stepping stone. When Postgres lands, copy any real rows once (or start clean — today there is only test data).
-- `content/events/*.yml` becomes seed data: import each file into `events` once, then delete the collection from `content.config.ts` and the Studio schema.
-- The homepage carousel currently reads `app/data/slides.ts`. It should read published, featured events from the API once phase 1 lands.
-- Keep `remaining` computed in one place (`server/features/events/`) and expose it in every response, so the carousel, listing, and form cannot disagree.
+- The SQLite event store was removed. Events now live in Postgres, and `content/events/*.yml` no longer exists; bootstrap data is in `server/database/seed-events.ts`.
+- The homepage carousel reads published upcoming events from the API, falling back to `app/data/slides.ts` when there are none.
+- Keep `remaining` computed in one place (`server/features/events/`) and exposed in every response, so the carousel, listing, and form cannot disagree.

@@ -12,9 +12,19 @@ import * as schema from './schema'
  */
 let pool: Pool | undefined
 let database: NodePgDatabase<typeof schema> | undefined
+let ready = false
 
 export function hasDatabase() {
   return Boolean(process.env.DATABASE_URL)
+}
+
+/** Set once migrations have run, so background workers can wait their turn. */
+export function markDatabaseReady() {
+  ready = true
+}
+
+export function isDatabaseReady() {
+  return ready
 }
 
 export function useDatabase(): NodePgDatabase<typeof schema> {
@@ -41,4 +51,5 @@ export async function closeDatabase() {
   await pool?.end()
   pool = undefined
   database = undefined
+  ready = false
 }

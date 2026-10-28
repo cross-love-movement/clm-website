@@ -1,6 +1,6 @@
 import { index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
-import { USER_ROLES } from '#shared/types/auth'
+import { USER_ROLES } from '../../../shared/types/auth'
 
 /**
  * Roles map to portals:

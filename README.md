@@ -101,17 +101,19 @@ clm-website/
 ├─ content/                    # Editorial content (Nuxt Content)
 │  ├─ projects/*.md            # Project pages with frontmatter + Markdown body
 │  ├─ news/*.md                # Articles with frontmatter + Markdown/MDC body
-│  ├─ events/*.yml             # Event records (one file per event)
 │  └─ portfolio/*.yml          # Portfolio pieces (one file per piece)
 ├─ server/
-│  ├─ api/                     # public + auth + admin routes
+│  ├─ api/                     # public, auth, and admin routes
 │  │  ├─ auth/                 # login, logout, session, reset-request, reset-confirm
 │  │  ├─ admin/users/          # list, invite, role/status changes
-│  │  └─ events/               # availability, register, registrations, health
-│  ├─ database/                # Postgres: client, schema, generated SQL migrations
+│  │  ├─ admin/events/         # registrations: list, CSV, cancel, check-in
+│  │  ├─ events/               # public list + register
+│  │  └─ health.get.ts
+│  ├─ database/                # Postgres: client, schema, migrations, seeds
 │  ├─ features/
 │  │  ├─ auth/                 # password hashing, tokens, service, guards, mail
-│  │  └─ events/               # Registrations app: db, repository, admin guard
+│  │  ├─ events/               # repository, reference codes, email templates
+│  │  └─ mail/                 # outbox drain (background sender)
 │  ├─ plugins/database.ts      # Boot: apply migrations, seed the first superadmin
 │  └─ utils/                   # schemas (Zod), validation, mailer, rate-limit
 ├─ shared/
@@ -164,8 +166,9 @@ Content is split by how often it changes.
 
 - `content/projects/*.md` — project pages with structured frontmatter and a Markdown body
 - `content/news/*.md` — articles with frontmatter and a Markdown/MDC body
-- `content/events/*.yml` — one file per event
 - `content/portfolio/*.yml` — one file per portfolio piece
+
+Events are no longer content: they live in Postgres and are managed by the event app (see below).
 
 Each is declared as a collection with a Zod schema, so missing or malformed fields fail
 `nuxt build`. Pages query through async composables (`useProjects()`, `useNews()`, `useEvents()`,
@@ -196,52 +199,62 @@ and dot navigation, and stops auto-advancing entirely under `prefers-reduced-mot
 images are the abstract SVG artwork — replace them with photographs when they arrive; the caption is
 written to stand on its own if an image fails to load.
 
-### Event app (registrations)
+### Event app
 
-Events are a small application inside the site, kept together rather than spread across the generic
-folders:
-
-```
-app/features/events/     components + composables (carousel, form, live availability)
-server/features/events/  db.ts (connection + schema), repository.ts (SQL), admin.ts (token guard)
-server/api/events/       availability.get, register.post, registrations.get, [id].delete
-shared/utils/events.ts   availability maths used by both sides
-```
-
-**Where capacity comes from.** `content/events/*.yml` holds `capacity` (editorial) and
-`registeredOffline` — places taken by phone, walk-in, or a partner. Website bookings live in a
-separate SQLite file and are counted at request time:
+Events are an application inside the site, and that is how the code is arranged:
 
 ```
-remaining = capacity − registeredOffline − SUM(confirmed website attendees)
+app/features/events/       carousel + registration form
+server/features/events/    repository (SQL + transactions), mail templates, references
+server/features/mail/      outbox drain (background sender)
+server/api/events/         public list + register
+server/api/admin/events/   registrations list, CSV, cancel, check-in
+shared/utils/events.ts     availability maths used by both sides
 ```
 
-Both an event's offline figure and every website booking are combined in `GET /api/events/availability`.
-The events page and the form read from that endpoint, so “places left” updates after every
-registration without a rebuild.
+**Events live in Postgres**, not in `content/`. A public request returns published events with live
+capacity:
 
-**No overbooking.** `reserveSeats()` opens a `BEGIN IMMEDIATE` transaction, re-reads the confirmed
-count, and only inserts if the requested places still fit. Two simultaneous group bookings cannot
-both pass the check. A rejection returns `409` with the exact number left, which the form shows
-against the number input.
-
-**Storage.** `NUXT_EVENTS_DB_PATH` decides where the SQLite file lives (default `.data/events.sqlite`).
-In production it **must** point at a persistent volume, otherwise a redeploy recreates the container
-and takes the registrations with it. Keep one replica: SQLite on a shared volume across replicas is
-not safe.
-
-**Admin access.** `GET /api/events/registrations` lists bookings; add `?event=slug` to narrow or
-`?format=csv` for a spreadsheet. `DELETE /api/events/registrations/:id` cancels a booking and frees
-its seats. All three require `NUXT_REGISTRATIONS_TOKEN` as `Authorization: Bearer <token>` (or
-`x-admin-token`); with the variable unset the endpoints return `503`.
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "https://www.clmnative.com/api/events/registrations?format=csv" -o registrations.csv
+```json
+{
+  "slug": "people-like-you-2027",
+  "capacity": 1000,
+  "availability": { "registered": 3, "remaining": 997, "open": true }
+}
 ```
 
-**Not built yet:** a waitlist, per-email duplicate prevention, and any admin UI. Registrations store
-name, email, and phone, so agree a retention period before collecting them in earnest.
+`GET /api/events` is the single source for the listing, the registration form, the home strip, and
+the homepage carousel — so “places left” cannot disagree between them.
+
+**No overbooking.** `registerForEvent()` locks the event row (`SELECT … FOR UPDATE`), re-counts
+confirmed attendees, and inserts in the same transaction. Two simultaneous group bookings cannot
+both pass the check.
+
+**Waitlist.** If the requested places do not fit, the booking is stored as `waitlisted` instead of
+failing — it still gets a reference and an email. Cancelling a confirmed booking promotes waitlisted
+bookings first-come-first-served inside the same transaction, and emails each promoted registrant.
+
+**Reference codes.** `PEO-7K4M2Q` — event prefix plus Crockford base32 (no `I`, `L`, `O`, `U`).
+Emailed only: the confirmation screen tells the registrant to check their inbox.
+
+**Email outbox.** The booking commits first and writes a `mail_outbox` row; a background worker
+sends it and retries up to five times. A mail outage cannot lose a booking, and a retry cannot send
+twice.
+
+**Admin endpoints** (staff session required — see Accounts and portals):
+
+| Route                                               | Purpose                   |
+| --------------------------------------------------- | ------------------------- |
+| `GET /api/admin/events/registrations?event=slug`    | list bookings             |
+| `GET …?format=csv`                                  | spreadsheet download      |
+| `DELETE /api/admin/events/registrations/:id`        | cancel + promote waitlist |
+| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived |
+
+**Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
+disables it) so the site has something to show. The admin CRUD screens replace this next.
+
+**Not built yet:** per-email duplicate prevention and the admin CRUD UI. Registrations store name,
+email, and phone, so agree a retention period before collecting them in earnest.
 
 To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
 and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
@@ -491,8 +504,7 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_          | GitHub OAuth app for Studio editors    |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                  | GitHub OAuth secret                    |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_    | Comma-separated editor email allowlist |
-| `NUXT_EVENTS_DB_PATH`                   | `.data/events.sqlite`                      | SQLite file for event registrations    |
-| `NUXT_REGISTRATIONS_TOKEN`              | _(empty — export endpoints disabled)_      | Bearer token for the registrant list   |
+| `SEED_EVENTS`                           | `true`                                     | Seed one event on an empty database    |
 | `DATABASE_URL`                          | _(empty — database features off)_          | Postgres connection string             |
 | `DATABASE_SSL`                          | `false`                                    | Enable TLS to the database             |
 | `DATABASE_POOL_SIZE`                    | `10`                                       | Postgres pool size                     |
@@ -521,10 +533,10 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 - Home page verified to include the partner strip, repeated marquee groups, and pause control
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
-- Event registration verified end to end against SQLite: a booking returns the new availability,
-  `GET /api/events/availability` reflects it, cancelling returns the seats, the list and CSV export
-  return `401` without the token and data with it, and over-capacity bookings are rejected (`409`)
-  by a `BEGIN IMMEDIATE` transaction
+- Event flow verified end to end on Postgres: booking returns the new availability, a booking beyond
+  capacity is stored as `waitlisted` with its own reference, cancelling a confirmed booking promotes
+  the waitlist inside the same transaction and emails the promoted registrant, CSV export and
+  check-in work, and staff-only endpoints return `401` without a session
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
 - Nuxt Studio verified: client plugin registers in dev, `/_studio` in a production build returns
   `404 No authentication provider found` without credentials, and with credentials set it returns
@@ -547,9 +559,9 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
 5. **Payments** — connect a gateway if online giving is required (see above).
-6. **Event storage** — mount a persistent volume, set `NUXT_EVENTS_DB_PATH` to a file on it, set
-   `NUXT_REGISTRATIONS_TOKEN`, keep a single replica, and schedule a nightly copy of the SQLite file.
-   Agree a retention period for registrant names, emails, and phone numbers.
+6. **Event data** — events and registrations live in `DATABASE_URL`. Keep one replica, schedule
+   nightly Postgres backups, and agree a retention period for registrant names, emails, and phone
+   numbers. The admin CRUD screens are the next phase; until then, events are created with SQL.
 7. **News** — replace the illustrative posts, agree an editorial cadence, and add an RSS feed
    (`/rss.xml`) if people want to subscribe outside email.
 8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.

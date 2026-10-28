@@ -60,59 +60,6 @@ export default defineContentConfig({
       }),
     }),
 
-    events: defineCollection({
-      type: 'data',
-      source: 'events/*.yml',
-      schema: z.object({
-        slug: property(z.string()).editor({
-          description:
-            'Stable identifier used by links and the registration form. Do not change it once shared.',
-        }),
-        title: property(z.string()).editor({ label: 'Event name' }),
-        category: property(
-          z.enum(['session', 'training', 'workshop', 'devotion', 'outreach', 'showcase']),
-        ).editor({ label: 'Type of event' }),
-        summary: property(z.string()).editor({
-          input: 'textarea',
-          description: 'One sentence used on cards and in the events list.',
-        }),
-        description: property(z.array(z.string())).editor({
-          label: 'Full description',
-          description: 'One paragraph per entry. Each becomes a paragraph on the events page.',
-        }),
-        startsAt: property(z.string()).editor({
-          label: 'Starts',
-          description: 'Date and time with timezone, e.g. 2026-11-14T17:00:00+00:00.',
-        }),
-        endsAt: property(z.string()).editor({
-          label: 'Ends',
-          description: 'Date and time with timezone, e.g. 2026-11-14T20:00:00+00:00.',
-        }),
-        venue: property(z.string()).editor({ label: 'Venue name' }),
-        address: property(z.string()).editor({
-          description: 'Street address as it should appear to someone travelling there.',
-        }),
-        city: property(z.string()).editor({ label: 'City / town' }),
-        capacity: property(z.number().int().nonnegative()).editor({
-          label: 'Places available',
-          description: 'Total seats. The site warns people once registrations reach this number.',
-        }),
-        registeredOffline: property(z.number().int().nonnegative().default(0)).editor({
-          label: 'Places already taken offline',
-          description:
-            'Phone, walk-in, or partner bookings. Website registrations are counted automatically, so do not add them here.',
-        }),
-        registrationDeadline: property(z.string().optional()).editor({
-          label: 'Registration closes',
-          description:
-            'Optional. Date and time with timezone; leave blank to keep registration open.',
-        }),
-        featured: property(z.boolean().default(false)).editor({
-          description: 'Featured events are highlighted on the home page.',
-        }),
-      }),
-    }),
-
     portfolio: defineCollection({
       type: 'data',
       source: 'portfolio/*.yml',

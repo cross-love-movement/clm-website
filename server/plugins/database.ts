@@ -1,6 +1,7 @@
-import { closeDatabase, hasDatabase } from '../database/client'
+import { closeDatabase, hasDatabase, markDatabaseReady } from '../database/client'
 import { runMigrations } from '../database/migrate'
 import { seedSuperadmin } from '../database/seed'
+import { seedEvents } from '../database/seed-events'
 
 /**
  * Applies pending migrations and seeds the first superadmin at boot.
@@ -20,9 +21,16 @@ export default defineNitroPlugin(async (nitroApp) => {
       await runMigrations()
     }
 
+    markDatabaseReady()
+
     const admin = await seedSuperadmin()
     if (admin) {
       console.info(`[db] superadmin ready: ${admin.email} (${admin.role})`)
+    }
+
+    if (process.env.SEED_EVENTS !== 'false') {
+      const created = await seedEvents()
+      if (created > 0) console.info(`[db] seeded ${created} event(s)`)
     }
   } catch (error) {
     // Keep the marketing site up even if the database is unreachable, but make

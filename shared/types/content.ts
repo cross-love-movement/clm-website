@@ -150,7 +150,8 @@ export interface Event {
   title: string
   category: EventCategory
   summary: string
-  description: string[]
+  /** Markdown body. */
+  description: string
   /** ISO 8601 timestamp with offset. Ghana is GMT (UTC+00:00). */
   startsAt: string
   endsAt: string
@@ -158,21 +159,16 @@ export interface Event {
   address: string
   city: string
   capacity: number
-  /** Places already taken by phone, walk-in, or partner registrations. */
-  registeredOffline: number
-  registrationDeadline?: string
-  featured?: boolean
+  registrationDeadline: string | null
+  featured: boolean
+  image: string
+  imageAlt: string
+  availability: EventAvailability
 }
 
-/** Capacity, takings, and remaining seats for one event, computed at request time. */
+/** Live capacity for one event, computed per request from confirmed bookings. */
 export interface EventAvailability {
-  slug: string
   capacity: number
-  /** Places taken outside the website (edited in content). */
-  registeredOffline: number
-  /** Places taken through the website (from the registrations database). */
-  registeredOnline: number
-  /** `registeredOffline + registeredOnline`. */
   registered: number
   remaining: number
   /** False when full or past the registration deadline. */

@@ -1,9 +1,27 @@
 <script setup lang="ts">
+import type { HomeSlide } from '#shared/types/content'
+
 import { howToHelp } from '~/data/involve'
 import { pillars, stats, vision } from '~/data/about'
 import { homeSlides } from '~/data/slides'
 
+const { upcoming } = await useEvents()
 const { site } = useSite()
+const slides = computed<HomeSlide[]>(() => {
+  const events = upcoming.value.slice(0, 3)
+
+  if (!events.length) return homeSlides
+
+  return events.map((event) => ({
+    eyebrow: `${formatEventDate(event.startsAt)} · ${event.city}`,
+    title: event.title,
+    caption: event.summary,
+    image: event.image || '/images/portfolio-stage.svg',
+    imageAlt: event.imageAlt || `Artwork for ${event.title}`,
+    to: '/events',
+    cta: event.availability.open ? 'Register' : 'See the event',
+  }))
+})
 const { featured } = await useProjects()
 const { featured: featuredTestimonials } = useTestimonials()
 
@@ -16,7 +34,7 @@ useSeo({
 
 <template>
   <div>
-    <EventCarousel :slides="homeSlides" />
+    <EventCarousel :slides="slides" />
 
     <!-- Intro -->
     <section class="container-page py-14 sm:py-16">

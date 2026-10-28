@@ -86,8 +86,6 @@ export default defineNuxtConfig({
     resendApiKey: '',
     mailFrom: 'Cross-Love Movement <info@clmnative.com>',
     mailTo: 'info@clmnative.com',
-    // Protects the event registrations list/export. Empty disables the endpoint.
-    registrationsToken: '',
     public: {
       siteUrl: 'https://www.clmnative.ovahol.com',
     },

@@ -2,10 +2,7 @@
 import type { Event, EventCategory } from '#shared/types/content'
 import { eventFaqs } from '~/data/faqs'
 
-import { useEventAvailability } from '~/features/events/composables/useEventAvailability'
-
-const { upcoming, categoryLabels } = await useEvents()
-const { availability, forSlug, refresh } = await useEventAvailability()
+const { upcoming, categoryLabels, refresh } = await useEvents()
 const route = useRoute()
 
 const selectedSlug = ref('')
@@ -30,15 +27,13 @@ function registerFor(slug: string) {
 }
 
 function isOpen(event: Event) {
-  return forSlug(event.slug)?.open ?? offlinePlacesLeft(event) > 0
+  return event.availability.open
 }
 
 function seatsLabel(event: Event) {
-  const live = forSlug(event.slug)
+  const { remaining, capacity } = event.availability
 
-  if (!live) return `${offlinePlacesLeft(event)} of ${event.capacity} places left`
-
-  return live.remaining === 0 ? 'Fully booked' : `${live.remaining} of ${live.capacity} places left`
+  return remaining === 0 ? 'Fully booked' : `${remaining} of ${capacity} places left`
 }
 
 function categoryTone(category: EventCategory) {
@@ -227,11 +222,7 @@ useSeo({
         </div>
 
         <div class="rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
-          <EventRegistrationForm
-            :initial-event="selectedSlug"
-            :availability="availability"
-            @registered="refresh()"
-          />
+          <EventRegistrationForm :initial-event="selectedSlug" @registered="refresh" />
         </div>
       </div>
     </section>

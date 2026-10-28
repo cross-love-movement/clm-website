@@ -1,22 +1,9 @@
 <script setup lang="ts">
-import type { EventAvailability } from '#shared/types/content'
-
-const props = withDefaults(
-  defineProps<{
-    initialEvent?: string
-    /** Live capacity from `/api/events/availability`. */
-    availability?: EventAvailability[]
-  }>(),
-  { availability: () => [] },
-)
+const props = defineProps<{ initialEvent?: string }>()
 
 const emit = defineEmits<{ registered: [] }>()
 
-const { upcoming } = await useEvents()
-
-const availabilityBySlug = computed(
-  () => new Map(props.availability.map((item) => [item.slug, item])),
-)
+const { upcoming, refresh } = await useEvents()
 
 const initialSlug = props.initialEvent || upcoming.value[0]?.slug || ''
 
@@ -42,32 +29,23 @@ watch(
 )
 
 const eventOptions = computed(() =>
-  upcoming.value.map((event) => {
-    const live = availabilityBySlug.value.get(event.slug)
-    const suffix = live && !live.open ? ' — fully booked' : ''
-
-    return {
-      value: event.slug,
-      label: `${event.title} — ${formatEventDate(event.startsAt)}${suffix}`,
-    }
-  }),
+  upcoming.value.map((event) => ({
+    value: event.slug,
+    label: `${event.title} — ${formatEventDate(event.startsAt)}${
+      event.availability.open ? '' : ' — fully booked'
+    }`,
+  })),
 )
 
 const selectedEvent = computed(
   () => upcoming.value.find((event) => event.slug === values.eventSlug) ?? null,
 )
 
-const selectedAvailability = computed(() =>
-  selectedEvent.value ? (availabilityBySlug.value.get(selectedEvent.value.slug) ?? null) : null,
-)
+const selectedAvailability = computed(() => selectedEvent.value?.availability ?? null)
 
-const remaining = computed(
-  () => selectedAvailability.value?.remaining ?? selectedEvent.value?.capacity ?? 0,
-)
+const remaining = computed(() => selectedAvailability.value?.remaining ?? 0)
 
-const canRegister = computed(
-  () => remaining.value > 0 && (selectedAvailability.value?.open ?? true),
-)
+const canRegister = computed(() => selectedAvailability.value?.open ?? false)
 
 const maxAttendees = computed(() => Math.max(1, remaining.value))
 
@@ -75,7 +53,7 @@ const seatsHint = computed(() => {
   if (!selectedAvailability.value) return 'Places are confirmed when we receive your registration.'
 
   return selectedAvailability.value.remaining === 0
-    ? 'This event is fully booked.'
+    ? 'This event is fully booked. You will be added to the waitlist.'
     : `${selectedAvailability.value.remaining} of ${selectedAvailability.value.capacity} places left.`
 })
 
@@ -98,13 +76,17 @@ const selectedWhen = computed(() => {
 
 async function onSubmit() {
   const ok = await submit()
-  if (ok) emit('registered')
+
+  if (ok) {
+    emit('registered')
+    await refresh()
+  }
 }
 </script>
 
 <template>
   <div>
-    <AlertBox v-if="isSuccess" tone="success" title="You are registered">
+    <AlertBox v-if="isSuccess" tone="success" title="Check your email">
       <p class="mt-1">{{ message }}</p>
       <button
         type="button"
@@ -213,15 +195,13 @@ async function onSubmit() {
       <p v-if="message && !isSuccess" class="text-sm font-medium text-red-700">{{ message }}</p>
 
       <div class="flex flex-wrap items-center gap-4">
-        <BaseButton
-          type="submit"
-          size="lg"
-          :disabled="isSubmitting || !eventOptions.length || !canRegister"
-        >
-          {{ isSubmitting ? 'Registering…' : canRegister ? 'Register' : 'Fully booked' }}
+        <BaseButton type="submit" size="lg" :disabled="isSubmitting || !eventOptions.length">
+          {{ isSubmitting ? 'Sending…' : canRegister ? 'Register' : 'Join the waitlist' }}
           <template #icon><Icon name="calendar" :size="17" /></template>
         </BaseButton>
-        <p class="text-xs text-ink-soft">We will email a confirmation and a reminder.</p>
+        <p class="text-xs text-ink-soft">
+          We will email your reference code and a reminder before the day.
+        </p>
       </div>
 
       <input
