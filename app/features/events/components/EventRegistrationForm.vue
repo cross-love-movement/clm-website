@@ -1,7 +1,22 @@
 <script setup lang="ts">
-const props = defineProps<{ initialEvent?: string }>()
+import type { EventAvailability } from '#shared/types/content'
+
+const props = withDefaults(
+  defineProps<{
+    initialEvent?: string
+    /** Live capacity from `/api/events/availability`. */
+    availability?: EventAvailability[]
+  }>(),
+  { availability: () => [] },
+)
+
+const emit = defineEmits<{ registered: [] }>()
 
 const { upcoming } = await useEvents()
+
+const availabilityBySlug = computed(
+  () => new Map(props.availability.map((item) => [item.slug, item])),
+)
 
 const initialSlug = props.initialEvent || upcoming.value[0]?.slug || ''
 
@@ -27,20 +42,52 @@ watch(
 )
 
 const eventOptions = computed(() =>
-  upcoming.value.map((event) => ({
-    value: event.slug,
-    label: `${event.title} — ${formatEventDate(event.startsAt)}`,
-  })),
-)
+  upcoming.value.map((event) => {
+    const live = availabilityBySlug.value.get(event.slug)
+    const suffix = live && !live.open ? ' — fully booked' : ''
 
-const attendeeOptions = [1, 2, 3, 4, 5, 6].map((count) => ({
-  value: String(count),
-  label: count === 1 ? 'Just me' : `${count} people`,
-}))
+    return {
+      value: event.slug,
+      label: `${event.title} — ${formatEventDate(event.startsAt)}${suffix}`,
+    }
+  }),
+)
 
 const selectedEvent = computed(
   () => upcoming.value.find((event) => event.slug === values.eventSlug) ?? null,
 )
+
+const selectedAvailability = computed(() =>
+  selectedEvent.value ? (availabilityBySlug.value.get(selectedEvent.value.slug) ?? null) : null,
+)
+
+const remaining = computed(
+  () => selectedAvailability.value?.remaining ?? selectedEvent.value?.capacity ?? 0,
+)
+
+const canRegister = computed(
+  () => remaining.value > 0 && (selectedAvailability.value?.open ?? true),
+)
+
+const maxAttendees = computed(() => Math.max(1, remaining.value))
+
+const seatsHint = computed(() => {
+  if (!selectedAvailability.value) return 'Places are confirmed when we receive your registration.'
+
+  return selectedAvailability.value.remaining === 0
+    ? 'This event is fully booked.'
+    : `${selectedAvailability.value.remaining} of ${selectedAvailability.value.capacity} places left.`
+})
+
+watch(remaining, (left) => {
+  const chosen = Number(values.attendees)
+
+  if (!Number.isFinite(chosen) || chosen < 1) {
+    values.attendees = '1'
+  } else if (chosen > left && left > 0) {
+    values.attendees = String(left)
+  }
+})
 
 const selectedWhen = computed(() => {
   const event = selectedEvent.value
@@ -48,6 +95,11 @@ const selectedWhen = computed(() => {
 
   return `${formatEventDateLong(event.startsAt)} · ${formatEventTime(event.startsAt, event.endsAt)}`
 })
+
+async function onSubmit() {
+  const ok = await submit()
+  if (ok) emit('registered')
+}
 </script>
 
 <template>
@@ -63,7 +115,7 @@ const selectedWhen = computed(() => {
       </button>
     </AlertBox>
 
-    <form v-else novalidate class="space-y-5" @submit.prevent="submit">
+    <form v-else novalidate class="space-y-5" @submit.prevent="onSubmit">
       <SelectField
         v-model="values.eventSlug"
         label="Which event?"
@@ -78,6 +130,12 @@ const selectedWhen = computed(() => {
         <p class="text-sm font-semibold text-ink">{{ selectedWhen }}</p>
         <p class="mt-1 text-sm text-ink-soft">
           {{ selectedEvent.venue }} · {{ selectedEvent.address }}, {{ selectedEvent.city }}
+        </p>
+        <p
+          class="mt-2 text-sm font-semibold"
+          :class="canRegister ? 'text-clay-700' : 'text-red-700'"
+        >
+          {{ seatsHint }}
         </p>
       </div>
 
@@ -112,12 +170,17 @@ const selectedWhen = computed(() => {
           placeholder="Optional"
           :error="errors.phone"
         />
-        <SelectField
+        <TextField
           v-model="values.attendees"
           label="How many are coming?"
           name="attendees"
-          :options="attendeeOptions"
-          placeholder="Choose a number"
+          type="number"
+          inputmode="numeric"
+          :min="1"
+          :max="maxAttendees"
+          :step="1"
+          :hint="seatsHint"
+          placeholder="1"
           required
           :error="errors.attendees"
         />
@@ -150,8 +213,12 @@ const selectedWhen = computed(() => {
       <p v-if="message && !isSuccess" class="text-sm font-medium text-red-700">{{ message }}</p>
 
       <div class="flex flex-wrap items-center gap-4">
-        <BaseButton type="submit" size="lg" :disabled="isSubmitting || !eventOptions.length">
-          {{ isSubmitting ? 'Registering…' : 'Register' }}
+        <BaseButton
+          type="submit"
+          size="lg"
+          :disabled="isSubmitting || !eventOptions.length || !canRegister"
+        >
+          {{ isSubmitting ? 'Registering…' : canRegister ? 'Register' : 'Fully booked' }}
           <template #icon><Icon name="calendar" :size="17" /></template>
         </BaseButton>
         <p class="text-xs text-ink-soft">We will email a confirmation and a reminder.</p>

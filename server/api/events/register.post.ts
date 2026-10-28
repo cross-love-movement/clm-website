@@ -1,5 +1,8 @@
 import type { Event } from '#shared/types/content'
+import { registrationDeadlinePassed, remainingSeats, toAvailability } from '#shared/utils/events'
 import { queryCollection } from '@nuxt/content/server'
+
+import { reserveSeats } from '../../features/events/repository'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -26,12 +29,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const closed =
-    selected.registered >= selected.capacity ||
-    (selected.registrationDeadline !== undefined &&
-      new Date(selected.registrationDeadline).getTime() < Date.now())
-
-  if (closed) {
+  if (registrationDeadlinePassed(selected.registrationDeadline)) {
     throw createError({
       statusCode: 409,
       statusMessage: 'Registration closed',
@@ -42,11 +40,42 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const reserved = reserveSeats({
+    eventSlug: selected.slug,
+    capacity: selected.capacity,
+    registeredOffline: selected.registeredOffline,
+    attendees: data.attendees,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    notes: data.notes,
+  })
+
+  if (!reserved.ok) {
+    const left = remainingSeats(selected.capacity, reserved.registered)
+
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'Not enough places',
+      data: {
+        message:
+          left === 0
+            ? `${selected.title} is now fully booked.`
+            : `Only ${left} ${left === 1 ? 'place is' : 'places are'} left for ${selected.title}.`,
+        errors: {
+          attendees: left === 0 ? 'This event is fully booked.' : `Please choose ${left} or fewer.`,
+        },
+      },
+    })
+  }
+
   const when = new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'full',
     timeStyle: 'short',
     timeZone: 'Africa/Accra',
   }).format(new Date(selected.startsAt))
+
+  const availability = toAvailability(selected, reserved.registeredOnline)
 
   await sendMail({
     tag: 'event-registration',
@@ -67,11 +96,12 @@ export default defineEventHandler(async (event) => {
       'Notes:',
       data.notes || '—',
       '',
-      `Running total: ${selected.registered + data.attendees} of ${selected.capacity} places.`,
+      `Running total: ${availability.registered} of ${availability.capacity} places (${availability.remaining} left).`,
     ].join('\n'),
   })
 
   return {
     message: `You are registered for ${selected.title} on ${when}. We will email the details and a reminder before the day.`,
+    availability,
   }
 })

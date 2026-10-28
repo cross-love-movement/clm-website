@@ -97,10 +97,10 @@ export default defineContentConfig({
           label: 'Places available',
           description: 'Total seats. The site warns people once registrations reach this number.',
         }),
-        registered: property(z.number().int().nonnegative()).editor({
-          label: 'Places already taken',
+        registeredOffline: property(z.number().int().nonnegative().default(0)).editor({
+          label: 'Places already taken offline',
           description:
-            'Update this by hand after off-site registrations so the places-left figure stays honest.',
+            'Phone, walk-in, or partner bookings. Website registrations are counted automatically, so do not add them here.',
         }),
         registrationDeadline: property(z.string().optional()).editor({
           label: 'Registration closes',

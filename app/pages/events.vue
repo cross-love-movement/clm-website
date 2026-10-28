@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { EventCategory } from '#shared/types/content'
+import type { Event, EventCategory } from '#shared/types/content'
 import { eventFaqs } from '~/data/faqs'
 
+import { useEventAvailability } from '~/features/events/composables/useEventAvailability'
+
 const { upcoming, categoryLabels } = await useEvents()
+const { availability, forSlug, refresh } = await useEventAvailability()
 const route = useRoute()
 
 const selectedSlug = ref('')
@@ -26,6 +29,18 @@ function registerFor(slug: string) {
   })
 }
 
+function isOpen(event: Event) {
+  return forSlug(event.slug)?.open ?? offlinePlacesLeft(event) > 0
+}
+
+function seatsLabel(event: Event) {
+  const live = forSlug(event.slug)
+
+  if (!live) return `${offlinePlacesLeft(event)} of ${event.capacity} places left`
+
+  return live.remaining === 0 ? 'Fully booked' : `${live.remaining} of ${live.capacity} places left`
+}
+
 function categoryTone(category: EventCategory) {
   switch (category) {
     case 'session':
@@ -46,7 +61,7 @@ function categoryTone(category: EventCategory) {
 useSeo({
   title: 'Events',
   description:
-    'Upcoming Cross-Love Movement events — worship nights, artiste clinics, volunteer training, street outreach, and the annual showcase. Register free online.',
+    'Upcoming Cross-Love Movement events — Cross Sessions, the People Like You symposium, and programme days. Register free online and see live places remaining.',
   path: '/events',
 })
 </script>
@@ -115,7 +130,7 @@ useSeo({
                 Featured
               </span>
               <span
-                v-if="!isRegistrationOpen(event)"
+                v-if="!isOpen(event)"
                 class="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-clay-700"
               >
                 Registration closed
@@ -141,24 +156,14 @@ useSeo({
               <div class="flex items-center gap-1.5">
                 <Icon name="users" :size="14" class="text-clay-600" />
                 <dt class="sr-only">Availability</dt>
-                <dd>
-                  {{
-                    placesLeft(event) === 0
-                      ? 'Fully booked'
-                      : `${placesLeft(event)} of ${event.capacity} places left`
-                  }}
-                </dd>
+                <dd>{{ seatsLabel(event) }}</dd>
               </div>
             </dl>
           </div>
 
           <div class="sm:text-right">
-            <BaseButton
-              size="sm"
-              :disabled="!isRegistrationOpen(event)"
-              @click="registerFor(event.slug)"
-            >
-              {{ isRegistrationOpen(event) ? 'Register' : 'Closed' }}
+            <BaseButton size="sm" :disabled="!isOpen(event)" @click="registerFor(event.slug)">
+              {{ isOpen(event) ? 'Register' : 'Closed' }}
             </BaseButton>
             <p v-if="event.registrationDeadline" class="mt-2 text-[0.68rem] text-ink-soft/70">
               Closes {{ formatEventDate(event.registrationDeadline) }}
@@ -208,8 +213,8 @@ useSeo({
           <div class="mt-8 rounded-2xl bg-white p-5 ring-1 ring-sand-200">
             <p class="text-sm font-semibold text-ink">Running a group?</p>
             <p class="mt-1 text-sm leading-relaxed text-ink-soft">
-              For more than six people, register once and write the group size in the notes, or
-              email us and we will handle it directly.
+              Choose how many people are coming and we will hold that many places. For a large
+              group, email us and we will handle it directly.
             </p>
             <NuxtLink
               to="/contact"
@@ -222,7 +227,11 @@ useSeo({
         </div>
 
         <div class="rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
-          <EventRegistrationForm :initial-event="selectedSlug" />
+          <EventRegistrationForm
+            :initial-event="selectedSlug"
+            :availability="availability"
+            @registered="refresh()"
+          />
         </div>
       </div>
     </section>

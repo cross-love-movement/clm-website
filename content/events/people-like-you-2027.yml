@@ -16,6 +16,6 @@ venue: Venue to be confirmed
 address: Tema
 city: Tema
 capacity: 1000
-registered: 0
+registeredOffline: 0
 registrationDeadline: '2027-06-05T23:59:00+00:00'
 featured: true

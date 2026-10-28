@@ -327,7 +327,7 @@ describe('event content', () => {
       expect(event.venue.trim()).not.toBe('')
       expect(event.city.trim()).not.toBe('')
       expect(categories).toContain(event.category)
-      expect(event.registered).toBeLessThanOrEqual(event.capacity)
+      expect(event.registeredOffline).toBeLessThanOrEqual(event.capacity)
       expect(new Date(event.endsAt).getTime()).toBeGreaterThan(new Date(event.startsAt).getTime())
 
       if (event.registrationDeadline) {

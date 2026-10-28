@@ -158,10 +158,25 @@ export interface Event {
   address: string
   city: string
   capacity: number
-  /** Places already taken — replace with real registrations. */
-  registered: number
+  /** Places already taken by phone, walk-in, or partner registrations. */
+  registeredOffline: number
   registrationDeadline?: string
   featured?: boolean
+}
+
+/** Capacity, takings, and remaining seats for one event, computed at request time. */
+export interface EventAvailability {
+  slug: string
+  capacity: number
+  /** Places taken outside the website (edited in content). */
+  registeredOffline: number
+  /** Places taken through the website (from the registrations database). */
+  registeredOnline: number
+  /** `registeredOffline + registeredOnline`. */
+  registered: number
+  remaining: number
+  /** False when full or past the registration deadline. */
+  open: boolean
 }
 
 export type PostCategory = 'story' | 'update' | 'reflection' | 'event'

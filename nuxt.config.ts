@@ -38,6 +38,8 @@ export default defineNuxtConfig({
   components: [
     // Flat namespace: `ui/BaseButton.vue` is used as <BaseButton>, not <UiBaseButton>.
     { path: '~/components', pathPrefix: false },
+    // Feature-owned components keep their own folder but the same flat names.
+    { path: '~/features/events/components', pathPrefix: false },
   ],
 
   vite: {
@@ -82,8 +84,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private: server-only. Override with NUXT_RESEND_API_KEY etc.
     resendApiKey: '',
-    mailFrom: 'Cross-Love Movement <info@clmnative.ovahol.com>',
-    mailTo: 'info@clmnative.ovahol.com',
+    mailFrom: 'Cross-Love Movement <info@clmnative.com>',
+    mailTo: 'info@clmnative.com',
+    // Protects the event registrations list/export. Empty disables the endpoint.
+    registrationsToken: '',
     public: {
       siteUrl: 'https://www.clmnative.ovahol.com',
     },
