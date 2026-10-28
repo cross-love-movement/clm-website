@@ -181,6 +181,17 @@ describe('email templates', () => {
     }
   })
 
+  it('centres the card in every template', () => {
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      const html = templateFile(kind)
+
+      // Resend's renderer drops some legacy alignment, so the card carries both
+      // the attribute and a CSS margin.
+      expect(html).toContain('align="center" width="600"')
+      expect(html).toContain('margin: 0 auto')
+    }
+  })
+
   it('supplies every variable the template uses', () => {
     for (const kind of Object.keys(EMAIL_TEMPLATES)) {
       const used = templateVariables(templateFile(kind))
