@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 
-import { STAFF_ROLES, type SessionUser, type UserRole } from '#shared/types/auth'
+import { CONTENT_ROLES, STAFF_ROLES, type SessionUser, type UserRole } from '#shared/types/auth'
 
 /**
  * `requireUserSession` throws 401 when there is no valid session. The session
@@ -33,6 +33,11 @@ export function requireStaff(event: H3Event) {
 /** Staff management (inviting, roles, suspension). */
 export function requireAdmin(event: H3Event) {
   return requireRole(event, ['superadmin', 'admin'])
+}
+
+/** Content and event records. Viewers can read but not write. */
+export function requireEditor(event: H3Event) {
+  return requireRole(event, CONTENT_ROLES)
 }
 
 export function requireSuperadmin(event: H3Event) {

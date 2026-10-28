@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, sum } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { Event } from '#shared/types/content'
+import type { Event, AdminEvent, AdminEventDetail } from '#shared/types/content'
 import { buildAvailability, registrationDeadlinePassed } from '#shared/utils/events'
 
 import { useDatabase } from '../../database/client'
@@ -15,6 +15,7 @@ import {
 } from '../../database/schema'
 import { confirmationMail, promotionMail, waitlistMail } from './mail'
 import { generateReference } from './references'
+import type { EventInput } from './schemas'
 
 type Db = NodePgDatabase<typeof schema>
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
@@ -246,7 +247,7 @@ export async function cancelRegistration(id: string) {
   })
 }
 
-export interface AdminRegistration extends RegistrationRow {
+export interface AdminRegistrationRow extends RegistrationRow {
   eventTitle: string
   eventSlug: string
 }
@@ -264,7 +265,7 @@ export async function listRegistrations(options: { eventSlug?: string } = {}) {
     .where(options.eventSlug ? eq(events.slug, options.eventSlug) : undefined)
     .orderBy(desc(eventRegistrations.createdAt))
 
-  return rows.map<AdminRegistration>((row) => ({
+  return rows.map<AdminRegistrationRow>((row) => ({
     ...row.registration,
     eventTitle: row.eventTitle,
     eventSlug: row.eventSlug,
@@ -280,4 +281,117 @@ export async function checkInRegistration(id: string) {
     .returning()
 
   return row ?? null
+}
+
+async function waitlistTotals(db: Db | Tx) {
+  const rows = await db
+    .select({ eventId: eventRegistrations.eventId, total: sum(eventRegistrations.attendees) })
+    .from(eventRegistrations)
+    .where(eq(eventRegistrations.status, 'waitlisted'))
+    .groupBy(eventRegistrations.eventId)
+
+  return new Map(rows.map((row) => [row.eventId, Number(row.total ?? 0)]))
+}
+
+function toAdminEvent(row: EventRow, registered: number, waitlisted: number): AdminEventDetail {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    category: row.category,
+    status: row.status,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    venue: row.venue,
+    city: row.city,
+    capacity: row.capacity,
+    featured: row.featured,
+    registered,
+    remaining: Math.max(0, row.capacity - registered),
+    waitlisted,
+    summary: row.summary,
+    description: row.description,
+    address: row.address,
+    registrationDeadline: row.registrationDeadline ? row.registrationDeadline.toISOString() : null,
+    image: row.image,
+    imageAlt: row.imageAlt,
+  }
+}
+
+export async function listAllEvents(): Promise<AdminEvent[]> {
+  const db = useDatabase()
+  const rows = await db.select().from(events).orderBy(asc(events.startsAt))
+  const registered = await totalsByEvent(db)
+  const waitlisted = await waitlistTotals(db)
+
+  return rows.map((row) =>
+    toAdminEvent(row, registered.get(row.id) ?? 0, waitlisted.get(row.id) ?? 0),
+  )
+}
+
+export async function getEventForEdit(id: string): Promise<AdminEventDetail | null> {
+  const db = useDatabase()
+  const [row] = await db.select().from(events).where(eq(events.id, id)).limit(1)
+
+  if (!row) return null
+
+  return toAdminEvent(
+    row,
+    await confirmedSeats(db, row.id),
+    (await waitlistTotals(db)).get(row.id) ?? 0,
+  )
+}
+
+function isSlugConflict(error: unknown) {
+  return (error as { code?: string }).code === '23505'
+}
+
+export async function createEvent(input: EventInput, createdBy?: string) {
+  const db = useDatabase()
+
+  try {
+    const [row] = await db
+      .insert(events)
+      .values({ ...input, createdBy: createdBy ?? null })
+      .returning()
+    return row ?? null
+  } catch (error) {
+    if (isSlugConflict(error)) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Slug already used',
+        data: {
+          message: 'Another event already uses that slug.',
+          errors: { slug: 'Choose a different slug.' },
+        },
+      })
+    }
+    throw error
+  }
+}
+
+export async function updateEvent(id: string, input: EventInput) {
+  const db = useDatabase()
+
+  try {
+    const [row] = await db
+      .update(events)
+      .set({ ...input, updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning()
+
+    return row ?? null
+  } catch (error) {
+    if (isSlugConflict(error)) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Slug already used',
+        data: {
+          message: 'Another event already uses that slug.',
+          errors: { slug: 'Choose a different slug.' },
+        },
+      })
+    }
+    throw error
+  }
 }

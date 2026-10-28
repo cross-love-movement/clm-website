@@ -5,7 +5,7 @@ withDefaults(
   defineProps<{
     label: string
     name: string
-    type?: 'text' | 'email' | 'tel' | 'number' | 'password'
+    type?: 'text' | 'email' | 'tel' | 'number' | 'password' | 'datetime-local'
     error?: string
     hint?: string
     required?: boolean

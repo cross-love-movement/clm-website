@@ -26,34 +26,34 @@ useSeo({
       Welcome back, {{ current?.name || 'team' }}.
     </h1>
     <p class="mt-3 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-      Events, registrations, and people will be managed from here. The database and accounts are in
-      place; the management screens are next.
+      Events, registrations, and people are managed from here. Events are live; volunteer and
+      project records come next.
     </p>
 
     <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <article class="rounded-3xl border border-dashed border-sand-300 bg-sand-100 p-6">
+      <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
         <Icon name="calendar" :size="22" class="text-clay-600" />
         <h2 class="mt-3 text-lg text-ink">Events</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
           Create, publish, and archive events. Registration counts and the waitlist live here.
         </p>
-        <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-soft/70">
-          Coming next
-        </p>
+        <BaseButton to="/admin/events" variant="secondary" size="sm" class="mt-4 self-start">
+          Manage events
+        </BaseButton>
       </article>
 
-      <article class="rounded-3xl border border-dashed border-sand-300 bg-sand-100 p-6">
+      <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
         <Icon name="users" :size="22" class="text-clay-600" />
         <h2 class="mt-3 text-lg text-ink">Registrations</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
           Search by reference, check people in, cancel and release seats, export a spreadsheet.
         </p>
-        <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-soft/70">
-          Coming next
-        </p>
+        <BaseButton to="/admin/events" variant="secondary" size="sm" class="mt-4 self-start">
+          Choose an event
+        </BaseButton>
       </article>
 
-      <article class="rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
+      <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
         <Icon name="shield" :size="22" class="text-clay-600" />
         <h2 class="mt-3 text-lg text-ink">People</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">

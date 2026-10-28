@@ -137,13 +137,20 @@ export interface DonationOption {
   impact: string
 }
 
-export type EventCategory =
-  | 'session'
-  | 'training'
-  | 'workshop'
-  | 'devotion'
-  | 'outreach'
-  | 'showcase'
+export const EVENT_CATEGORIES = [
+  'session',
+  'training',
+  'workshop',
+  'devotion',
+  'outreach',
+  'showcase',
+] as const
+
+export type EventCategory = (typeof EVENT_CATEGORIES)[number]
+
+export const EVENT_STATUSES = ['draft', 'published', 'archived'] as const
+
+export type EventStatus = (typeof EVENT_STATUSES)[number]
 
 export interface Event {
   slug: string
@@ -173,6 +180,51 @@ export interface EventAvailability {
   remaining: number
   /** False when full or past the registration deadline. */
   open: boolean
+}
+
+/** Admin list row: event plus its booking counts. */
+export interface AdminEvent {
+  id: string
+  slug: string
+  title: string
+  category: EventCategory
+  status: EventStatus
+  startsAt: string
+  endsAt: string
+  venue: string
+  city: string
+  capacity: number
+  featured: boolean
+  registered: number
+  remaining: number
+  waitlisted: number
+}
+
+export interface AdminEventDetail extends AdminEvent {
+  summary: string
+  description: string
+  address: string
+  registrationDeadline: string | null
+  image: string
+  imageAlt: string
+}
+
+/** One booking as returned by the admin registrations endpoint. */
+export interface AdminRegistration {
+  id: string
+  reference: string
+  eventId: string
+  eventTitle: string
+  eventSlug: string
+  name: string
+  email: string
+  phone: string
+  attendees: number
+  notes: string
+  status: 'confirmed' | 'waitlisted' | 'cancelled'
+  createdAt: string
+  checkedInAt: string | null
+  cancelledAt: string | null
 }
 
 export type PostCategory = 'story' | 'update' | 'reflection' | 'event'

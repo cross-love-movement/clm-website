@@ -176,14 +176,13 @@ Format: `PREFIX-XXXXXX` — a short event prefix plus Crockford base32 (no `I`, 
 
 ### Admin endpoints (authenticated)
 
-| Route                                        | Purpose                                  |
-| -------------------------------------------- | ---------------------------------------- |
-| `GET/POST /api/admin/events`                 | List, create                             |
-| `GET/PATCH/DELETE /api/admin/events/:id`     | Read, edit, archive                      |
-| `POST /api/admin/events/:id/publish`         | Move draft → published                   |
-| `GET /api/admin/events/:id/registrations`    | List, search, CSV                        |
-| `POST /api/admin/registrations/:id/check-in` | Check in                                 |
-| `POST /api/admin/registrations/:id/cancel`   | Cancel, release seats, offer to waitlist |
+| Route                                               | Purpose                                    |
+| --------------------------------------------------- | ------------------------------------------ |
+| `GET/POST /api/admin/events`                        | List every event, create one               |
+| `GET/PATCH /api/admin/events/:id`                   | Read or edit one event                     |
+| `GET /api/admin/events/registrations?event=slug`    | List bookings (add `format=csv` to export) |
+| `POST /api/admin/events/registrations/:id/check-in` | Check in                                   |
+| `DELETE /api/admin/events/registrations/:id`        | Cancel, release seats, promote waitlist    |
 
 Bulk actions and CSV export are table stakes for an events team.
 
@@ -310,7 +309,7 @@ A true monorepo is unnecessary while there is one Nuxt app. These folders alread
 | **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                                                                      |
 | **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | **Done** — events live in Postgres, bookings return references, waitlist promotes automatically |
 | **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Members and staff sign in and land in the right place                                           |
-| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | Event management, no more git edits                                                             |
+| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | **Done** — `/admin/events` manages the calendar and its bookings                                |
 | **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                        |
 | **5. Volunteers**           | Applications, skills, availability, statuses                                                                                    | Second entity on the same foundations                                                           |
 | **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                                                                 |
@@ -332,15 +331,17 @@ Phases 0–3 are the real scope for "event management". Phase 4 is what makes it
 6. **Invite-only accounts**, password reset and invite acceptance by email link.
 7. **Waitlist on launch**, first come, first served promotion on cancellation.
 8. **Reference codes by email only**.
+9. **Events leave Content entirely** — Postgres is the single source of truth for capacity.
 
 **Still open**
 
-1. **Events leave Content entirely** — recommended, so capacity has one source of truth. Confirm.
-2. **Who needs staff access** at launch, and at what role?
-3. **Signup policy detail** — can staff add a member from the admin UI, or is every member created by the superadmin?
+1. **Who needs staff access** at launch, and at what role?
+2. **Signup policy detail** — can staff add a member from the admin UI, or is every member created by the superadmin?
+3. **Retention period** for registration and attendee data.
 
 ## 8. Migration notes
 
 - The SQLite event store was removed. Events now live in Postgres, and `content/events/*.yml` no longer exists; bootstrap data is in `server/database/seed-events.ts`.
+- The admin CRUD screens are live at `/admin/events`. Creating an event sets `created_by` from the staff session.
 - The homepage carousel reads published upcoming events from the API, falling back to `app/data/slides.ts` when there are none.
 - Keep `remaining` computed in one place (`server/features/events/`) and exposed in every response, so the carousel, listing, and form cannot disagree.

@@ -70,6 +70,12 @@ export function formatDateLong(iso: string) {
   return `${parts.weekdayLong}, ${Number(parts.day)} ${parts.monthLong} ${parts.year}`
 }
 
+/** 14 Nov 2026, 09:30 GMT */
+export function formatDateTime(iso: string) {
+  const date = new Date(iso)
+  return `${formatDateShort(iso)}, ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} GMT`
+}
+
 /** 18:00–20:30 GMT */
 export function formatTimeRange(startsAt: string, endsAt: string) {
   const clock = (iso: string) => {

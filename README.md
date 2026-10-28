@@ -85,7 +85,7 @@ clm-website/
 │  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter
 │  ├─ features/
 │  │  └─ events/               # The event app: components + composables (see below)
-│  │     ├─ components/        # EventCarousel, EventRegistrationForm
+│  │     ├─ components/        # EventCarousel, EventRegistrationForm, EventForm (admin)
 │  │     └─ composables/       # useEventAvailability
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
 │  │                           # usePortfolio, useTestimonials, useForm, useSeo
@@ -94,8 +94,8 @@ clm-website/
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
 │  ├─ middleware/              # auth (any session), admin (staff roles only)
 │  ├─ pages/                   # File-based routes, including /events, /news, /portfolio,
-│  │                           # /login, /forgot-password, /reset-password, /portal, /admin
-│  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts
+│  │                           # /login, /portal, /admin, /admin/events (CRUD + registrations)
+│  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts, admin.ts
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
 ├─ content/                    # Editorial content (Nuxt Content)
@@ -106,7 +106,7 @@ clm-website/
 │  ├─ api/                     # public, auth, and admin routes
 │  │  ├─ auth/                 # login, logout, session, reset-request, reset-confirm
 │  │  ├─ admin/users/          # list, invite, role/status changes
-│  │  ├─ admin/events/         # registrations: list, CSV, cancel, check-in
+│  │  ├─ admin/events/         # event CRUD + registrations: list, CSV, cancel, check-in
 │  │  ├─ events/               # public list + register
 │  │  └─ health.get.ts
 │  ├─ database/                # Postgres: client, schema, migrations, seeds
@@ -204,11 +204,12 @@ written to stand on its own if an image fails to load.
 Events are an application inside the site, and that is how the code is arranged:
 
 ```
-app/features/events/       carousel + registration form
+app/features/events/       carousel, registration form, admin event form
+app/pages/admin/events/    list, create, detail + registrations, edit
 server/features/events/    repository (SQL + transactions), mail templates, references
 server/features/mail/      outbox drain (background sender)
 server/api/events/         public list + register
-server/api/admin/events/   registrations list, CSV, cancel, check-in
+server/api/admin/events/   CRUD, registrations list, CSV, cancel, check-in
 shared/utils/events.ts     availability maths used by both sides
 ```
 
@@ -241,24 +242,33 @@ Emailed only: the confirmation screen tells the registrant to check their inbox.
 sends it and retries up to five times. A mail outage cannot lose a booking, and a retry cannot send
 twice.
 
+**Admin screens** live under `/admin/events` and use the same endpoints, guarded by the staff
+session. `/admin/events` lists every event with live counts, `/admin/events/new` creates one,
+`/admin/events/:id` shows the registration table (search, check-in, cancel, CSV), and
+`/admin/events/:id/edit` edits the record. Viewers can read; editors and above can write.
+
 **Admin endpoints** (staff session required — see Accounts and portals):
 
-| Route                                               | Purpose                   |
-| --------------------------------------------------- | ------------------------- |
-| `GET /api/admin/events/registrations?event=slug`    | list bookings             |
-| `GET …?format=csv`                                  | spreadsheet download      |
-| `DELETE /api/admin/events/registrations/:id`        | cancel + promote waitlist |
-| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived |
+| Route                                               | Purpose                       |
+| --------------------------------------------------- | ----------------------------- |
+| `GET/POST /api/admin/events`                        | list every event, create one  |
+| `GET/PATCH /api/admin/events/:id`                   | read or edit one event        |
+| `GET /api/admin/events/registrations?event=slug`    | list bookings                 |
+| `GET …?format=csv`                                  | spreadsheet download          |
+| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived     |
+| `DELETE /api/admin/events/registrations/:id`        | cancel + promote the waitlist |
 
 **Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
-disables it) so the site has something to show. The admin CRUD screens replace this next.
+disables it) so the site has something to show.
 
-**Not built yet:** per-email duplicate prevention and the admin CRUD UI. Registrations store name,
-email, and phone, so agree a retention period before collecting them in earnest.
+**Not built yet:** per-email duplicate prevention, a public event detail page, reminder emails,
+and an audit log. Registrations store name, email, and phone, so agree a retention period before
+collecting them in earnest.
 
-To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
-and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
-is hosted, and the public pages keep the same layout, components, and theme.
+To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
+site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
+and the public pages keep the same layout, components, and theme. Events are the exception: they are
+records in Postgres, edited at `/admin/events`.
 
 Each schema field also carries `property(...).editor(...)` metadata — labels, helper text, media
 pickers, textareas. That metadata is invisible to the site and only shapes the Nuxt Studio form, so
