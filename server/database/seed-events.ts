@@ -24,7 +24,7 @@ const BOOTSTRAP_EVENTS: NewEvent[] = [
     startsAt: new Date('2027-06-12T09:00:00+00:00'),
     endsAt: new Date('2027-06-12T16:00:00+00:00'),
     venue: 'Venue to be confirmed',
-    address: 'Tema',
+    address: '',
     city: 'Tema',
     capacity: 1000,
     registrationDeadline: new Date('2027-06-05T23:59:00+00:00'),

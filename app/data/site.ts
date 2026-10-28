@@ -3,7 +3,7 @@ import type { NavLink, SocialLink } from '#shared/types/content'
 export const site = {
   name: 'Cross-Love Movement',
   shortName: 'CLM',
-  legalName: 'Cross-Love Movement, Limited By Guarantee',
+  legalName: 'Cross-Love Movement Limited By Guarantee',
   tagline: 'Faith. Creativity. Inclusion.',
   description:
     'Cross-Love Movement is a Christian, non-denominational nonprofit network of young creatives and youthful advocates in Ghana, using faith, creativity, and inclusion to empower young people to build sustainable societies.',

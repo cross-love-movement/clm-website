@@ -1,3 +1,4 @@
+import { formNotification } from '../emails/layout'
 import { MAILBOXES } from '../utils/mailboxes'
 
 export default defineEventHandler(async (event) => {
@@ -23,6 +24,12 @@ export default defineEventHandler(async (event) => {
       '',
       'Add this address to the monthly update list.',
     ].join('\n'),
+    html: formNotification({
+      heading: 'New newsletter signup',
+      intro: 'Someone subscribed from the website footer.',
+      rows: [['Email', data.email]],
+      footnote: 'Add this address to the monthly update list.',
+    }),
   })
 
   return { message: 'You are subscribed. Look out for the next update.' }

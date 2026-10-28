@@ -51,21 +51,10 @@ async function signOut() {
     <div class="container-page py-3">
       <div class="flex min-h-10 items-center justify-between gap-4">
         <div class="flex min-w-0 items-center gap-3">
-          <NuxtLink
-            to="/"
-            class="flex items-center gap-2.5"
-            aria-label="Cross-Love Movement — home"
-          >
-            <BrandMark :size="32" />
-            <span class="hidden leading-none sm:flex sm:flex-col">
-              <span class="font-display text-[1rem] font-semibold tracking-tight text-brand-900">
-                Cross-Love
-              </span>
-              <span
-                class="mt-0.5 text-[0.55rem] font-bold uppercase tracking-[0.2em] text-clay-600"
-              >
-                Movement
-              </span>
+          <NuxtLink to="/" class="flex items-center" aria-label="Cross-Love Movement — home">
+            <BrandMark :size="32" class="sm:hidden" />
+            <span class="hidden sm:inline-flex">
+              <BrandLockup :size="32" />
             </span>
           </NuxtLink>
 

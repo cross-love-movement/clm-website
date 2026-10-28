@@ -34,16 +34,8 @@ onBeforeUnmount(() => {
     class="sticky top-0 z-40 border-b border-sand-200/80 bg-sand-50/85 backdrop-blur-md supports-[backdrop-filter]:bg-sand-50/70"
   >
     <div class="container-page flex h-[4.75rem] items-center justify-between gap-4">
-      <NuxtLink to="/" class="flex items-center gap-2.5" aria-label="Cross-Love Movement — home">
-        <BrandMark :size="42" />
-        <span class="flex flex-col leading-none">
-          <span class="font-display text-[1.15rem] font-semibold tracking-tight text-brand-900">
-            Cross-Love
-          </span>
-          <span class="mt-1 text-[0.6rem] font-bold uppercase tracking-[0.22em] text-clay-600">
-            Movement
-          </span>
-        </span>
+      <NuxtLink to="/" class="flex items-center" aria-label="Cross-Love Movement — home">
+        <BrandLockup :size="40" />
       </NuxtLink>
 
       <nav class="hidden items-center gap-1 xl:flex" aria-label="Main navigation">
@@ -94,11 +86,8 @@ onBeforeUnmount(() => {
           class="mobile-nav-panel absolute inset-x-0 top-0 max-h-[100dvh] overflow-y-auto rounded-b-4xl bg-sand-50 p-5 pb-8 shadow-lift"
         >
           <div class="flex items-center justify-between">
-            <NuxtLink to="/" class="flex items-center gap-2.5" @click="mobileOpen = false">
-              <BrandMark :size="36" />
-              <span class="font-display text-lg font-semibold text-brand-900"
-                >Cross-Love Movement</span
-              >
+            <NuxtLink to="/" class="flex items-center" @click="mobileOpen = false">
+              <BrandLockup :size="32" />
             </NuxtLink>
             <button
               type="button"

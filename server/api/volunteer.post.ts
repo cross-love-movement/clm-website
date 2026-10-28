@@ -1,5 +1,6 @@
 import { hasDatabase, useDatabase } from '../database/client'
 import { mailOutbox } from '../database/schema'
+import { formNotification, sanitizeSubject } from '../emails/layout'
 import { drainOutbox } from '../features/mail/outbox'
 import { applicationNotification } from '../features/volunteers/mail'
 import { MAILBOXES } from '../utils/mailboxes'
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
       tag: 'volunteer',
       to: MAILBOXES.apply,
       replyTo: data.email,
-      subject: `Volunteer application — ${data.area || 'general'} — ${data.name}`,
+      subject: sanitizeSubject(`Volunteer application — ${data.area || 'general'} — ${data.name}`),
       text: [
         'New volunteer application from the website.',
         '',
@@ -36,6 +37,21 @@ export default defineEventHandler(async (event) => {
         '',
         data.experience || '—',
       ].join('\n'),
+      html: formNotification({
+        heading: 'New volunteer application',
+        intro: `${data.name} applied through the website while the database was unavailable.`,
+        rows: [
+          ['Email', data.email],
+          ['Phone', data.phone || '—'],
+          ['Based in', data.city],
+          ['Availability', data.availability],
+          ['Interest', data.area || '—'],
+        ],
+        message: data.experience,
+        messageLabel: 'Experience',
+        footnote:
+          'This was sent without saving to the staff portal — record it manually once the database is back.',
+      }),
     })
 
     return {

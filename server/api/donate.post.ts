@@ -1,3 +1,4 @@
+import { formNotification, sanitizeSubject } from '../emails/layout'
 import { MAILBOXES } from '../utils/mailboxes'
 
 export default defineEventHandler(async (event) => {
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     tag: 'donation',
     to: MAILBOXES.donate,
     replyTo: data.email,
-    subject: `Giving interest — ${amount} ${data.frequency} — ${data.name}`,
+    subject: sanitizeSubject(`Giving interest — ${amount} ${data.frequency} — ${data.name}`),
     text: [
       'Someone has registered giving interest on the website.',
       '',
@@ -35,6 +36,19 @@ export default defineEventHandler(async (event) => {
       '',
       'Send transfer details and confirm the giving schedule.',
     ].join('\n'),
+    html: formNotification({
+      heading: 'New giving interest',
+      intro: 'Someone registered a giving interest on the website.',
+      rows: [
+        ['Name', data.name],
+        ['Email', data.email],
+        ['Amount', amount],
+        ['Frequency', data.frequency === 'monthly' ? 'Monthly' : 'One-time'],
+      ],
+      message: data.note,
+      messageLabel: 'Note',
+      footnote: 'Reply to this email to send transfer details and confirm the giving schedule.',
+    }),
   })
 
   return {

@@ -29,7 +29,9 @@ export async function drainOutbox(limit = 10) {
         replyTo: row.replyTo ?? undefined,
         subject: row.subject,
         text: row.body,
+        html: row.html ?? undefined,
         tag: row.kind,
+        variables: row.variables ?? undefined,
       })
 
       await db

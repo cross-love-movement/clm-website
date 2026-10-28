@@ -22,9 +22,8 @@ const accountLink = computed(() => {
     <div class="container-page pt-16 pb-10">
       <div class="grid gap-12 lg:grid-cols-12 lg:gap-8">
         <div class="lg:col-span-5">
-          <NuxtLink to="/" class="flex items-center gap-2.5">
-            <BrandMark tile :size="46" />
-            <span class="font-display text-lg font-semibold text-sand-50">Cross-Love Movement</span>
+          <NuxtLink to="/" class="flex items-center">
+            <BrandLockup :size="46" tile on-dark />
           </NuxtLink>
           <p class="mt-5 max-w-sm text-[0.95rem] leading-relaxed text-sand-200/75">
             {{ site.description }}

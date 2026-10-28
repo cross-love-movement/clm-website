@@ -1,3 +1,4 @@
+import { formNotification, sanitizeSubject } from '../emails/layout'
 import { mailboxForContactTopic } from '../utils/mailboxes'
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
     tag: 'contact',
     to: mailboxForContactTopic(data.topic),
     replyTo: data.email,
-    subject: `Contact form — ${data.topic} — ${data.name}`,
+    subject: sanitizeSubject(`Contact form — ${data.topic} — ${data.name}`),
     text: [
       'New message from the website contact form.',
       '',
@@ -27,6 +28,18 @@ export default defineEventHandler(async (event) => {
       'Message:',
       data.message,
     ].join('\n'),
+    html: formNotification({
+      heading: 'New contact form message',
+      intro: 'A visitor sent a message through the website contact form.',
+      rows: [
+        ['Name', data.name],
+        ['Email', data.email],
+        ['Phone', data.phone || '—'],
+        ['Topic', data.topic],
+      ],
+      message: data.message,
+      messageLabel: 'Message',
+    }),
   })
 
   return {

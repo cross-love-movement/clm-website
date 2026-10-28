@@ -11,7 +11,7 @@ const isNotFound = computed(() => props.error?.statusCode === 404)
     class="flex min-h-dvh flex-col items-center justify-center bg-sand-50 px-6 py-20 text-center"
   >
     <NuxtLink to="/" aria-label="Cross-Love Movement — home">
-      <BrandMark class="text-brand-700" :size="52" />
+      <BrandLockup :size="48" />
     </NuxtLink>
 
     <p class="eyebrow mt-7">
