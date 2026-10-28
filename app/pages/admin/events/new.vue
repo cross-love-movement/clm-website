@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { canEditContent, type SessionUser } from '#shared/types/auth'
+import { hasPermission, type SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
 const { user } = useUserSession()
-const canEdit = computed(() => canEditContent((user.value as SessionUser | null)?.role))
+const canEdit = computed(() => hasPermission(user.value as SessionUser | null, 'canEdit'))
 
 useSeo({
   title: 'New event',

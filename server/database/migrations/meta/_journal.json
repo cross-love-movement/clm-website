@@ -22,6 +22,13 @@
       "when": 1793190737800,
       "tag": "0002_clever_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793200396853,
+      "tag": "0003_modern_molten_man",
+      "breakpoints": true
     }
   ]
 }

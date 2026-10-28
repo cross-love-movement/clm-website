@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { AdminEvent } from '#shared/types/content'
-import { canEditContent, type SessionUser } from '#shared/types/auth'
+import { hasPermission, type SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
 const { user } = useUserSession()
 const current = computed(() => user.value as SessionUser | null)
-const canEdit = computed(() => canEditContent(current.value?.role))
+const canEdit = computed(() => hasPermission(current.value, 'canEdit'))
 
 const {
   data: events,

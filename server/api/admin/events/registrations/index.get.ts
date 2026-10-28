@@ -1,4 +1,4 @@
-import { requireStaff } from '../../../../features/auth/guards'
+import { requirePermission } from '../../../../features/auth/guards'
 import { listRegistrations } from '../../../../features/events/repository'
 
 function csvCell(value: string | number) {
@@ -13,7 +13,7 @@ function csvCell(value: string | number) {
  *   ?format=csv   spreadsheet download
  */
 export default defineEventHandler(async (event) => {
-  await requireStaff(event)
+  await requirePermission(event, 'canManageRegistrations')
 
   const query = getQuery(event)
   const slug = typeof query.event === 'string' && query.event ? query.event : undefined

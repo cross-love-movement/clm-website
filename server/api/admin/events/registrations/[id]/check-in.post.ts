@@ -1,9 +1,9 @@
-import { requireStaff } from '../../../../../features/auth/guards'
+import { requirePermission } from '../../../../../features/auth/guards'
 import { checkInRegistration } from '../../../../../features/events/repository'
 
 /** Marks a confirmed booking as arrived. Idempotent. */
 export default defineEventHandler(async (event) => {
-  await requireStaff(event)
+  await requirePermission(event, 'canManageRegistrations')
 
   const id = getRouterParam(event, 'id')
 

@@ -15,7 +15,7 @@ export async function sendInviteEmail(
   input: { to: string; name: string; role: UserRole; token: string },
 ) {
   const link = resetLink(event, input.token)
-  const portal = input.role === 'member' ? 'member portal' : 'staff portal'
+  const portal = input.role === 'volunteer' ? 'volunteer portal' : 'staff portal'
 
   await sendMail({
     tag: 'auth-invite',

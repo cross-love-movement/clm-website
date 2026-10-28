@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 
-import type { SessionUser, UserRole } from '#shared/types/auth'
+import type { Permission, SessionUser, UserRole } from '#shared/types/auth'
+import { defaultPermissions } from '#shared/types/auth'
 
 import { useDatabase } from '../../database/client'
 import { users, type User } from '../../database/schema'
@@ -8,7 +9,13 @@ import { hashPassword, verifyPassword } from './password'
 import { consumeToken, issueToken } from './tokens'
 
 export function toSessionUser(user: User): SessionUser {
-  return { id: user.id, email: user.email, name: user.name, role: user.role }
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    permissions: user.permissions as Permission[],
+  }
 }
 
 export async function findUserByEmail(email: string) {
@@ -36,17 +43,26 @@ export async function inviteUser(input: {
   email: string
   name: string
   role: UserRole
+  permissions?: Permission[]
 }): Promise<InviteResult | null> {
   const database = useDatabase()
   const email = input.email.trim().toLowerCase()
   const existing = await findUserByEmail(email)
+  const permissions =
+    input.role === 'admin' ? (input.permissions ?? defaultPermissions('admin')) : []
 
   if (existing) {
     if (existing.status === 'active') return null
 
     const [updated] = await database
       .update(users)
-      .set({ name: input.name, role: input.role, status: 'invited', updatedAt: new Date() })
+      .set({
+        name: input.name,
+        role: input.role,
+        permissions,
+        status: 'invited',
+        updatedAt: new Date(),
+      })
       .where(eq(users.id, existing.id))
       .returning()
 
@@ -56,7 +72,7 @@ export async function inviteUser(input: {
 
   const [created] = await database
     .insert(users)
-    .values({ email, name: input.name, role: input.role, status: 'invited' })
+    .values({ email, name: input.name, role: input.role, permissions, status: 'invited' })
     .returning()
 
   if (!created) return null

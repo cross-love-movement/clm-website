@@ -1,9 +1,9 @@
-import { requireStaff } from '../../../../../features/auth/guards'
+import { requirePermission } from '../../../../../features/auth/guards'
 import { cancelRegistration } from '../../../../../features/events/repository'
 
 /** Cancels a booking and promotes waitlisted bookings into the freed seats. */
 export default defineEventHandler(async (event) => {
-  await requireStaff(event)
+  await requirePermission(event, 'canManageRegistrations')
 
   const id = getRouterParam(event, 'id')
 

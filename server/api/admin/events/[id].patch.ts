@@ -1,10 +1,10 @@
-import { requireEditor } from '../../../features/auth/guards'
+import { requirePermission } from '../../../features/auth/guards'
 import { updateEvent } from '../../../features/events/repository'
 import { eventInputSchema } from '../../../features/events/schemas'
 import { parseOrThrow } from '../../../utils/validation'
 
 export default defineEventHandler(async (event) => {
-  await requireEditor(event)
+  await requirePermission(event, 'canEdit')
 
   const id = getRouterParam(event, 'id')
 

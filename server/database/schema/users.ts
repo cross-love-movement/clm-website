@@ -1,14 +1,13 @@
+import { sql } from 'drizzle-orm'
 import { index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 import { USER_ROLES } from '../../../shared/types/auth'
 
 /**
  * Roles map to portals:
- *   superadmin — staff portal, plus user management
- *   admin      — staff portal, all records
- *   editor     — staff portal, content and event records
- *   viewer     — staff portal, read-only
- *   member     — member portal (own registrations, profile)
+ *   superadmin — staff portal, every permission, plus roles and suspension
+ *   admin      — staff portal, permissions assigned per account
+ *   volunteer  — volunteer portal, no staff access
  */
 export const userRole = pgEnum('user_role', USER_ROLES)
 
@@ -19,7 +18,12 @@ export const users = pgTable('users', {
   /** Stored lower-cased. Unique, so one account per address. */
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  role: userRole('role').notNull().default('member'),
+  role: userRole('role').notNull().default('volunteer'),
+  /** Operational flags, e.g. canEdit. Empty for volunteers and superadmins. */
+  permissions: text('permissions')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   status: userStatus('status').notNull().default('active'),
   /** scrypt hash. Null until the account holder sets a password. */
   passwordHash: text('password_hash'),

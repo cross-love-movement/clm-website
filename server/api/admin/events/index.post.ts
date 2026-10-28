@@ -1,10 +1,10 @@
-import { requireEditor } from '../../../features/auth/guards'
+import { requirePermission } from '../../../features/auth/guards'
 import { createEvent } from '../../../features/events/repository'
 import { eventInputSchema } from '../../../features/events/schemas'
 import { parseOrThrow } from '../../../utils/validation'
 
 export default defineEventHandler(async (event) => {
-  const actor = await requireEditor(event)
+  const actor = await requirePermission(event, 'canEdit')
 
   const body = await readBody(event)
   const input = parseOrThrow(eventInputSchema, body)

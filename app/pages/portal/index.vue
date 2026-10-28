@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import type { SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'volunteer', layout: 'portal' })
 
-const { user, clear } = useUserSession()
+const { user } = useUserSession()
 const current = computed(() => user.value as SessionUser | null)
 
-async function signOut() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  clear()
-  await navigateTo('/')
-}
-
 useSeo({
-  title: 'Member portal',
+  title: 'Volunteer portal',
   description: 'Your Cross-Love Movement account.',
   path: '/portal',
 })
@@ -21,21 +15,22 @@ useSeo({
 
 <template>
   <section class="container-page py-16 sm:py-20">
-    <p class="eyebrow">Member portal</p>
+    <p class="eyebrow">Volunteer portal</p>
     <h1 class="mt-3 text-3xl leading-tight sm:text-4xl">
       Welcome back, {{ current?.name || 'friend' }}.
     </h1>
     <p class="mt-3 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-      Your registrations and reference codes will appear here. Event booking is moving onto this
-      account system next.
+      This is the volunteer account area. Event registration is currently open without an account,
+      so your reference code is emailed to you; linking bookings to this account is next.
     </p>
 
     <div class="mt-10 grid gap-5 sm:grid-cols-2">
       <article class="rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
         <h2 class="text-lg text-ink">Your registrations</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Nothing yet. Once you register for an event while signed in, it will be listed here with
-          its reference code.
+          Nothing listed yet. Register for an event from the public calendar — your reference code
+          is sent to {{ current?.email }}. Once bookings are tied to accounts, they will appear here
+          automatically.
         </p>
         <BaseButton to="/events" variant="secondary" size="sm" class="mt-4">
           See upcoming events
@@ -54,13 +49,6 @@ useSeo({
             <dd class="font-semibold capitalize text-ink">{{ current?.role }}</dd>
           </div>
         </dl>
-        <button
-          type="button"
-          class="mt-4 text-sm font-semibold text-clay-700 underline underline-offset-2 hover:text-clay-900"
-          @click="signOut"
-        >
-          Sign out
-        </button>
       </article>
     </div>
   </section>

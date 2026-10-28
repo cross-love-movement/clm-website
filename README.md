@@ -92,7 +92,7 @@ clm-website/
 │  ├─ data/                    # Code-managed content: site, about, involve, faqs, testimonials,
 │  │                           # partners, home slides (plus category labels)
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
-│  ├─ middleware/              # auth (any session), admin (staff roles only)
+│  ├─ middleware/              # guest, admin (staff), manager (people), volunteer (portal)
 │  ├─ pages/                   # File-based routes, including /events, /news, /portfolio,
 │  │                           # /login, /portal, /admin, /admin/events (CRUD + registrations)
 │  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts, admin.ts
@@ -245,7 +245,8 @@ twice.
 **Admin screens** live under `/admin/events` and use the same endpoints, guarded by the staff
 session. `/admin/events` lists every event with live counts, `/admin/events/new` creates one,
 `/admin/events/:id` shows the registration table (search, check-in, cancel, CSV), and
-`/admin/events/:id/edit` edits the record. Viewers can read; editors and above can write.
+`/admin/events/:id/edit` edits the record. Reading needs staff access; writing needs the
+`canEdit` permission and registrations need `canManageRegistrations`.
 
 **Admin endpoints** (staff session required — see Accounts and portals):
 
@@ -473,31 +474,43 @@ See `docs/architecture.md` for the content/operations split, roles, portals, and
 
 ## Accounts and portals
 
-Accounts are **invite-only** — there is no public signup. A superadmin or admin invites an address; the invitee sets a password from the emailed link (7-day expiry). Password resets use the same mechanism (1-hour expiry).
+Accounts are **invite-only** — there is no public signup. A superadmin or an admin with
+`canManagePeople` invites an address; the invitee sets a password from the emailed link (7-day
+expiry). Password resets use the same mechanism (1-hour expiry).
 
-| Route                                 | Who                                       |
-| ------------------------------------- | ----------------------------------------- |
-| `/login`                              | Everyone                                  |
-| `/forgot-password`, `/reset-password` | Everyone with a link                      |
-| `/portal`                             | Any signed-in account                     |
-| `/admin`                              | `viewer`, `editor`, `admin`, `superadmin` |
+| Route                                 | Who                          |
+| ------------------------------------- | ---------------------------- |
+| `/login`                              | Everyone                     |
+| `/forgot-password`, `/reset-password` | Everyone with a link         |
+| `/portal`                             | `volunteer`                  |
+| `/admin`                              | `superadmin`, `admin`        |
+| `/admin/users`                        | `canManagePeople` permission |
 
-Roles: `superadmin` (everything, plus user management), `admin` (records + inviting members), `editor`, `viewer`, `member`. Guards run in route middleware (`auth`, `admin`) and again in the API — a member hitting `/api/admin/*` gets `403`.
+Roles: `superadmin`, `admin`, `volunteer`. Operational permissions are assigned per account at
+invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV), and
+`canManagePeople` (people screen, invite volunteers). An admin starts with all three; a superadmin
+implicitly has everything, plus changing roles, editing permissions, and suspending accounts.
+Volunteers have no staff access. Guards run in route middleware (`admin`, `manager`, `volunteer`)
+and again in the API, so a volunteer hitting `/api/admin/*` gets `403`.
+
+**Volunteer portal.** `/portal` is on hold as a feature surface. It shows the account and a link to
+the public calendar; linking event bookings to volunteer accounts comes later. Volunteers are
+intended to be invited after a volunteer application is approved, which is not built yet.
 
 **First sign-in.** The seeded superadmin has no password: open `/forgot-password`, enter the seeded email, and follow the link from the server log (or the inbox once Resend is configured).
 
 **Sessions** are sealed cookies signed by `NUXT_SESSION_PASSWORD` — set it to 32+ random characters in production (`openssl rand -base64 32`). Without it, sign-in logs an error and sessions will not persist.
 
-| Endpoint                       | Purpose                                                |
-| ------------------------------ | ------------------------------------------------------ |
-| `POST /api/auth/login`         | Email + password → session, returns the landing portal |
-| `POST /api/auth/logout`        | Clear the session                                      |
-| `GET /api/auth/session`        | Current user                                           |
-| `POST /api/auth/reset-request` | Always generic; emails a link if the account exists    |
-| `POST /api/auth/reset-confirm` | Accept invite or reset token, set password, sign in    |
-| `GET /api/admin/users`         | List accounts (admin+)                                 |
-| `POST /api/admin/users/invite` | Invite a member (admin) or staff (superadmin)          |
-| `PATCH /api/admin/users/:id`   | Change role or suspend (superadmin)                    |
+| Endpoint                       | Purpose                                                      |
+| ------------------------------ | ------------------------------------------------------------ |
+| `POST /api/auth/login`         | Email + password → session, returns the landing portal       |
+| `POST /api/auth/logout`        | Clear the session                                            |
+| `GET /api/auth/session`        | Current user                                                 |
+| `POST /api/auth/reset-request` | Always generic; emails a link if the account exists          |
+| `POST /api/auth/reset-confirm` | Accept invite or reset token, set password, sign in          |
+| `GET /api/admin/users`         | List accounts (`canManagePeople`)                            |
+| `POST /api/admin/users/invite` | Invite a volunteer (`canManagePeople`) or staff (superadmin) |
+| `PATCH /api/admin/users/:id`   | Change role/permissions or suspend (superadmin)              |
 
 Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-256 hashes and are single-use. Login and reset responses are deliberately generic so the endpoints cannot be used to discover who has an account.
 

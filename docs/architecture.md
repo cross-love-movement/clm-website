@@ -214,29 +214,44 @@ create table mail_outbox (
 
 The site has three surfaces that share one `users` table:
 
-| Surface       | Route                    | Who                                       |
-| ------------- | ------------------------ | ----------------------------------------- |
-| Public site   | `/`, `/events`, `/news`… | Everyone, no account needed               |
-| Member portal | `/portal`                | Anyone with an account, role `member`     |
-| Staff portal  | `/admin`                 | `viewer`, `editor`, `admin`, `superadmin` |
+| Surface          | Route                    | Who                   |
+| ---------------- | ------------------------ | --------------------- |
+| Public site      | `/`, `/events`, `/news`… | Everyone, no account  |
+| Volunteer portal | `/portal`                | `volunteer` (on hold) |
+| Staff portal     | `/admin`                 | `superadmin`, `admin` |
 
-One login form at `/login`. After authenticating, the user is sent to the portal their role allows; a member who opens `/admin` is redirected, and vice versa. Guards live in route middleware (`/portal/**`, `/admin/**`) and in the API, not in the page components.
+One login form at `/login`. After authenticating, staff land in `/admin` and volunteers in
+`/portal`; each portal middleware redirects the other role away. Guards live in route middleware
+(`/portal/**`, `/admin/**`) and in the API, not in the page components.
 
-### Roles
+### Roles and permissions
 
-| Role         | Can                                                                        |
-| ------------ | -------------------------------------------------------------------------- |
-| `member`     | Own profile, own registrations and reference codes, volunteer applications |
-| `viewer`     | Read-only staff access to events and registrations                         |
-| `editor`     | Create and edit events, manage registrations                               |
-| `admin`      | Everything above, plus users and reports                                   |
-| `superadmin` | Everything, plus promoting and suspending other staff                      |
+Roles decide which portal an account can open. Permissions decide what staff can do inside it.
 
-Only `superadmin` can change roles. A member cannot promote themselves — role is never read from the request body in any endpoint that mutates a user.
+| Role         | Portal    | Permissions                                                                                        |
+| ------------ | --------- | -------------------------------------------------------------------------------------------------- |
+| `volunteer`  | `/portal` | None. Account only; invited after a volunteer application.                                         |
+| `admin`      | `/admin`  | Assigned at invite: `canEdit`, `canManageRegistrations`, `canManagePeople`. Defaults to all three. |
+| `superadmin` | `/admin`  | Everything implicitly, plus role changes, permission changes, and suspension.                      |
+
+The permission flags are stored on `users.permissions`:
+
+| Permission               | Grants                                              |
+| ------------------------ | --------------------------------------------------- |
+| `canEdit`                | Create and edit events                              |
+| `canManageRegistrations` | View bookings, check in, cancel, release seats, CSV |
+| `canManagePeople`        | Open the people screen and invite volunteers        |
+
+Only `superadmin` can change roles, edit permissions, or suspend an account. Role is never read
+from the request body in any endpoint that mutates a user. Guests get nothing, volunteers get a
+portal, and admins get only the permissions written on their row.
 
 ### Sign-in method
 
-**Invite-only accounts, email and password.** There is no public signup form: a superadmin or admin creates the account (member or staff) and the invitee sets their password from an emailed link. This keeps `/admin` unreachable by self-registration and keeps the member list curated.
+**Invite-only accounts, email and password.** There is no public signup form: a superadmin invites
+staff (with permissions) or volunteers, and an admin with `canManagePeople` can invite volunteers.
+The invitee sets their password from an emailed link. This keeps `/admin` unreachable by
+self-registration and keeps the people list curated.
 
 - Passwords hashed with **scrypt** from `node:crypto` — no native dependency, no argon2 build step.
 - Sessions via **`nuxt-auth-utils`**: sealed, signed cookies (`NUXT_SESSION_PASSWORD`), no session table to keep clean.
@@ -255,14 +270,14 @@ Waitlisting is part of launch, not a later phase.
 
 ### Reference codes
 
-Codes are **emailed only**. The public confirmation screen says “check your email for your reference” rather than printing the code, so the address on the booking is the thing that receives it. The member portal shows the member their own codes once signed in.
+Codes are **emailed only**. The public confirmation screen says “check your email for your reference” rather than printing the code, so the address on the booking is the thing that receives it. Once bookings are linked to accounts, the volunteer portal will show the account holder their own codes.
 
 ### Portal contents
 
-**Member portal** (`/portal`)
+**Volunteer portal** (`/portal`) — on hold
 
-- Upcoming events the member is registered for, with reference codes
-- Profile: name, phone, password
+- Account details today; the shell is intentionally minimal
+- Later: volunteer applications, approved roles, and event registrations with reference codes
 - Volunteer application status (phase 5)
 - Download or cancel a booking
 
@@ -308,7 +323,7 @@ A true monorepo is unnecessary while there is one Nuxt app. These folders alread
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                                                                      |
 | **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | **Done** — events live in Postgres, bookings return references, waitlist promotes automatically |
-| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Members and staff sign in and land in the right place                                           |
+| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Staff and volunteers sign in and land in the right place                                        |
 | **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | **Done** — `/admin/events` manages the calendar and its bookings                                |
 | **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                        |
 | **5. Volunteers**           | Applications, skills, availability, statuses                                                                                    | Second entity on the same foundations                                                           |
@@ -326,8 +341,8 @@ Phases 0–3 are the real scope for "event management". Phase 4 is what makes it
 1. **Postgres** — provisioned in Coolify on `postgres:18-alpine`.
 2. **Drizzle** — schema in `server/database/schema`, generated SQL in `server/database/migrations`.
 3. **Superadmin seeded** from `SEED_SUPERADMIN_EMAIL` / `SEED_SUPERADMIN_NAME` at boot. Idempotent.
-4. **Roles** — `superadmin`, `admin`, `editor`, `viewer`, `member`.
-5. **Own auth + portals** — public site, member portal, staff portal. No GitHub login for members.
+4. **Roles** — `superadmin`, `admin`, `volunteer`, with per-account permissions `canEdit`, `canManageRegistrations`, and `canManagePeople`.
+5. **Own auth + portals** — public site, volunteer portal, staff portal. No GitHub login for members.
 6. **Invite-only accounts**, password reset and invite acceptance by email link.
 7. **Waitlist on launch**, first come, first served promotion on cancellation.
 8. **Reference codes by email only**.

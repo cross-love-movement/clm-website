@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import type { AdminEventDetail, AdminRegistration } from '#shared/types/content'
-import { canEditContent, type SessionUser } from '#shared/types/auth'
+import { hasPermission, type SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
 const route = useRoute()
 const id = String(route.params.id)
 
 const { user } = useUserSession()
-const canEdit = computed(() => canEditContent((user.value as SessionUser | null)?.role))
+const current = computed(() => user.value as SessionUser | null)
+const canEdit = computed(() => hasPermission(current.value, 'canEdit'))
+const canManageRegistrations = computed(() =>
+  hasPermission(current.value, 'canManageRegistrations'),
+)
 
 const {
   data: event,
@@ -30,7 +34,7 @@ const {
   key: `admin-registrations-${id}`,
   query: { event: slug },
   default: () => [],
-  immediate: Boolean(slug),
+  immediate: Boolean(slug) && canManageRegistrations.value,
 })
 
 const search = ref('')
@@ -182,7 +186,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           <BaseButton v-if="canEdit" :to="`/admin/events/${event.id}/edit`" size="sm">
             Edit event
           </BaseButton>
-          <BaseButton :href="csvHref" variant="secondary" size="sm">
+          <BaseButton v-if="canManageRegistrations" :href="csvHref" variant="secondary" size="sm">
             Export CSV
             <template #icon><Icon name="download" :size="16" /></template>
           </BaseButton>
@@ -225,7 +229,9 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 
         <div class="rounded-2xl border border-sand-200 bg-white p-5 shadow-soft">
           <dt class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">On the day</dt>
-          <dd class="mt-1.5 font-semibold text-ink">{{ checkedInSeats }} checked in</dd>
+          <dd v-if="canManageRegistrations" class="mt-1.5 font-semibold text-ink">
+            {{ checkedInSeats }} checked in
+          </dd>
           <dd class="text-sm text-ink-soft">{{ event.waitlisted }} waitlisted</dd>
         </div>
       </dl>
@@ -245,7 +251,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       </AlertBox>
 
       <!-- Registrations -->
-      <div class="mt-12">
+      <div v-if="canManageRegistrations" class="mt-12">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 class="text-2xl text-ink">Registrations</h2>
@@ -445,6 +451,14 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           Cancelling frees the seats immediately and promotes waitlisted guests in the order they
           joined. They receive an email automatically.
         </p>
+      </div>
+
+      <div
+        v-else
+        class="mt-12 rounded-2xl border border-dashed border-sand-300 bg-sand-100 p-6 text-sm text-ink-soft"
+      >
+        Your account can view this event but not its registrations. Ask a superadmin if you need
+        access.
       </div>
     </template>
   </section>

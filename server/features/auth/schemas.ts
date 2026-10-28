@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { USER_ROLES } from '#shared/types/auth'
+import { INVITABLE_ROLES, PERMISSIONS, USER_ROLES, USER_STATUSES } from '#shared/types/auth'
 
 const email = z.email('Please enter a valid email address.').max(200)
 
@@ -24,10 +24,13 @@ export const resetConfirmSchema = z.object({
 export const inviteSchema = z.object({
   email,
   name: z.string().trim().min(2, 'Please enter a name.').max(120),
-  role: z.enum(USER_ROLES).default('member'),
+  role: z.enum(INVITABLE_ROLES).default('volunteer'),
+  /** Omit to use the role default. An empty array means no permissions. */
+  permissions: z.array(z.enum(PERMISSIONS)).optional(),
 })
 
 export const userUpdateSchema = z.object({
   role: z.enum(USER_ROLES).optional(),
-  status: z.enum(['invited', 'active', 'suspended']).optional(),
+  status: z.enum(USER_STATUSES).optional(),
+  permissions: z.array(z.enum(PERMISSIONS)).optional(),
 })

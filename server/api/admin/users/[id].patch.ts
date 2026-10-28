@@ -1,5 +1,12 @@
 import { eq } from 'drizzle-orm'
 
+import {
+  defaultPermissions,
+  type Permission,
+  type UserRole,
+  type UserStatus,
+} from '#shared/types/auth'
+
 import { useDatabase } from '../../../database/client'
 import { users } from '../../../database/schema'
 import { requireSuperadmin } from '../../../features/auth/guards'
@@ -28,16 +35,38 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  if (id === actor.id && data.status === 'suspended') {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'You cannot suspend your own account.',
+    })
+  }
+
   if (Object.keys(data).length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Nothing to update' })
   }
 
+  const patch: {
+    role?: UserRole
+    status?: UserStatus
+    permissions?: Permission[]
+    updatedAt: Date
+  } = { ...data, updatedAt: new Date() }
+
+  if (data.role) {
+    // Permissions only mean something for admins; superadmin is implicit.
+    patch.permissions =
+      data.role === 'admin' ? (data.permissions ?? defaultPermissions('admin')) : []
+  }
+
   const database = useDatabase()
-  const [updated] = await database
-    .update(users)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(users.id, id))
-    .returning({ id: users.id, email: users.email, role: users.role, status: users.status })
+  const [updated] = await database.update(users).set(patch).where(eq(users.id, id)).returning({
+    id: users.id,
+    email: users.email,
+    role: users.role,
+    status: users.status,
+    permissions: users.permissions,
+  })
 
   if (!updated) {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })

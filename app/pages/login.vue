@@ -1,7 +1,9 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'guest' })
+
 const route = useRoute()
 const { site } = useSite()
-const { loggedIn, fetch: refreshSession } = useUserSession()
+const { fetch: refreshSession } = useUserSession()
 
 const email = ref('')
 const password = ref('')
@@ -14,10 +16,6 @@ const redirectTo = computed(() => {
   return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')
     ? target
     : ''
-})
-
-onMounted(() => {
-  if (loggedIn.value) navigateTo(redirectTo.value || '/portal')
 })
 
 async function onSubmit() {
@@ -44,7 +42,7 @@ async function onSubmit() {
 
 useSeo({
   title: 'Sign in',
-  description: 'Sign in to the Cross-Love Movement member or staff portal.',
+  description: 'Sign in to the Cross-Love Movement volunteer or staff portal.',
   path: '/login',
 })
 </script>

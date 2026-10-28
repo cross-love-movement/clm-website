@@ -1,6 +1,12 @@
 import type { H3Event } from 'h3'
 
-import { CONTENT_ROLES, STAFF_ROLES, type SessionUser, type UserRole } from '#shared/types/auth'
+import {
+  STAFF_ROLES,
+  hasPermission,
+  type Permission,
+  type SessionUser,
+  type UserRole,
+} from '#shared/types/auth'
 
 /**
  * `requireUserSession` throws 401 when there is no valid session. The session
@@ -30,14 +36,18 @@ export function requireStaff(event: H3Event) {
   return requireRole(event, STAFF_ROLES)
 }
 
-/** Staff management (inviting, roles, suspension). */
-export function requireAdmin(event: H3Event) {
-  return requireRole(event, ['superadmin', 'admin'])
-}
+/** Superadmins pass automatically; admins need the flag on their account. */
+export async function requirePermission(
+  event: H3Event,
+  permission: Permission,
+): Promise<SessionUser> {
+  const user = await requireSessionUser(event)
 
-/** Content and event records. Viewers can read but not write. */
-export function requireEditor(event: H3Event) {
-  return requireRole(event, CONTENT_ROLES)
+  if (!hasPermission(user, permission)) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+  }
+
+  return user
 }
 
 export function requireSuperadmin(event: H3Event) {

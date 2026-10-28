@@ -2,19 +2,19 @@ import { parseOrThrow } from '../../../utils/validation'
 import { sendInviteEmail } from '../../../features/auth/mail'
 import { inviteSchema } from '../../../features/auth/schemas'
 import { inviteUser } from '../../../features/auth/service'
-import { requireAdmin } from '../../../features/auth/guards'
+import { requirePermission } from '../../../features/auth/guards'
 
 /**
  * Invite is the only way an account is created — there is no public signup.
  * Admins may invite members; only a superadmin may invite staff.
  */
 export default defineEventHandler(async (event) => {
-  const actor = await requireAdmin(event)
+  const actor = await requirePermission(event, 'canManagePeople')
 
   const body = await readBody(event)
   const data = parseOrThrow(inviteSchema, body)
 
-  if (actor.role !== 'superadmin' && data.role !== 'member') {
+  if (actor.role !== 'superadmin' && data.role !== 'volunteer') {
     throw createError({
       statusCode: 403,
       statusMessage: 'Only a superadmin can invite staff.',

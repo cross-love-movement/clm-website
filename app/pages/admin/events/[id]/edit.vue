@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { AdminEventDetail } from '#shared/types/content'
-import { canEditContent, type SessionUser } from '#shared/types/auth'
+import { hasPermission, type SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
 const route = useRoute()
 const id = String(route.params.id)
 
 const { user } = useUserSession()
-const canEdit = computed(() => canEditContent((user.value as SessionUser | null)?.role))
+const canEdit = computed(() => hasPermission(user.value as SessionUser | null, 'canEdit'))
 
 const { data: event, error } = await useFetch<AdminEventDetail>(`/api/admin/events/${id}`, {
   key: `admin-event-edit-${id}`,

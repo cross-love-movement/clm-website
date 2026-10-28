@@ -1,6 +1,20 @@
 <script setup lang="ts">
+import { isStaffRole, portalPathFor, type SessionUser } from '#shared/types/auth'
+
 const { site, footerNav, socials } = useSite()
+const { loggedIn, user } = useUserSession()
 const year = new Date().getFullYear()
+
+const accountLink = computed(() => {
+  if (!loggedIn.value) return { to: '/login', label: 'Sign in' }
+
+  const role = (user.value as SessionUser | null)?.role
+
+  return {
+    to: portalPathFor(role),
+    label: isStaffRole(role) ? 'Staff portal' : 'Volunteer portal',
+  }
+})
 </script>
 
 <template>
@@ -85,8 +99,8 @@ const year = new Date().getFullYear()
         <p>© {{ year }} Cross-Love Movement. Registered company limited by guarantee in Ghana.</p>
         <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>Registration CG041650523 · TIN C0062926586</span>
-          <NuxtLink to="/login" class="font-semibold text-sand-100/80 hover:text-sand-50">
-            Sign in
+          <NuxtLink :to="accountLink.to" class="font-semibold text-sand-100/80 hover:text-sand-50">
+            {{ accountLink.label }}
           </NuxtLink>
         </p>
       </div>

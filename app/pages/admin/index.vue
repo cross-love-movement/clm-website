@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import type { SessionUser } from '#shared/types/auth'
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ middleware: 'admin', layout: 'admin' })
 
-const { user, clear } = useUserSession()
+const { user } = useUserSession()
 const current = computed(() => user.value as SessionUser | null)
-
-async function signOut() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  clear()
-  await navigateTo('/')
-}
 
 useSeo({
   title: 'Staff portal',
@@ -26,56 +20,21 @@ useSeo({
       Welcome back, {{ current?.name || 'team' }}.
     </h1>
     <p class="mt-3 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-      Events, registrations, and people are managed from here. Events are live; volunteer and
-      project records come next.
+      Events and their registrations live under the Events tab. People, roles, and access live under
+      the People tab. Volunteer and project records come next.
     </p>
 
-    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="mt-10 max-w-md">
       <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
         <Icon name="calendar" :size="22" class="text-clay-600" />
         <h2 class="mt-3 text-lg text-ink">Events</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Create, publish, and archive events. Registration counts and the waitlist live here.
+          Create, publish, and archive events. Registration counts, check-in, the waitlist, and CSV
+          export live inside each event.
         </p>
         <BaseButton to="/admin/events" variant="secondary" size="sm" class="mt-4 self-start">
           Manage events
         </BaseButton>
-      </article>
-
-      <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
-        <Icon name="users" :size="22" class="text-clay-600" />
-        <h2 class="mt-3 text-lg text-ink">Registrations</h2>
-        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Search by reference, check people in, cancel and release seats, export a spreadsheet.
-        </p>
-        <BaseButton to="/admin/events" variant="secondary" size="sm" class="mt-4 self-start">
-          Choose an event
-        </BaseButton>
-      </article>
-
-      <article class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft">
-        <Icon name="shield" :size="22" class="text-clay-600" />
-        <h2 class="mt-3 text-lg text-ink">People</h2>
-        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Invite members and staff, change roles, suspend access. Restricted to admins.
-        </p>
-        <dl class="mt-3 space-y-1 text-sm text-ink-soft">
-          <div class="flex justify-between gap-4">
-            <dt>Signed in as</dt>
-            <dd class="font-semibold text-ink">{{ current?.email }}</dd>
-          </div>
-          <div class="flex justify-between gap-4">
-            <dt>Role</dt>
-            <dd class="font-semibold capitalize text-ink">{{ current?.role }}</dd>
-          </div>
-        </dl>
-        <button
-          type="button"
-          class="mt-4 text-sm font-semibold text-clay-700 underline underline-offset-2 hover:text-clay-900"
-          @click="signOut"
-        >
-          Sign out
-        </button>
       </article>
     </div>
   </section>
