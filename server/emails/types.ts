@@ -1,7 +1,11 @@
 /** Values substituted into a Resend-hosted template. Strings cap at 2,000 chars. */
 export type TemplateVariables = Record<string, string | number>
 
-/** A rendered message: plain text for clients that prefer it, HTML for everyone else. */
+/**
+ * A composed message. `variables` is the only body representation the app
+ * keeps: the HTML comes from `server/emails/templates`, either rendered here or
+ * by the Resend template with the same variables.
+ */
 export interface ComposedMail {
   kind: string
   toEmail: string
@@ -10,10 +14,5 @@ export interface ComposedMail {
   subject: string
   /** Plain-text alternative. Keep it complete — it is also the dev log. */
   body: string
-  html: string
-  /**
-   * Variables for the matching Resend template. Used only when that kind has a
-   * template configured; harmless otherwise.
-   */
-  variables?: TemplateVariables
+  variables: TemplateVariables
 }

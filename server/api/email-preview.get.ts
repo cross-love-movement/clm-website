@@ -4,7 +4,14 @@ import type {
   VolunteerApplicationRow,
   VolunteerRow,
 } from '../database/schema'
-import { formNotification } from '../emails/layout'
+import { EMAIL_TEMPLATES, loadTemplate, renderEmail } from '../emails/catalog'
+import {
+  contactVariables,
+  donationVariables,
+  newsletterVariables,
+  partnershipVariables,
+} from '../emails/notifications'
+import type { TemplateVariables } from '../emails/types'
 import { inviteMail, passwordResetMail } from '../features/auth/mail'
 import {
   cancellationMail,
@@ -15,9 +22,9 @@ import {
 import { applicationNotification } from '../features/volunteers/mail'
 
 /**
- * Development-only preview of every branded email, with sample data.
- * Open /api/email-preview for the list, or ?kind=confirmation for one.
- * Returns 404 in production so it never becomes a public surface.
+ * Development-only preview of every email, rendered from the same template
+ * files that are pasted into Resend. Open /api/email-preview for the list, or
+ * ?kind=confirmation for one. Returns 404 in production.
  */
 
 const sampleEvent: EventRow = {
@@ -49,7 +56,7 @@ const sampleRegistration: RegistrationRow = {
   eventId: sampleEvent.id,
   name: 'Ama Mensah',
   email: 'ama@example.com',
-  phone: '+233 55 175 7842',
+  phone: '+233 53 050 2774',
   attendees: 2,
   notes: '',
   status: 'confirmed',
@@ -94,23 +101,17 @@ const sampleApplication: VolunteerApplicationRow = {
   createdAt: new Date('2026-01-01T00:00:00Z'),
 }
 
-const previews: Record<string, () => string> = {
-  confirmation: () => confirmationMail(sampleEvent, sampleRegistration).html,
-  waitlist: () => waitlistMail(sampleEvent, sampleRegistration).html,
-  promotion: () => promotionMail(sampleEvent, sampleRegistration).html,
-  cancellation: () => cancellationMail(sampleEvent, sampleRegistration).html,
-  invite: () =>
-    inviteMail({
-      name: 'Ama Mensah',
-      role: 'volunteer',
-      link: 'https://www.crosslovemovement.org/reset-password?token=sample-token',
-    }).html,
-  reset: () =>
-    passwordResetMail({
-      name: 'Ama Mensah',
-      link: 'https://www.crosslovemovement.org/reset-password?token=sample-token',
-    }).html,
-  application: () =>
+const sampleLink = 'https://www.crosslovemovement.org/reset-password?token=sample-token'
+
+const samples: Record<string, () => TemplateVariables> = {
+  'event-registration': () => confirmationMail(sampleEvent, sampleRegistration).variables,
+  'event-waitlist': () => waitlistMail(sampleEvent, sampleRegistration).variables,
+  'event-promoted': () => promotionMail(sampleEvent, sampleRegistration).variables,
+  'event-cancelled': () => cancellationMail(sampleEvent, sampleRegistration).variables,
+  'auth-invite': () =>
+    inviteMail({ name: 'Ama Mensah', role: 'volunteer', link: sampleLink }).variables,
+  'auth-reset': () => passwordResetMail({ name: 'Ama Mensah', link: sampleLink }).variables,
+  'volunteer-application': () =>
     applicationNotification({
       toEmail: 'apply@crosslovemovement.org',
       volunteer: sampleVolunteer,
@@ -118,58 +119,36 @@ const previews: Record<string, () => string> = {
       programmeTitle: 'Cross Sessions',
       opportunityTitle: 'Sound engineer',
       adminUrl: 'https://www.crosslovemovement.org/admin/volunteers/1',
-    }).html,
+    }).variables,
   contact: () =>
-    formNotification({
-      heading: 'New contact form message',
-      intro: 'A visitor sent a message through the website contact form.',
-      rows: [
-        ['Name', 'Ama Mensah'],
-        ['Email', 'ama@example.com'],
-        ['Phone', '+233 55 175 7842'],
-        ['Topic', 'general'],
-      ],
+    contactVariables({
+      name: 'Ama Mensah',
+      email: 'ama@example.com',
+      phone: '+233 53 050 2774',
+      topic: 'general',
       message: 'I would like to know when the next Cross Session is happening.',
-      messageLabel: 'Message',
     }),
   donation: () =>
-    formNotification({
-      heading: 'New giving interest',
-      intro: 'Someone registered a giving interest on the website.',
-      rows: [
-        ['Name', 'Ama Mensah'],
-        ['Email', 'ama@example.com'],
-        ['Amount', 'GH₵1,000'],
-        ['Frequency', 'Monthly'],
-      ],
-      message: 'Please send the monthly transfer details.',
-      messageLabel: 'Note',
-      footnote: 'Reply to this email to send transfer details and confirm the giving schedule.',
+    donationVariables({
+      name: 'Ama Mensah',
+      email: 'ama@example.com',
+      amount: 'GH₵1,000',
+      frequency: 'monthly',
+      note: 'Please send the monthly transfer details.',
     }),
   partnership: () =>
-    formNotification({
-      heading: 'New partnership enquiry',
-      intro: 'Acme Foundation would like to explore a partnership.',
-      rows: [
-        ['Organisation', 'Acme Foundation'],
-        ['Contact', 'Kwesi Owusu'],
-        ['Email', 'kwesi@example.com'],
-        ['Phone', '+233 55 175 7842'],
-        ['Type', 'Funding and volunteers'],
-      ],
+    partnershipVariables({
+      organisation: 'Acme Foundation',
+      contactName: 'Kwesi Owusu',
+      email: 'kwesi@example.com',
+      phone: '+233 53 050 2774',
+      type: 'Funding and volunteers',
       message: 'We can support transport for the choir this year.',
-      messageLabel: 'What they have in mind',
     }),
-  newsletter: () =>
-    formNotification({
-      heading: 'New newsletter signup',
-      intro: 'Someone subscribed from the website footer.',
-      rows: [['Email', 'ama@example.com']],
-      footnote: 'Add this address to the monthly update list.',
-    }),
+  newsletter: () => newsletterVariables('ama@example.com'),
 }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   if (!import.meta.dev) {
     throw createError({ statusCode: 404, statusMessage: 'Not found' })
   }
@@ -177,9 +156,17 @@ export default defineEventHandler((event) => {
   const kind = getQuery(event).kind
   setHeader(event, 'content-type', 'text/html; charset=utf-8')
 
-  if (typeof kind === 'string' && previews[kind]) return previews[kind]()
+  if (typeof kind === 'string' && samples[kind]) {
+    const template = await loadTemplate(kind)
 
-  const links = Object.keys(previews)
+    if (!template) {
+      throw createError({ statusCode: 404, statusMessage: `No template for ${kind}` })
+    }
+
+    return renderEmail(template, samples[kind]!())
+  }
+
+  const links = Object.keys(EMAIL_TEMPLATES)
     .map(
       (name) =>
         `<li style="margin:6px 0;"><a href="/api/email-preview?kind=${name}" style="color:#b81828;">${name}</a></li>`,
@@ -189,7 +176,7 @@ export default defineEventHandler((event) => {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Email previews</title></head>
 <body style="font-family:system-ui,sans-serif;padding:32px;background:#faf5ec;color:#17120f;">
   <h1 style="font-size:22px;">Email previews</h1>
-  <p style="color:#4a4139;">Rendered with sample data. Development only.</p>
+  <p style="color:#4a4139;">Rendered from <code>server/emails/templates</code> with sample data. Development only.</p>
   <ul style="list-style:none;padding:0;">${links}</ul>
 </body></html>`
 })

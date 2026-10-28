@@ -1,6 +1,6 @@
 import { hasDatabase, useDatabase } from '../database/client'
 import { mailOutbox } from '../database/schema'
-import { formNotification, sanitizeSubject } from '../emails/layout'
+import { sanitizeSubject, siteUrl, take } from '../emails/catalog'
 import { drainOutbox } from '../features/mail/outbox'
 import { applicationNotification } from '../features/volunteers/mail'
 import { MAILBOXES } from '../utils/mailboxes'
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   if (!hasDatabase()) {
     // Keep the public form usable if the operations database is unavailable.
     await sendMail({
-      tag: 'volunteer',
+      tag: 'volunteer-application',
       to: MAILBOXES.apply,
       replyTo: data.email,
       subject: sanitizeSubject(`Volunteer application — ${data.area || 'general'} — ${data.name}`),
@@ -37,21 +37,20 @@ export default defineEventHandler(async (event) => {
         '',
         data.experience || '—',
       ].join('\n'),
-      html: formNotification({
-        heading: 'New volunteer application',
-        intro: `${data.name} applied through the website while the database was unavailable.`,
-        rows: [
-          ['Email', data.email],
-          ['Phone', data.phone || '—'],
-          ['Based in', data.city],
-          ['Availability', data.availability],
-          ['Interest', data.area || '—'],
-        ],
-        message: data.experience,
-        messageLabel: 'Experience',
-        footnote:
-          'This was sent without saving to the staff portal — record it manually once the database is back.',
-      }),
+      variables: {
+        APPLICANT_NAME: data.name,
+        APPLICANT_EMAIL: data.email,
+        PHONE: data.phone || '—',
+        CITY: data.city,
+        AVAILABILITY: data.availability,
+        PROGRAMME: '—',
+        ROLE: '—',
+        INTEREST: data.area || '—',
+        EXPERIENCE: take(data.experience || '—'),
+        MESSAGE: '—',
+        CONSENT_AT: new Date().toISOString(),
+        REVIEW_URL: `${siteUrl()}/admin/volunteers`,
+      },
     })
 
     return {
@@ -63,8 +62,7 @@ export default defineEventHandler(async (event) => {
   const result = await submitApplication(data)
 
   const database = useDatabase()
-  const config = useRuntimeConfig(event)
-  const siteUrl = config.public.siteUrl.replace(/\/+$/, '')
+  const site = siteUrl()
 
   await database.insert(mailOutbox).values(
     applicationNotification({
@@ -73,7 +71,7 @@ export default defineEventHandler(async (event) => {
       application: result.application,
       programmeTitle: result.programmeTitle,
       opportunityTitle: result.opportunityTitle,
-      adminUrl: `${siteUrl}/admin/volunteers/${result.volunteer.id}`,
+      adminUrl: `${site}/admin/volunteers/${result.volunteer.id}`,
     }),
   )
 

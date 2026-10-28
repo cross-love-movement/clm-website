@@ -57,6 +57,13 @@
       "when": 1793216195062,
       "tag": "0007_outgoing_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793217485997,
+      "tag": "0008_uneven_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

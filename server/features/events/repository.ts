@@ -13,7 +13,7 @@ import {
   type EventRow,
   type RegistrationRow,
 } from '../../database/schema'
-import { confirmationMail, promotionMail, waitlistMail } from './mail'
+import { cancellationMail, confirmationMail, promotionMail, waitlistMail } from './mail'
 import { generateReference } from './references'
 import type { EventInput } from './schemas'
 
@@ -240,6 +240,13 @@ export async function cancelRegistration(id: string) {
       .update(eventRegistrations)
       .set({ status: 'cancelled', cancelledAt: new Date() })
       .where(eq(eventRegistrations.id, id))
+
+    // Only a confirmed booking gets a cancellation notice; a waitlisted one was
+    // never promised a place.
+    if (row.status === 'confirmed') {
+      const [event] = await tx.select().from(events).where(eq(events.id, row.eventId)).limit(1)
+      if (event) await tx.insert(mailOutbox).values(cancellationMail(event, row))
+    }
 
     const promoted = row.status === 'confirmed' ? await promoteWaitlist(tx, row.eventId) : []
 

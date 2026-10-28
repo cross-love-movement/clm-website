@@ -103,9 +103,7 @@ export const mailOutbox = pgTable(
     replyTo: text('reply_to'),
     subject: text('subject').notNull(),
     body: text('body').notNull(),
-    /** Branded HTML alternative. Null on rows queued before templates existed. */
-    html: text('html'),
-    /** Resend template variables. Only used when that kind has a template set. */
+    /** Resend template variables. The markup lives in server/emails/templates. */
     variables: jsonb('variables').$type<Record<string, string | number>>(),
     status: text('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),

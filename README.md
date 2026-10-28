@@ -421,7 +421,7 @@ those documents:
   (YEPs) — and every initiative now in `content/projects/`
 - Cross Sessions (Easter Sundays, nine editions since 2018), Power-Point, Today Is Us, CSL
   Evangelism, People Like You (12 June 2027), and the church support work in Community 12 and Bawku
-- Contact details: `info@crosslovemovement.org`, `+233 55 175 7842`, WhatsApp
+- Contact details: `info@crosslovemovement.org`, `+233 53 050 2774`, WhatsApp
   `+233 53 050 2774`, and the temporary site `cross-lovemovement.my.canva.site`
 
 The **logo mark** (`public/images/clm-mark.png`, `public/favicon.png`) was extracted from the 2023
@@ -476,7 +476,7 @@ Global reduced-motion handling and focus-visible styling are in the base layer.
 **Brand lockup.** `BrandLockup.vue` is the official signature: the heart-and-cross mark beside
 `CROSS-LOVE MOVEMENT` over `LIMITED BY GUARANTEE`, both in the logo red. It sizes from one `size`
 prop and is used in `SiteHeader`, `PortalHeader`, `SiteFooter` (with `tile` and `on-dark`), the error
-page, and the email header in `server/emails/layout.ts`. Change it there once rather than editing
+page, and the email header in `server/emails/templates/*.html`. Change it there once rather than editing
 individual headers; if the organisation supplies the lockup as a single SVG, swap the component
 body for that image.
 
@@ -508,65 +508,83 @@ Server protections:
 
 ### Mail
 
-`server/utils/mailer.ts` sends through the [Resend](https://resend.com) HTTP API as a **multipart
-message**: a branded HTML part plus a plain-text alternative. Clients that block HTML — or prefer
-text, like watches and terminal mail — still get the whole message. With no `NUXT_RESEND_API_KEY`
-the message is printed to the server console, so local testing works without an account.
+`server/utils/mailer.ts` sends through the [Resend](https://resend.com) HTTP API. The markup lives in
+`server/emails/templates` as standalone HTML files — the **single source** for each mail — and is used
+two ways:
 
-Templates live in the repository, next to the code that fills them:
+- **In this app** for previews and as the fallback, rendered with `escapeHtml`.
+- **In Resend** by pasting the same file into a template; `{{{VARIABLE}}}` is the syntax both sides use.
 
-| File                                                         | Covers                                                                                                      |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `server/emails/layout.ts`                                    | Brand shell and primitives: `paragraphs`, `detailList`, `referenceBlock`, `emailButton`, `formNotification` |
-| `server/emails/types.ts`                                     | `ComposedMail` — the shape queued in `mail_outbox`                                                          |
-| `server/features/events/mail.ts`                             | Registration, waitlist, promotion, cancellation                                                             |
-| `server/features/auth/mail.ts`                               | Invite and password reset                                                                                   |
-| `server/features/volunteers/mail.ts`                         | Staff notification for a new application                                                                    |
-| `server/api/{contact,donate,partnership,newsletter}.post.ts` | Staff notifications built with `formNotification`                                                           |
+With no `NUXT_RESEND_API_KEY` the message is printed to the server console, so local testing works
+without an account.
 
-The shell is a 600px table card with the charcoal header, the clay rule, a real-text wordmark (so
-it reads even when images are blocked), the reference code block, and a footer carrying the legal
-name, RGD number, address, and reply address. Every interpolated value goes through `escapeHtml`;
-`tests/email.test.ts` covers escaping, the reference code, the action link, and the footer.
+| File                             | Covers                                                              |
+| -------------------------------- | ------------------------------------------------------------------- |
+| `server/emails/templates/*.html` | One branded file per kind, ready to paste into Resend               |
+| `server/emails/catalog.ts`       | Kind → file/env map, renderer, escaping, subject and length helpers |
+| `server/emails/notifications.ts` | Variable builders for the four staff notifications                  |
+| `server/emails/types.ts`         | `ComposedMail`, `TemplateVariables` — what `mail_outbox` stores     |
+| `server/features/*/mail.ts`      | Subject lines, plain-text bodies, and variables per workflow        |
+| `server/emails/layout.ts`        | _Removed_ — there is no second copy of the markup in TypeScript     |
+
+The shell is a 600px table card with a white header carrying the official lockup, the clay rule, the
+reference code block, and a footer with the legal name, RGD number, address, and reply address.
+`tests/email.test.ts` checks that every kind has a file, that each file carries the brand, that the
+app supplies every placeholder the file uses, and that rendering escapes interpolated values.
 
 **Preview them in development.** `/api/email-preview` lists every kind;
-`/api/email-preview?kind=confirmation` renders one with sample data. Kinds: `confirmation`,
-`waitlist`, `promotion`, `cancellation`, `invite`, `reset`, `application`, `contact`, `donation`,
-`partnership`, `newsletter`. The route returns `404` outside development.
+`/api/email-preview?kind=confirmation` renders one with sample data. It returns `404` outside
+development.
 
 **Event mail is queued first.** The message row is written inside the booking transaction, so a mail
-outage can never lose a booking. `mail_outbox.html` holds the rendered body; the worker sends it
-immediately and retries up to five times. Rows queued before the HTML column existed still send as
-text only.
+outage can never lose a booking. `mail_outbox.variables` holds the values; the worker renders the
+template (or sends the Resend template) immediately and retries up to five times. Rows queued without
+variables send as plain text.
 
-**Using Resend-hosted templates (optional).** Any recipient-facing mail can be sent through a
-published Resend template instead of the HTML rendered here. Set that kind's environment variable
-to the template **id or alias**; leave it blank to keep the built-in HTML. Sending still supplies
-`from`, `to`, `subject`, and `Reply-To` from the app, so routing and subject lines stay reviewable in
-the repository and a missing template never changes who receives the message.
+**Using Resend-hosted templates.** Create the template in Resend, paste the matching file from
+`server/emails/templates`, publish it, then set the kind's environment variable to the template **id
+or alias**. Leave it blank to keep rendering the file in the app. Sending still supplies `from`,
+`to`, `subject`, and `Reply-To`, so routing and subject lines stay in the repository.
 
 | Kind                    | Environment variable                    | Variables                                                                                                                                                  |
 | ----------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                 |
 | `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                       |
 | `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                       |
-| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | same as registration                                                                                                                                       |
-| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
+| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                              |
+| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                  |
 | `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
 | `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
+| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
+| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
+| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`                                                                                                                                         |
 
 Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
-**published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies exactly
-the variables in this table, so a drift shows up in CI rather than in a customer's inbox. Aliases
+**published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
+placeholder its file uses, so drift shows up in CI rather than in a customer's inbox. Aliases
 (`clm-event-registration`) are worth using over raw ids: staging and production can share one value.
-
-Start with one kind and watch `mail_outbox.last_error` for a day before moving the rest. The four
-staff notifications (contact, giving, partnership, newsletter) stay in code — they change whenever a
-form field changes, and nobody edits their wording from a dashboard. Rows queued before a kind was
-switched keep their stored HTML and are sent as-is.
 
 To seed a dashboard template, open the matching `/api/email-preview?kind=…` output, paste the markup,
 and replace the sample values with `{{{ VARIABLE }}}` placeholders from the table above.
+
+**Which path is used?** A kind uses Resend only when its env var is non-empty **and** the composer
+supplies variables. At boot the server prints one line, e.g.
+
+```
+[mail] 7/11 kinds use a Resend template: event-registration → clm-event-registration, …
+```
+
+Every send then logs the path it took:
+
+```
+[mail] event-registration delivered via Resend template "clm-event-registration"
+[mail] newsletter delivered via server/emails/templates/newsletter.html
+```
+
+A configured alias that is wrong, unpublished, or missing a variable makes Resend reject the send —
+the row stays in `mail_outbox` and `last_error` names the cause. It deliberately does **not** fall
+back to the local file, so a misconfiguration is visible rather than silently sending different copy.
 
 ### Donations
 
@@ -681,7 +699,7 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
 - `npm run check` — passes (format, lint, type-aware checks across 178 files)
-- `npm test` — 64 tests passing (content files, event availability and references, permissions, email rendering, and Resend payload shape)
+- `npm test` — 60 tests passing (content files, event availability and references, permissions, template contract, email rendering, and Resend payload shape)
 - `npm run build` — passes, including Nuxt Content database generation with `node:sqlite`
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
 - Nuxt Content verified end to end: 6 project pages, 6 Markdown articles, 6 event YAML files, and 9
@@ -699,9 +717,10 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
   the waitlist inside the same transaction and emails the promoted registrant, CSV export and
   check-in work, and staff-only endpoints return `401` without a session
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
-- Branded mail verified end to end: a registration queues an 8.5 KB HTML body in `mail_outbox`, the
-  worker sends it, the development log reports the HTML part, and `/api/email-preview` returns `200`
-  in development and `404` in the production build
+- Branded mail verified end to end: a registration stores its variables in `mail_outbox`, the worker
+  renders the template file (8.2 KB) and sends it, cancellation queues and sends the cancellation
+  template, the Resend-template path is selected when its env var is set, and `/api/email-preview`
+  returns `200` in development and `404` in the production build
 - Nuxt Studio verified: client plugin registers in dev, `/_studio` in a production build returns
   `404 No authentication provider found` without credentials, and with credentials set it returns
   `302 → /__nuxt_studio/auth/github`, which in turn redirects to GitHub with

@@ -1,4 +1,5 @@
-import { formNotification, sanitizeSubject } from '../emails/layout'
+import { sanitizeSubject } from '../emails/catalog'
+import { donationVariables } from '../emails/notifications'
 import { MAILBOXES } from '../utils/mailboxes'
 
 export default defineEventHandler(async (event) => {
@@ -36,18 +37,12 @@ export default defineEventHandler(async (event) => {
       '',
       'Send transfer details and confirm the giving schedule.',
     ].join('\n'),
-    html: formNotification({
-      heading: 'New giving interest',
-      intro: 'Someone registered a giving interest on the website.',
-      rows: [
-        ['Name', data.name],
-        ['Email', data.email],
-        ['Amount', amount],
-        ['Frequency', data.frequency === 'monthly' ? 'Monthly' : 'One-time'],
-      ],
-      message: data.note,
-      messageLabel: 'Note',
-      footnote: 'Reply to this email to send transfer details and confirm the giving schedule.',
+    variables: donationVariables({
+      name: data.name,
+      email: data.email,
+      amount,
+      frequency: data.frequency,
+      note: data.note,
     }),
   })
 

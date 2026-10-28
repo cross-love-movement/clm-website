@@ -46,6 +46,9 @@ export default defineConfig({
   fmt: {
     singleQuote: true,
     semi: false,
+    // These are pasted into Resend verbatim; formatting them into one attribute
+    // per line makes that unreadable.
+    ignorePatterns: ['server/emails/templates/**'],
   },
   lint: {
     jsPlugins: [{ name: 'vite-plus', specifier: 'vite-plus/oxlint-plugin' }],

@@ -1,4 +1,5 @@
-import { formNotification, sanitizeSubject } from '../emails/layout'
+import { sanitizeSubject } from '../emails/catalog'
+import { partnershipVariables } from '../emails/notifications'
 import { MAILBOXES } from '../utils/mailboxes'
 
 export default defineEventHandler(async (event) => {
@@ -29,18 +30,13 @@ export default defineEventHandler(async (event) => {
       'Message:',
       data.message,
     ].join('\n'),
-    html: formNotification({
-      heading: 'New partnership enquiry',
-      intro: `${data.organisation} would like to explore a partnership.`,
-      rows: [
-        ['Organisation', data.organisation],
-        ['Contact', data.contactName],
-        ['Email', data.email],
-        ['Phone', data.phone || '—'],
-        ['Type', data.type],
-      ],
+    variables: partnershipVariables({
+      organisation: data.organisation,
+      contactName: data.contactName,
+      email: data.email,
+      phone: data.phone,
+      type: data.type,
       message: data.message,
-      messageLabel: 'What they have in mind',
     }),
   })
 

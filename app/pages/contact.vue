@@ -20,7 +20,7 @@ const details = [
     value: site.phone,
     href: `tel:${site.phoneHref}`,
     icon: 'phone' as const,
-    note: `Mobile ${site.mobile} · Mon–Fri, 9:00–17:00 GMT.`,
+    note: 'Mon–Fri, 9:00–17:00 GMT.',
   },
   {
     label: 'Office',

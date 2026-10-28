@@ -1,3 +1,7 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { describe, expect, it } from 'vite-plus/test'
 
 import type {
@@ -6,17 +10,38 @@ import type {
   VolunteerApplicationRow,
   VolunteerRow,
 } from '../server/database/schema'
-import { escapeHtml, formNotification, sanitizeSubject } from '../server/emails/layout'
-import { RESEND_TEMPLATES, resendTemplateId, take } from '../server/emails/resend'
+import {
+  EMAIL_TEMPLATES,
+  escapeHtml,
+  mailRoutes,
+  renderEmail,
+  sanitizeSubject,
+  take,
+  templateIdFor,
+  templateVariables,
+} from '../server/emails/catalog'
+import {
+  contactVariables,
+  donationVariables,
+  newsletterVariables,
+  partnershipVariables,
+} from '../server/emails/notifications'
+import type { TemplateVariables } from '../server/emails/types'
+import { inviteMail, passwordResetMail } from '../server/features/auth/mail'
 import {
   cancellationMail,
   confirmationMail,
   promotionMail,
   waitlistMail,
 } from '../server/features/events/mail'
-import { inviteMail, passwordResetMail } from '../server/features/auth/mail'
 import { applicationNotification } from '../server/features/volunteers/mail'
 import { buildMailPayload } from '../server/utils/mailer'
+
+const templatesDir = fileURLToPath(new URL('../server/emails/templates/', import.meta.url))
+
+function templateFile(kind: string) {
+  return readFileSync(join(templatesDir, EMAIL_TEMPLATES[kind]!.file), 'utf8')
+}
 
 const event: EventRow = {
   id: '00000000-0000-4000-8000-000000000001',
@@ -47,7 +72,7 @@ const registration: RegistrationRow = {
   eventId: event.id,
   name: 'Ama Mensah',
   email: 'ama@example.com',
-  phone: '+233551757842',
+  phone: '+233530502774',
   attendees: 2,
   notes: '',
   status: 'confirmed',
@@ -92,152 +117,166 @@ const application: VolunteerApplicationRow = {
   createdAt: new Date('2026-01-01T00:00:00Z'),
 }
 
-describe('email escaping', () => {
-  it('neutralises markup in interpolated values', () => {
+const link = 'https://www.crosslovemovement.org/reset-password?token=abc'
+
+/** The variables each kind actually sends. Must cover the template's placeholders. */
+const samples: Record<string, TemplateVariables> = {
+  'event-registration': confirmationMail(event, registration).variables,
+  'event-waitlist': waitlistMail(event, registration).variables,
+  'event-promoted': promotionMail(event, registration).variables,
+  'event-cancelled': cancellationMail(event, registration).variables,
+  'auth-invite': inviteMail({ name: 'Ama', role: 'volunteer', link }).variables,
+  'auth-reset': passwordResetMail({ name: 'Ama', link }).variables,
+  'volunteer-application': applicationNotification({
+    toEmail: 'apply@crosslovemovement.org',
+    volunteer,
+    application,
+    programmeTitle: 'Cross Sessions',
+    opportunityTitle: 'Sound engineer',
+    adminUrl: 'https://www.crosslovemovement.org/admin/volunteers/1',
+  }).variables,
+  contact: contactVariables({
+    name: 'Ama',
+    email: 'ama@example.com',
+    topic: 'general',
+    message: 'Hello',
+  }),
+  donation: donationVariables({
+    name: 'Ama',
+    email: 'ama@example.com',
+    amount: 'GH₵100',
+    frequency: 'monthly',
+  }),
+  partnership: partnershipVariables({
+    organisation: 'Acme',
+    contactName: 'Kwesi',
+    email: 'kwesi@example.com',
+    type: 'Funding',
+    message: 'Hello',
+  }),
+  newsletter: newsletterVariables('ama@example.com'),
+}
+
+describe('email templates', () => {
+  it('has a file for every kind and no orphan files', () => {
+    const files = readdirSync(templatesDir).filter((file) => file.endsWith('.html'))
+
+    expect(files.sort()).toEqual(
+      Object.values(EMAIL_TEMPLATES)
+        .map((template) => template.file)
+        .sort(),
+    )
+  })
+
+  it('carries the brand in every template', () => {
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      const html = templateFile(kind)
+
+      expect(html.startsWith('<!doctype html>')).toBe(true)
+      expect(html).toContain('Cross-Love Movement')
+      expect(html).toContain('Limited By Guarantee')
+      expect(html).toContain('RGD CG041650523')
+      expect(html).toContain('crosslovemovement.org')
+      expect(templateVariables(html).length).toBeGreaterThan(0)
+    }
+  })
+
+  it('supplies every variable the template uses', () => {
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      const used = templateVariables(templateFile(kind))
+      const supplied = Object.keys(samples[kind] ?? {})
+      const missing = used.filter((name) => !supplied.includes(name))
+
+      expect(missing, `${kind} is missing ${missing.join(', ')}`).toEqual([])
+    }
+  })
+
+  it('renders with no placeholders left behind', () => {
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      const html = renderEmail(templateFile(kind), samples[kind]!)
+
+      expect(html).not.toContain('{{{')
+      expect(html).toContain('Cross-Love Movement')
+    }
+  })
+
+  it('uses the real booking values', () => {
+    const html = renderEmail(templateFile('event-registration'), samples['event-registration']!)
+
+    expect(html).toContain('PEO-7K4M2Q')
+    expect(html).toContain('People Like You')
+    expect(html).toContain('2 people')
+    expect(html).toContain('/events?event=people-like-you-2027')
+  })
+
+  it('avoids the variable names Resend reserves', () => {
+    const reserved = ['FIRST_NAME', 'LAST_NAME', 'EMAIL', 'UNSUBSCRIBE_URL', 'contact', 'this']
+
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      for (const name of templateVariables(templateFile(kind))) {
+        expect(reserved, `${kind} uses ${name}`).not.toContain(name)
+      }
+    }
+  })
+})
+
+describe('email rendering', () => {
+  it('escapes interpolated values', () => {
     expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;')
     expect(escapeHtml(`O'Brien & "co"`)).toBe('O&#39;Brien &amp; &quot;co&quot;')
+
+    const html = renderEmail(templateFile('contact'), {
+      ...samples.contact!,
+      NAME: '<img src=x onerror=alert(1)>',
+    })
+
+    expect(html).not.toContain('<img src=x')
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
   })
 
   it('flattens header injection attempts', () => {
     expect(sanitizeSubject('Hello\nBcc: victim@example.com')).toBe('Hello Bcc: victim@example.com')
   })
 
-  it('escapes the notification message but keeps line breaks', () => {
-    const html = formNotification({
-      heading: 'New message',
-      message: '<img src=x onerror=alert(1)>\nSecond line',
-    })
-
-    expect(html).not.toContain('<img src=x')
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
-  })
-})
-
-describe('branded mail', () => {
-  const mails = [
-    confirmationMail(event, registration),
-    waitlistMail(event, registration),
-    promotionMail(event, registration),
-    cancellationMail(event, registration),
-  ]
-
-  it('renders a full HTML document with the brand footer', () => {
-    for (const mail of mails) {
-      expect(mail.html.startsWith('<!doctype html>')).toBe(true)
-      expect(mail.html).toContain('Limited By Guarantee')
-      expect(mail.html).toContain('RGD CG041650523')
-      expect(mail.html).toContain('role="presentation"')
-    }
-  })
-
-  it('renders the official lockup in the header', () => {
-    for (const mail of mails) {
-      expect(mail.html).toContain('alt="Cross-Love Movement"')
-      expect(mail.html).toContain('width="48" height="48"')
-      expect(mail.html).toContain('>Limited By Guarantee</p>')
-      expect(mail.html).toContain('text-transform:uppercase;color:#b81828')
-    }
-  })
-
-  it('keeps the plain-text alternative complete', () => {
-    expect(mails[0]!.body).toContain('PEO-7K4M2Q')
-    expect(mails[0]!.body).toContain('Ama Mensah')
-    expect(mails[2]!.body).toContain('a place has opened')
-  })
-
-  it('shows the reference code in every booking mail', () => {
-    for (const mail of mails) {
-      expect(mail.html).toContain('PEO-7K4M2Q')
-    }
-  })
-
-  it('escapes a registrant name in HTML but not in text', () => {
-    const risky = { ...registration, name: '<b>Ama</b>' }
-    const mail = confirmationMail(event, risky)
-
-    expect(mail.html).toContain('&lt;b&gt;Ama&lt;/b&gt;')
-    expect(mail.html).not.toContain('<b>Ama</b>')
-    expect(mail.body).toContain('<b>Ama</b>')
-  })
-
-  it('links the action to the public calendar', () => {
-    expect(mails[0]!.html).toContain('/events?event=people-like-you-2027')
-  })
-
-  it('uses the reset link in the password reset mail', () => {
-    const mail = passwordResetMail({
-      name: 'Ama',
-      link: 'https://www.crosslovemovement.org/reset-password?token=abc',
-    })
-
-    expect(mail.subject).toContain('Reset your')
-    expect(mail.html).toContain('reset-password?token=abc')
-    expect(mail.html).toContain('expires in 1 hour')
-    expect(mail.body).toContain('reset-password?token=abc')
+  it('keeps long form answers inside the variable limit', () => {
+    expect(take('x'.repeat(5_000)).length).toBeLessThanOrEqual(2_000)
   })
 })
 
 describe('Resend templates', () => {
-  const inviteLink = 'https://www.crosslovemovement.org/reset-password?token=abc'
-
-  const mailsByKind: Record<string, { variables?: Record<string, string | number> }> = {
-    'event-registration': confirmationMail(event, registration),
-    'event-waitlist': waitlistMail(event, registration),
-    'event-promoted': promotionMail(event, registration),
-    'event-cancelled': cancellationMail(event, registration),
-    'auth-invite': inviteMail({ name: 'Ama', role: 'volunteer', link: inviteLink }),
-    'auth-reset': passwordResetMail({ name: 'Ama', link: inviteLink }),
-    'volunteer-application': applicationNotification({
-      toEmail: 'apply@crosslovemovement.org',
-      volunteer,
-      application,
-      programmeTitle: 'Cross Sessions',
-      opportunityTitle: 'Sound engineer',
-      adminUrl: 'https://www.crosslovemovement.org/admin/volunteers/1',
-    }),
-  }
-
-  it('supplies exactly the variables each template declares', () => {
-    for (const [kind, template] of Object.entries(RESEND_TEMPLATES)) {
-      const mail = mailsByKind[kind]
-
-      expect(mail, `no sample mail for ${kind}`).toBeTruthy()
-      expect(Object.keys(mail!.variables ?? {}).sort()).toEqual([...template.variables].sort())
-    }
-  })
-
-  it('sends the real booking values', () => {
-    const variables = mailsByKind['event-registration']!.variables!
-
-    expect(variables.NAME).toBe('Ama Mensah')
-    expect(variables.REFERENCE).toBe('PEO-7K4M2Q')
-    expect(variables.EVENT_TITLE).toBe('People Like You')
-    expect(variables.PLACES).toBe('2 people')
-    expect(variables.EVENT_URL).toContain('/events?event=people-like-you-2027')
-  })
-
   it('only selects a template when its env var is set', () => {
     const previous = process.env.RESEND_TEMPLATE_AUTH_RESET
 
     try {
       delete process.env.RESEND_TEMPLATE_AUTH_RESET
-      expect(resendTemplateId('auth-reset')).toBeUndefined()
+      expect(templateIdFor('auth-reset')).toBeUndefined()
 
       process.env.RESEND_TEMPLATE_AUTH_RESET = ' clm-auth-reset '
-      expect(resendTemplateId('auth-reset')).toBe('clm-auth-reset')
+      expect(templateIdFor('auth-reset')).toBe('clm-auth-reset')
 
-      expect(resendTemplateId('contact')).toBeUndefined()
-      expect(resendTemplateId(undefined)).toBeUndefined()
+      expect(templateIdFor('unknown')).toBeUndefined()
+      expect(templateIdFor(undefined)).toBeUndefined()
     } finally {
       if (previous === undefined) delete process.env.RESEND_TEMPLATE_AUTH_RESET
       else process.env.RESEND_TEMPLATE_AUTH_RESET = previous
     }
   })
 
-  it('keeps long form answers inside the variable limit', () => {
-    const long = 'x'.repeat(5_000)
+  it('reports where each kind will be rendered from', () => {
+    const previous = process.env.RESEND_TEMPLATE_CONTACT
 
-    expect(take(long).length).toBeLessThanOrEqual(2_000)
+    try {
+      process.env.RESEND_TEMPLATE_CONTACT = 'clm-contact'
+
+      const routes = mailRoutes()
+
+      expect(routes.find((route) => route.kind === 'contact')?.alias).toBe('clm-contact')
+      expect(routes.find((route) => route.kind === 'newsletter')?.alias).toBeNull()
+      expect(routes).toHaveLength(Object.keys(EMAIL_TEMPLATES).length)
+    } finally {
+      if (previous === undefined) delete process.env.RESEND_TEMPLATE_CONTACT
+      else process.env.RESEND_TEMPLATE_CONTACT = previous
+    }
   })
 })
 

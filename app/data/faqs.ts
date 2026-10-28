@@ -88,7 +88,7 @@ export const contactFaqs: FaqItem[] = [
   {
     question: 'Where are you based?',
     answer:
-      'Our central office is at 28 Waterbird Lane, Sixth Avenue Street, Tema Community 11, Accra, Ghana. Programmes also run in the Upper East Region.',
+      'Our central office is at 64 Thirdes, GT-197-1816, Tema Community 12, Ghana. Programmes also run in the Upper East Region.',
   },
   {
     question: 'Can I visit a project?',

@@ -99,6 +99,9 @@ export default defineNuxtConfig({
   nitro: {
     compressPublicAssets: true,
 
+    // Branded mail templates, copied into the build and read at send time.
+    serverAssets: [{ baseName: 'emails', dir: './server/emails/templates' }],
+
     // Baseline hardening. A full Content-Security-Policy is deliberately not
     // set here: Studio, Google Fonts, and Vue's inline styles would all need
     // auditing first.
