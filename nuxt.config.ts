@@ -8,7 +8,7 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  modules: ['@nuxt/content', 'nuxt-studio'],
+  modules: ['@nuxt/content', 'nuxt-studio', 'nuxt-auth-utils'],
 
   content: {
     // Node 24 ships node:sqlite, so no native SQLite dependency is needed.

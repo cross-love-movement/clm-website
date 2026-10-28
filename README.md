@@ -81,15 +81,20 @@ clm-website/
 │  │  ├─ layout/               # SiteHeader, SiteFooter
 │  │  ├─ ui/                   # BaseButton, PageHero, SectionHeading, ProjectCard, PostCard,
 │  │  │                        # TestimonialsSection, PartnersCarousel, StatGrid, FaqList, fields…
-│  │  ├─ home/                 # EventCarousel, EventsSection, NewsSection
-│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter,
-│  │                           # EventRegistration
+│  │  ├─ home/                 # EventsSection, NewsSection
+│  │  └─ forms/                # Contact, Volunteer, Partnership, Donate, Newsletter
+│  ├─ features/
+│  │  └─ events/               # The event app: components + composables (see below)
+│  │     ├─ components/        # EventCarousel, EventRegistrationForm
+│  │     └─ composables/       # useEventAvailability
 │  ├─ composables/             # useSite, useProjects, useProject, useEvents, useNews,
 │  │                           # usePortfolio, useTestimonials, useForm, useSeo
 │  ├─ data/                    # Code-managed content: site, about, involve, faqs, testimonials,
-│  │                           # partners (plus category labels for content collections)
+│  │                           # partners, home slides (plus category labels)
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
-│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio
+│  ├─ middleware/              # auth (any session), admin (staff roles only)
+│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio,
+│  │                           # /login, /forgot-password, /reset-password, /portal, /admin
 │  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts
 │  ├─ app.vue
 │  └─ error.vue                # 404 / error screen
@@ -99,14 +104,25 @@ clm-website/
 │  ├─ events/*.yml             # Event records (one file per event)
 │  └─ portfolio/*.yml          # Portfolio pieces (one file per piece)
 ├─ server/
-│  ├─ api/                     # contact, volunteer, partnership, newsletter, donate,
-│  │                           # events/register
+│  ├─ api/                     # public + auth + admin routes
+│  │  ├─ auth/                 # login, logout, session, reset-request, reset-confirm
+│  │  ├─ admin/users/          # list, invite, role/status changes
+│  │  └─ events/               # availability, register, registrations, health
+│  ├─ database/                # Postgres: client, schema, generated SQL migrations
+│  ├─ features/
+│  │  ├─ auth/                 # password hashing, tokens, service, guards, mail
+│  │  └─ events/               # Registrations app: db, repository, admin guard
+│  ├─ plugins/database.ts      # Boot: apply migrations, seed the first superadmin
 │  └─ utils/                   # schemas (Zod), validation, mailer, rate-limit
-├─ shared/types/content.ts     # Types used by both app and server
-├─ tests/                      # Vitest: content integrity + server schema tests
+├─ shared/
+│  ├─ types/content.ts         # Types used by both app and server
+│  └─ utils/events.ts          # Availability maths shared by both sides
+├─ docs/architecture.md        # Content vs operations planes, roles, portals, phases
+├─ tests/                      # Vitest: content integrity, schemas, registrations
 ├─ public/                     # logo mark, favicon, abstract SVG artwork
 ├─ content.config.ts           # Nuxt Content collections, schemas, Studio form metadata
 ├─ nuxt.config.ts              # Nuxt, Tailwind, Nuxt Content, Nuxt Studio (`studio.route`)
+├─ drizzle.config.ts           # Drizzle schema + migration output paths
 ├─ Dockerfile                  # Multi-stage build for Coolify / any container host
 ├─ vite.config.ts              # Vite+ format/lint/test config (not Nuxt's build config)
 └─ .env.example
@@ -179,6 +195,53 @@ It auto-advances every 7 seconds, pauses on hover, focus, or the pause button, s
 and dot navigation, and stops auto-advancing entirely under `prefers-reduced-motion`. The current
 images are the abstract SVG artwork — replace them with photographs when they arrive; the caption is
 written to stand on its own if an image fails to load.
+
+### Event app (registrations)
+
+Events are a small application inside the site, kept together rather than spread across the generic
+folders:
+
+```
+app/features/events/     components + composables (carousel, form, live availability)
+server/features/events/  db.ts (connection + schema), repository.ts (SQL), admin.ts (token guard)
+server/api/events/       availability.get, register.post, registrations.get, [id].delete
+shared/utils/events.ts   availability maths used by both sides
+```
+
+**Where capacity comes from.** `content/events/*.yml` holds `capacity` (editorial) and
+`registeredOffline` — places taken by phone, walk-in, or a partner. Website bookings live in a
+separate SQLite file and are counted at request time:
+
+```
+remaining = capacity − registeredOffline − SUM(confirmed website attendees)
+```
+
+Both an event's offline figure and every website booking are combined in `GET /api/events/availability`.
+The events page and the form read from that endpoint, so “places left” updates after every
+registration without a rebuild.
+
+**No overbooking.** `reserveSeats()` opens a `BEGIN IMMEDIATE` transaction, re-reads the confirmed
+count, and only inserts if the requested places still fit. Two simultaneous group bookings cannot
+both pass the check. A rejection returns `409` with the exact number left, which the form shows
+against the number input.
+
+**Storage.** `NUXT_EVENTS_DB_PATH` decides where the SQLite file lives (default `.data/events.sqlite`).
+In production it **must** point at a persistent volume, otherwise a redeploy recreates the container
+and takes the registrations with it. Keep one replica: SQLite on a shared volume across replicas is
+not safe.
+
+**Admin access.** `GET /api/events/registrations` lists bookings; add `?event=slug` to narrow or
+`?format=csv` for a spreadsheet. `DELETE /api/events/registrations/:id` cancels a booking and frees
+its seats. All three require `NUXT_REGISTRATIONS_TOKEN` as `Authorization: Bearer <token>` (or
+`x-admin-token`); with the variable unset the endpoints return `503`.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://www.clmnative.com/api/events/registrations?format=csv" -o registrations.csv
+```
+
+**Not built yet:** a waitlist, per-email duplicate prevention, and any admin UI. Registrations store
+name, email, and phone, so agree a retention period before collecting them in earnest.
 
 To publish a project, article, event, or portfolio piece, edit a file under `content/`, commit it,
 and the site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS
@@ -355,6 +418,68 @@ international cards) that creates a transaction and returns a checkout URL, then
 
 ---
 
+## Database
+
+The operations side of the app runs on **Postgres** (Drizzle ORM). The content site is unaffected: Nuxt Content still builds its own read-only SQLite at deploy time.
+
+```bash
+npm run db:generate   # after changing server/database/schema
+npm run db:migrate    # apply pending migrations (needs DATABASE_URL)
+```
+
+Migrations are generated into `server/database/migrations` and committed. The server also applies them at boot (`DB_MIGRATE_ON_START`, default on), which is safe with the single replica this deployment runs.
+
+The first superadmin is seeded from `SEED_SUPERADMIN_EMAIL` / `SEED_SUPERADMIN_NAME`. Seeding is idempotent and never overwrites an existing account.
+
+**Local development** against a throwaway database:
+
+```bash
+docker run -d --name clm-pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clm -p 5433:5432 postgres:18-alpine
+
+export DATABASE_URL=postgres://postgres:postgres@localhost:5433/clm
+export SEED_SUPERADMIN_EMAIL=you@example.com
+npm run dev
+```
+
+`GET /api/health` reports `database: up`, `not-configured`, or `503`. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+
+See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
+
+---
+
+## Accounts and portals
+
+Accounts are **invite-only** — there is no public signup. A superadmin or admin invites an address; the invitee sets a password from the emailed link (7-day expiry). Password resets use the same mechanism (1-hour expiry).
+
+| Route                                 | Who                                       |
+| ------------------------------------- | ----------------------------------------- |
+| `/login`                              | Everyone                                  |
+| `/forgot-password`, `/reset-password` | Everyone with a link                      |
+| `/portal`                             | Any signed-in account                     |
+| `/admin`                              | `viewer`, `editor`, `admin`, `superadmin` |
+
+Roles: `superadmin` (everything, plus user management), `admin` (records + inviting members), `editor`, `viewer`, `member`. Guards run in route middleware (`auth`, `admin`) and again in the API — a member hitting `/api/admin/*` gets `403`.
+
+**First sign-in.** The seeded superadmin has no password: open `/forgot-password`, enter the seeded email, and follow the link from the server log (or the inbox once Resend is configured).
+
+**Sessions** are sealed cookies signed by `NUXT_SESSION_PASSWORD` — set it to 32+ random characters in production (`openssl rand -base64 32`). Without it, sign-in logs an error and sessions will not persist.
+
+| Endpoint                       | Purpose                                                |
+| ------------------------------ | ------------------------------------------------------ |
+| `POST /api/auth/login`         | Email + password → session, returns the landing portal |
+| `POST /api/auth/logout`        | Clear the session                                      |
+| `GET /api/auth/session`        | Current user                                           |
+| `POST /api/auth/reset-request` | Always generic; emails a link if the account exists    |
+| `POST /api/auth/reset-confirm` | Accept invite or reset token, set password, sign in    |
+| `GET /api/admin/users`         | List accounts (admin+)                                 |
+| `POST /api/admin/users/invite` | Invite a member (admin) or staff (superadmin)          |
+| `PATCH /api/admin/users/:id`   | Change role or suspend (superadmin)                    |
+
+Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-256 hashes and are single-use. Login and reset responses are deliberately generic so the endpoints cannot be used to discover who has an account.
+
+---
+
 ## Environment variables
 
 | Variable                                | Default                                    | Purpose                                |
@@ -366,6 +491,16 @@ international cards) that creates a transaction and returns a checkout URL, then
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_          | GitHub OAuth app for Studio editors    |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                  | GitHub OAuth secret                    |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_    | Comma-separated editor email allowlist |
+| `NUXT_EVENTS_DB_PATH`                   | `.data/events.sqlite`                      | SQLite file for event registrations    |
+| `NUXT_REGISTRATIONS_TOKEN`              | _(empty — export endpoints disabled)_      | Bearer token for the registrant list   |
+| `DATABASE_URL`                          | _(empty — database features off)_          | Postgres connection string             |
+| `DATABASE_SSL`                          | `false`                                    | Enable TLS to the database             |
+| `DATABASE_POOL_SIZE`                    | `10`                                       | Postgres pool size                     |
+| `DB_MIGRATE_ON_START`                   | `true`                                     | Apply migrations at boot               |
+| `MIGRATIONS_DIR`                        | `server/database/migrations`               | `/app/migrations` in the image         |
+| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                     | First superadmin's email               |
+| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                              | First superadmin's name                |
+| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                 | Signs the session cookie (32+ chars)   |
 
 ---
 
@@ -386,8 +521,10 @@ international cards) that creates a transaction and returns a checkout URL, then
 - Home page verified to include the partner strip, repeated marquee groups, and pause control
 - API routes verified with valid payloads (`200`), invalid payloads (`400` with field errors),
   honeypot submissions (silent `200`), and rate limiting (`429`)
-- Event registration verified against the content collection: valid event (`200`), unknown slug
-  (`404`), and invalid attendee count (`400`), with the confirmation email in the development log
+- Event registration verified end to end against SQLite: a booking returns the new availability,
+  `GET /api/events/availability` reflects it, cancelling returns the seats, the list and CSV export
+  return `401` without the token and data with it, and over-capacity bookings are rejected (`409`)
+  by a `BEGIN IMMEDIATE` transaction
 - Contact and donation submissions confirmed in the development mail log (GH₵ formatting included)
 - Nuxt Studio verified: client plugin registers in dev, `/_studio` in a production build returns
   `404 No authentication provider found` without credentials, and with credentials set it returns
@@ -410,8 +547,9 @@ international cards) that creates a transaction and returns a checkout URL, then
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
 5. **Payments** — connect a gateway if online giving is required (see above).
-6. **Event registrations** — replace the dummy calendar and connect registration to a real store
-   (database, Google Sheet, or event platform) so capacities and headcounts stay accurate.
+6. **Event storage** — mount a persistent volume, set `NUXT_EVENTS_DB_PATH` to a file on it, set
+   `NUXT_REGISTRATIONS_TOKEN`, keep a single replica, and schedule a nightly copy of the SQLite file.
+   Agree a retention period for registrant names, emails, and phone numbers.
 7. **News** — replace the illustrative posts, agree an editorial cadence, and add an RSS feed
    (`/rss.xml`) if people want to subscribe outside email.
 8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.

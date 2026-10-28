@@ -2,6 +2,8 @@ interface MailInput {
   subject: string
   text: string
   replyTo?: string
+  /** Recipient. Defaults to the organisation inbox (form submissions). */
+  to?: string
   /** Used only in development logs. */
   tag?: string
 }
@@ -12,8 +14,9 @@ interface MailInput {
  * Without `NUXT_RESEND_API_KEY` the message is logged to the server console,
  * so local development and form testing work without an account.
  */
-export async function sendMail({ subject, text, replyTo, tag }: MailInput) {
+export async function sendMail({ subject, text, replyTo, to, tag }: MailInput) {
   const config = useRuntimeConfig()
+  const recipient = to ?? config.mailTo
 
   if (!config.resendApiKey) {
     console.info(
@@ -22,7 +25,7 @@ export async function sendMail({ subject, text, replyTo, tag }: MailInput) {
         '──────────── [mail:dev] ────────────',
         `Type:     ${tag ?? 'message'}`,
         `From:     ${config.mailFrom}`,
-        `To:       ${config.mailTo}`,
+        `To:       ${recipient}`,
         `Reply-To: ${replyTo ?? '—'}`,
         `Subject:  ${subject}`,
         '',
@@ -44,7 +47,7 @@ export async function sendMail({ subject, text, replyTo, tag }: MailInput) {
       },
       body: {
         from: config.mailFrom,
-        to: [config.mailTo],
+        to: [recipient],
         subject,
         text,
         ...(replyTo ? { reply_to: replyTo } : {}),

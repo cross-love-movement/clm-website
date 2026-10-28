@@ -1,0 +1,1 @@
+ALTER TYPE "public"."auth_token_kind" ADD VALUE 'invite';

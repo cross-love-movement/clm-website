@@ -83,7 +83,12 @@ const year = new Date().getFullYear()
         class="mt-14 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-sand-200/55 sm:flex-row sm:items-center sm:justify-between"
       >
         <p>© {{ year }} Cross-Love Movement. Registered company limited by guarantee in Ghana.</p>
-        <p>Registration CG041650523 · TIN C0062926586</p>
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>Registration CG041650523 · TIN C0062926586</span>
+          <NuxtLink to="/login" class="font-semibold text-sand-100/80 hover:text-sand-50">
+            Sign in
+          </NuxtLink>
+        </p>
       </div>
     </div>
   </footer>
