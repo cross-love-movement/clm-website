@@ -1,4 +1,4 @@
-import type { DonationOption, IconName, PartnerTier, VolunteerRole } from '#shared/types/content'
+import type { DonationOption, IconName, PartnerTier } from '#shared/types/content'
 
 export const howToHelp: {
   title: string
@@ -32,77 +32,6 @@ export const howToHelp: {
     icon: 'link',
   },
 ]
-
-export const volunteerRoles: VolunteerRole[] = [
-  {
-    title: 'Programme volunteer',
-    commitment: 'Event days · as scheduled',
-    description:
-      'Help set up, welcome guests, manage the stage, and make sure a host church is supported rather than stretched.',
-    requirements: [
-      'Available for event days in Tema or Accra',
-      'Comfortable with practical setup and hospitality',
-      'Attend a short briefing before the event',
-    ],
-  },
-  {
-    title: 'Creative mentor',
-    commitment: '2–4 hours a month',
-    description:
-      'Coach a young creative in music, writing, design, or stagecraft as our empowerment programmes grow.',
-    requirements: [
-      'Practical experience in your craft',
-      'Patience with people who are still finding their voice',
-      'Willing to complete a safeguarding briefing',
-    ],
-  },
-  {
-    title: 'CSL evangelism team',
-    commitment: '1–2 sessions a month',
-    description:
-      'Help design tracts and show up in the social spaces young people already inhabit — pitches, courts, clubhouses, game centres.',
-    requirements: [
-      'Willing to learn the culture of a space before speaking into it',
-      'Comfortable with one-to-one conversation',
-      'Commitment to CLM’s values and safeguarding policy',
-    ],
-  },
-  {
-    title: 'Media & content',
-    commitment: '4–6 hours a month',
-    description:
-      'Photograph sessions, record performances, edit short clips, and help us tell the story without exploiting the people in it.',
-    requirements: [
-      'Photography, video, or editing experience',
-      'Own equipment helpful but not essential',
-      'Commitment to consent and dignity-first storytelling',
-    ],
-  },
-  {
-    title: 'Street outreach volunteer',
-    commitment: 'Project days · as scheduled',
-    description:
-      'Support street feeding days and orphanage visits — preparation, distribution, and respectful presence.',
-    requirements: [
-      'Able to help with preparation and carrying supplies',
-      'Calm, respectful manner with vulnerable people',
-      'Attend a safeguarding briefing',
-    ],
-  },
-  {
-    title: 'Administrative & prayer support',
-    commitment: '3–4 hours a week · remote',
-    description:
-      'Assist with records, scheduling, donor updates, and hold the work in prayer. Both are real contributions.',
-    requirements: [
-      'Comfortable with spreadsheets and email',
-      'Careful with confidential information',
-      'Access to a laptop and reliable internet',
-    ],
-  },
-]
-
-export const volunteerAreas = volunteerRoles.map((role) => role.title)
 
 export const partnerTiers: PartnerTier[] = [
   {

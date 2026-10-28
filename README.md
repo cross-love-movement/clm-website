@@ -297,6 +297,11 @@ The model separates the person, the work, and the placement:
 | `volunteer_applications`  | Every public submission, kept for history                                  |
 | `volunteer_assignments`   | Who is placed in which programme/role                                      |
 
+**Roles are data, not code.** Admins create and close them under `/admin/programmes`; the public
+`/volunteer` page and the application form read the open ones from
+`/api/volunteer/opportunities`. Adding or changing a role does not require a deploy. If no roles
+are open, the page still accepts a general application.
+
 **Flow.** The public `/volunteer` form stores an application, queues a notification to
 `apply@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
 fails, the row is retried by the background worker. Staff do not need to be signed in to learn

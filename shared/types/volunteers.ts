@@ -85,7 +85,10 @@ export interface PublicProgramme {
   summary: string
   location: string
   startsAt: string | null
-  opportunities: Pick<Opportunity, 'id' | 'title' | 'commitment' | 'location'>[]
+  opportunities: Pick<
+    Opportunity,
+    'id' | 'title' | 'commitment' | 'location' | 'description' | 'requirements'
+  >[]
 }
 
 export interface VolunteerApplication {

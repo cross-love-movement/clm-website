@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { PublicProgramme } from '#shared/types/volunteers'
 
-import { volunteerAreas } from '~/data/involve'
-
-const props = defineProps<{ initialArea?: string }>()
+const props = withDefaults(
+  defineProps<{
+    initialProgrammeId?: string
+    initialOpportunityId?: string
+  }>(),
+  { initialProgrammeId: '', initialOpportunityId: '' },
+)
 
 const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
   key: 'public-volunteer-programmes',
@@ -17,7 +21,6 @@ const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useF
     email: '',
     phone: '',
     city: '',
-    area: '',
     availability: '',
     programmeId: 'none',
     opportunityId: 'none',
@@ -27,8 +30,6 @@ const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useF
     company: '',
   },
 )
-
-const roleOptions = volunteerAreas.map((area) => ({ value: area, label: area }))
 
 const programmeOptions = computed(() => [
   { value: 'none', label: 'No preference — place me where I am needed' },
@@ -59,15 +60,20 @@ const opportunityOptions = computed(() => {
 
 watch(
   () => values.programmeId,
-  () => {
-    values.opportunityId = 'none'
+  (programmeId) => {
+    const programme = programmes.value.find((item) => item.id === programmeId)
+
+    if (!programme?.opportunities.some((item) => item.id === values.opportunityId)) {
+      values.opportunityId = 'none'
+    }
   },
 )
 
 watch(
-  () => props.initialArea,
-  (area) => {
-    if (area) values.area = area
+  () => [props.initialProgrammeId, props.initialOpportunityId] as const,
+  ([programmeId, opportunityId]) => {
+    if (programmeId) values.programmeId = programmeId
+    if (opportunityId) values.opportunityId = opportunityId
   },
   { immediate: true },
 )
@@ -148,14 +154,6 @@ const availabilityOptions = [
           name="opportunityId"
           :options="opportunityOptions"
           :error="errors.opportunityId"
-        />
-        <SelectField
-          v-model="values.area"
-          label="Area of interest"
-          name="area"
-          :options="roleOptions"
-          placeholder="Optional — choose an area"
-          :error="errors.area"
         />
         <SelectField
           v-model="values.availability"

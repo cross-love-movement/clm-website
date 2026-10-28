@@ -111,13 +111,6 @@ export interface Project extends ProjectSummary {
   body?: unknown
 }
 
-export interface VolunteerRole {
-  title: string
-  commitment: string
-  description: string
-  requirements: string[]
-}
-
 export interface PartnerTier {
   name: string
   commitment: string

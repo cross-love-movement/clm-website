@@ -245,6 +245,8 @@ export async function listOpenProgrammes(): Promise<PublicProgramme[]> {
       title: opportunity.title,
       commitment: opportunity.commitment,
       location: opportunity.location,
+      description: opportunity.description,
+      requirements: opportunity.requirements,
     })),
   }))
 }
