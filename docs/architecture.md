@@ -228,19 +228,21 @@ One login form at `/login`. After authenticating, staff land in `/admin` and vol
 
 Roles decide which portal an account can open. Permissions decide what staff can do inside it.
 
-| Role         | Portal    | Permissions                                                                                        |
-| ------------ | --------- | -------------------------------------------------------------------------------------------------- |
-| `volunteer`  | `/portal` | None. Account only; invited after a volunteer application.                                         |
-| `admin`      | `/admin`  | Assigned at invite: `canEdit`, `canManageRegistrations`, `canManagePeople`. Defaults to all three. |
-| `superadmin` | `/admin`  | Everything implicitly, plus role changes, permission changes, and suspension.                      |
+| Role         | Portal    | Permissions                                                                                                                                     |
+| ------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `volunteer`  | `/portal` | None. Account only; invited after a volunteer application.                                                                                      |
+| `admin`      | `/admin`  | Assigned at invite: `canEdit`, `canManageRegistrations`, `canManagePeople`, `canManageVolunteers`, `canManageProgrammes`. Defaults to all five. |
+| `superadmin` | `/admin`  | Everything implicitly, plus role changes, permission changes, and suspension.                                                                   |
 
 The permission flags are stored on `users.permissions`:
 
-| Permission               | Grants                                              |
-| ------------------------ | --------------------------------------------------- |
-| `canEdit`                | Create and edit events                              |
-| `canManageRegistrations` | View bookings, check in, cancel, release seats, CSV |
-| `canManagePeople`        | Open the people screen and invite volunteers        |
+| Permission               | Grants                                                  |
+| ------------------------ | ------------------------------------------------------- |
+| `canEdit`                | Create and edit events                                  |
+| `canManageRegistrations` | View bookings, check in, cancel, release seats, CSV     |
+| `canManagePeople`        | Open the people screen and invite volunteers            |
+| `canManageVolunteers`    | Applications, safeguarding records, invites, placements |
+| `canManageProgrammes`    | Create programmes and the volunteer roles inside them   |
 
 Only `superadmin` can change roles, edit permissions, or suspend an account. Role is never read
 from the request body in any endpoint that mutates a user. Guests get nothing, volunteers get a
@@ -326,7 +328,7 @@ A true monorepo is unnecessary while there is one Nuxt app. These folders alread
 | **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Staff and volunteers sign in and land in the right place                                        |
 | **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | **Done** — `/admin/events` manages the calendar and its bookings                                |
 | **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                        |
-| **5. Volunteers**           | Applications, skills, availability, statuses                                                                                    | Second entity on the same foundations                                                           |
+| **5. Volunteers**           | Programmes, opportunities, applications, invite, placements, safeguarding                                                       | **Core done** — `/admin/programmes` and `/admin/volunteers`; shifts/hours and reports next      |
 | **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                                                                 |
 | **7. Projects**             | Operational rows linked to Content stories                                                                                      | Only when reporting needs them                                                                  |
 

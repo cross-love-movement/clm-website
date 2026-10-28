@@ -40,6 +40,7 @@ export default defineNuxtConfig({
     { path: '~/components', pathPrefix: false },
     // Feature-owned components keep their own folder but the same flat names.
     { path: '~/features/events/components', pathPrefix: false },
+    { path: '~/features/volunteers/components', pathPrefix: false },
   ],
 
   vite: {

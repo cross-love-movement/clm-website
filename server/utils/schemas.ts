@@ -41,19 +41,6 @@ export const contactSchema = z.object({
   consent,
 })
 
-export const volunteerSchema = z.object({
-  name,
-  email,
-  phone: optionalPhone,
-  city: z.string().trim().min(2, 'Please tell us where you are based.').max(120),
-  area: z.string().min(1, 'Please choose a volunteer role.'),
-  availability: z.enum(['weekdays', 'evenings', 'weekends', 'flexible'], {
-    message: 'Please choose your availability.',
-  }),
-  experience: z.string().trim().max(2000).optional().default(''),
-  consent,
-})
-
 export const partnershipSchema = z.object({
   organisation: z.string().trim().min(2, 'Please enter your organisation’s name.').max(160),
   contactName: name,

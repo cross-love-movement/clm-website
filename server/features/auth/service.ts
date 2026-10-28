@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { Permission, SessionUser, UserRole } from '#shared/types/auth'
 import { defaultPermissions } from '#shared/types/auth'
 
 import { useDatabase } from '../../database/client'
-import { users, type User } from '../../database/schema'
+import { users, volunteers, type User } from '../../database/schema'
 import { hashPassword, verifyPassword } from './password'
 import { consumeToken, issueToken } from './tokens'
 
@@ -116,6 +116,14 @@ export async function completePasswordSetup(rawToken: string, password: string) 
     .set({ passwordHash, status: 'active', emailVerifiedAt: now, updatedAt: now })
     .where(eq(users.id, userId))
     .returning()
+
+  if (updated) {
+    // A volunteer who accepts an invite becomes active in the volunteer app too.
+    await database
+      .update(volunteers)
+      .set({ status: 'active', updatedAt: now })
+      .where(and(eq(volunteers.userId, userId), eq(volunteers.status, 'invited')))
+  }
 
   return updated ?? null
 }

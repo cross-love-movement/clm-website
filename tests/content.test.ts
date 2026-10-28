@@ -12,12 +12,12 @@ import { footerNav, primaryNav, site } from '../app/data/site'
 import { homeSlides } from '../app/data/slides'
 import { testimonialAudiences, testimonials } from '../app/data/testimonials'
 import type { PortfolioItem } from '../shared/types/content'
+import { applicationSchema } from '../server/features/volunteers/schemas'
 import {
   contactSchema,
   donationSchema,
   eventRegistrationSchema,
   newsletterSchema,
-  volunteerSchema,
 } from '../server/utils/schemas'
 
 const newsFiles = import.meta.glob('../content/news/*.md', {
@@ -383,11 +383,11 @@ describe('server validation', () => {
   })
 
   it('accepts a complete volunteer application', () => {
-    expect(volunteerSchema.safeParse(validVolunteer).success).toBe(true)
+    expect(applicationSchema.safeParse(validVolunteer).success).toBe(true)
   })
 
   it('requires a known availability for volunteers', () => {
-    const unknown = volunteerSchema.safeParse({ ...validVolunteer, availability: 'whenever' })
+    const unknown = applicationSchema.safeParse({ ...validVolunteer, availability: 'whenever' })
     expect(unknown.success).toBe(false)
   })
 

@@ -2,6 +2,8 @@ import type { H3Event } from 'h3'
 
 import type { UserRole } from '#shared/types/auth'
 
+import { MAILBOXES } from '../../utils/mailboxes'
+
 function siteUrl(event: H3Event) {
   return useRuntimeConfig(event).public.siteUrl.replace(/\/+$/, '')
 }
@@ -20,6 +22,7 @@ export async function sendInviteEmail(
   await sendMail({
     tag: 'auth-invite',
     to: input.to,
+    replyTo: MAILBOXES.support,
     subject: 'Your Cross-Love Movement account',
     text: [
       `Hello ${input.name},`,
@@ -43,6 +46,7 @@ export async function sendPasswordResetEmail(
   await sendMail({
     tag: 'auth-reset',
     to: input.to,
+    replyTo: MAILBOXES.support,
     subject: 'Reset your Cross-Love Movement password',
     text: [
       `Hello ${input.name},`,

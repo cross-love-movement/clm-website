@@ -26,6 +26,7 @@ export async function drainOutbox(limit = 10) {
     try {
       await sendMail({
         to: row.toEmail,
+        replyTo: row.replyTo ?? undefined,
         subject: row.subject,
         text: row.body,
         tag: row.kind,

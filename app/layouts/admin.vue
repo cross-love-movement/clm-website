@@ -13,6 +13,14 @@ const links = computed(() => {
     items.push({ label: 'People', to: '/admin/users' })
   }
 
+  if (hasPermission(user.value as SessionUser | null, 'canManageProgrammes')) {
+    items.push({ label: 'Programmes', to: '/admin/programmes' })
+  }
+
+  if (hasPermission(user.value as SessionUser | null, 'canManageVolunteers')) {
+    items.push({ label: 'Volunteers', to: '/admin/volunteers' })
+  }
+
   return items
 })
 </script>

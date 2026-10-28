@@ -7,7 +7,7 @@ export const site = {
   tagline: 'Faith. Creativity. Inclusion.',
   description:
     'Cross-Love Movement is a Christian, non-denominational nonprofit network of young creatives and youthful advocates in Ghana, using faith, creativity, and inclusion to empower young people to build sustainable societies.',
-  email: 'crosslovemovement.lbg@gmail.com',
+  email: 'info@crosslovemovement.org',
   website: 'https://cross-lovemovement.my.canva.site/',
   phone: '+233 55 175 7842',
   phoneHref: '+233551757842',

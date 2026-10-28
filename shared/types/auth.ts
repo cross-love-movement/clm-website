@@ -13,7 +13,13 @@ export const USER_STATUSES = ['invited', 'active', 'suspended'] as const
 export type UserStatus = (typeof USER_STATUSES)[number]
 
 /** Capabilities assigned per user when they are invited. */
-export const PERMISSIONS = ['canEdit', 'canManageRegistrations', 'canManagePeople'] as const
+export const PERMISSIONS = [
+  'canEdit',
+  'canManageRegistrations',
+  'canManagePeople',
+  'canManageVolunteers',
+  'canManageProgrammes',
+] as const
 
 export type Permission = (typeof PERMISSIONS)[number]
 

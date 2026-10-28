@@ -2,6 +2,7 @@ import { closeDatabase, hasDatabase, markDatabaseReady } from '../database/clien
 import { runMigrations } from '../database/migrate'
 import { seedSuperadmin } from '../database/seed'
 import { seedEvents } from '../database/seed-events'
+import { seedVolunteerProgrammes } from '../database/seed-volunteers'
 
 /**
  * Applies pending migrations and seeds the first superadmin at boot.
@@ -31,6 +32,11 @@ export default defineNitroPlugin(async (nitroApp) => {
     if (process.env.SEED_EVENTS !== 'false') {
       const created = await seedEvents()
       if (created > 0) console.info(`[db] seeded ${created} event(s)`)
+    }
+
+    if (process.env.SEED_VOLUNTEER_PROGRAMMES !== 'false') {
+      const created = await seedVolunteerProgrammes()
+      if (created > 0) console.info(`[db] seeded ${created} volunteer programme record(s)`)
     }
   } catch (error) {
     // Keep the marketing site up even if the database is unreachable, but make

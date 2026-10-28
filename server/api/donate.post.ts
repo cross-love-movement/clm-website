@@ -1,3 +1,5 @@
+import { MAILBOXES } from '../utils/mailboxes'
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -17,6 +19,7 @@ export default defineEventHandler(async (event) => {
 
   await sendMail({
     tag: 'donation',
+    to: MAILBOXES.donate,
     replyTo: data.email,
     subject: `Giving interest — ${amount} ${data.frequency} — ${data.name}`,
     text: [

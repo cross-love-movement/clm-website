@@ -98,6 +98,8 @@ export const mailOutbox = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     kind: text('kind').notNull(),
     toEmail: text('to_email').notNull(),
+    /** Optional Reply-To, so staff can answer the person who submitted. */
+    replyTo: text('reply_to'),
     subject: text('subject').notNull(),
     body: text('body').notNull(),
     status: text('status').notNull().default('pending'),

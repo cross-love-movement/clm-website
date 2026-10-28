@@ -13,7 +13,7 @@ const WHEN = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Africa/Accra',
 })
 
-const SIGNATURE = ['', 'Cross-Love Movement', 'crosslovemovement.lbg@gmail.com']
+const SIGNATURE = ['', 'Cross-Love Movement', 'info@crosslovemovement.org']
 
 function when(event: EventRow) {
   return `${WHEN.format(new Date(event.startsAt))} (GMT)`

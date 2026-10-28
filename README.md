@@ -137,22 +137,29 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route              | Page           | Server route                |
-| ------------------ | -------------- | --------------------------- |
-| `/`                | Home           | —                           |
-| `/about`           | About          | —                           |
-| `/projects`        | Projects index | —                           |
-| `/projects/[slug]` | Project detail | —                           |
-| `/events`          | Events         | `POST /api/events/register` |
-| `/news`            | News index     | —                           |
-| `/news/[slug]`     | Article        | —                           |
-| `/portfolio`       | Portfolio      | —                           |
-| `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
-| `/partnership`     | Partnership    | `POST /api/partnership`     |
-| `/contact`         | Contact        | `POST /api/contact`         |
-| `/donate`          | Donate         | `POST /api/donate`          |
-| footer newsletter  | —              | `POST /api/newsletter`      |
-| `/_studio`         | —              | Nuxt Studio (GitHub OAuth)  |
+| Route               | Page             | Server route                  |
+| ------------------- | ---------------- | ----------------------------- |
+| `/`                 | Home             | —                             |
+| `/about`            | About            | —                             |
+| `/projects`         | Projects index   | —                             |
+| `/projects/[slug]`  | Project detail   | —                             |
+| `/events`           | Events           | `POST /api/events/register`   |
+| `/news`             | News index       | —                             |
+| `/news/[slug]`      | Article          | —                             |
+| `/portfolio`        | Portfolio        | —                             |
+| `/volunteer`        | Volunteer        | `POST /api/volunteer`         |
+| `/partnership`      | Partnership      | `POST /api/partnership`       |
+| `/contact`          | Contact          | `POST /api/contact`           |
+| `/donate`           | Donate           | `POST /api/donate`            |
+| footer newsletter   | —                | `POST /api/newsletter`        |
+| `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
+| `/login`            | Sign in          | `POST /api/auth/login`        |
+| `/admin`            | Staff overview   | —                             |
+| `/admin/events`     | Event management | `/api/admin/events`           |
+| `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
+| `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
+| `/admin/users`      | People           | `/api/admin/users`            |
+| `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -168,7 +175,7 @@ Content is split by how often it changes.
 - `content/news/*.md` — articles with frontmatter and a Markdown/MDC body
 - `content/portfolio/*.yml` — one file per portfolio piece
 
-Events are no longer content: they live in Postgres and are managed by the event app (see below).
+Events and volunteer records are no longer content: they live in Postgres and are managed by the event and volunteer apps (see below).
 
 Each is declared as a collection with a Zod schema, so missing or malformed fields fail
 `nuxt build`. Pages query through async composables (`useProjects()`, `useNews()`, `useEvents()`,
@@ -266,10 +273,72 @@ disables it) so the site has something to show.
 and an audit log. Registrations store name, email, and phone, so agree a retention period before
 collecting them in earnest.
 
+### Volunteer app
+
+Volunteers are the second operational entity. The code mirrors events:
+
+```
+app/pages/admin/programmes/   programme list, create, edit, roles
+app/pages/admin/volunteers/   applications, safeguarding, placements
+app/features/volunteers/      programme form and future shared components
+server/features/volunteers/   repository, schemas, application mail
+server/api/volunteer/         public opportunities
+server/api/admin/             programmes, opportunities, volunteers, assignments
+server/api/portal/            a volunteer's own placements
+```
+
+The model separates the person, the work, and the placement:
+
+| Entity                    | Purpose                                                                    |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `programmes`              | The work volunteers can join, with an optional link to a content story     |
+| `volunteer_opportunities` | Roles inside a programme, with slots and requirements                      |
+| `volunteers`              | The person, including safeguarding fields and an optional linked `user_id` |
+| `volunteer_applications`  | Every public submission, kept for history                                  |
+| `volunteer_assignments`   | Who is placed in which programme/role                                      |
+
+**Flow.** The public `/volunteer` form stores an application, queues a notification to
+`apply@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
+fails, the row is retried by the background worker. Staff do not need to be signed in to learn
+that someone applied.
+Staff review at `/admin/volunteers`, invite the volunteer (creating a `volunteer` account), then
+place them into a programme at `/admin/programmes`. Volunteers see their placements at `/portal`.
+Assigning to an opportunity with slots locks the row and refuses to overfill.
+
+**Safeguarding** lives on the volunteer row: date of birth, emergency contact, consent timestamp,
+briefing date, background-check status, and internal notes. It is only visible with
+`canManageVolunteers`.
+
+**Bootstrap data.** On a fresh database one programme (People Like You 2027) and five roles are
+seeded (`SEED_VOLUNTEER_PROGRAMMES=false` disables it) so the public form is not empty.
+
+**Not built yet:** approval/decline emails, shifts and hours logging, reports, and volunteer content
+grants. Content editing stays with developers/GitHub or Nuxt Studio for now; if scoped editors are
+added later, draft/publish approval belongs with that work.
+
+### Mail routing
+
+| Trigger                                    | Inbox                                         |
+| ------------------------------------------ | --------------------------------------------- |
+| Volunteer application                      | `apply@crosslovemovement.org`                 |
+| Contact form — volunteering                | `apply@crosslovemovement.org`                 |
+| Donation form                              | `donate@crosslovemovement.org`                |
+| Contact form — donation                    | `donate@crosslovemovement.org`                |
+| Contact form — complaint                   | `admin@crosslovemovement.org`                 |
+| Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
+| Partnership form                           | `info@crosslovemovement.org`                  |
+| Newsletter signup                          | `info@crosslovemovement.org`                  |
+| Invite and password-reset replies          | `support@crosslovemovement.org` (Reply-To)    |
+| Unrouted fallback                          | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
+
+The mailboxes are defined once in `server/utils/mailboxes.ts`. These are recipients; the sending
+address still has to live on the domain verified in Resend. All inboxes must be routed in Cloudflare
+Email Routing or they will accept mail into a void.
+
 To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
 site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
-and the public pages keep the same layout, components, and theme. Events are the exception: they are
-records in Postgres, edited at `/admin/events`.
+and the public pages keep the same layout, components, and theme. Events and volunteers are the
+exception: they are records in Postgres, edited at `/admin/events` and `/admin/volunteers`.
 
 Each schema field also carries `property(...).editor(...)` metadata — labels, helper text, media
 pickers, textareas. That metadata is invisible to the site and only shapes the Nuxt Studio form, so
@@ -347,7 +416,7 @@ those documents:
   (YEPs) — and every initiative now in `content/projects/`
 - Cross Sessions (Easter Sundays, nine editions since 2018), Power-Point, Today Is Us, CSL
   Evangelism, People Like You (12 June 2027), and the church support work in Community 12 and Bawku
-- Contact details: `crosslovemovement.lbg@gmail.com`, `+233 55 175 7842`, WhatsApp
+- Contact details: `info@crosslovemovement.org`, `+233 55 175 7842`, WhatsApp
   `+233 53 050 2774`, and the temporary site `cross-lovemovement.my.canva.site`
 
 The **logo mark** (`public/images/clm-mark.png`, `public/favicon.png`) was extracted from the 2023
@@ -487,11 +556,13 @@ expiry). Password resets use the same mechanism (1-hour expiry).
 | `/admin/users`                        | `canManagePeople` permission |
 
 Roles: `superadmin`, `admin`, `volunteer`. Operational permissions are assigned per account at
-invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV), and
-`canManagePeople` (people screen, invite volunteers). An admin starts with all three; a superadmin
-implicitly has everything, plus changing roles, editing permissions, and suspending accounts.
-Volunteers have no staff access. Guards run in route middleware (`admin`, `manager`, `volunteer`)
-and again in the API, so a volunteer hitting `/api/admin/*` gets `403`.
+invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV),
+`canManagePeople` (people screen, invite volunteers), `canManageVolunteers` (applications,
+safeguarding, placements), and `canManageProgrammes` (programmes and roles). An admin starts with
+all five; a superadmin implicitly has everything, plus changing roles, editing permissions, and
+suspending accounts. Volunteers have no staff access. Guards run in route middleware (`admin`,
+`manager`, `programme-manager`, `volunteer-manager`, `volunteer`) and again in the API, so a
+volunteer hitting `/api/admin/*` gets `403`.
 
 **Volunteer portal.** `/portal` is on hold as a feature surface. It shows the account and a link to
 the public calendar; linking event bookings to volunteer accounts comes later. Volunteers are
@@ -518,24 +589,25 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 
 ## Environment variables
 
-| Variable                                | Default                                    | Purpose                                |
-| --------------------------------------- | ------------------------------------------ | -------------------------------------- |
-| `NUXT_PUBLIC_SITE_URL`                  | `https://www.clmnative.com`                | Canonical + OG URLs                    |
-| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                | Mail delivery                          |
-| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@clmnative.com>` | Sender                                 |
-| `NUXT_MAIL_TO`                          | `info@clmnative.com`                       | Inbox receiving submissions            |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_          | GitHub OAuth app for Studio editors    |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                  | GitHub OAuth secret                    |
-| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_    | Comma-separated editor email allowlist |
-| `SEED_EVENTS`                           | `true`                                     | Seed one event on an empty database    |
-| `DATABASE_URL`                          | _(empty — database features off)_          | Postgres connection string             |
-| `DATABASE_SSL`                          | `false`                                    | Enable TLS to the database             |
-| `DATABASE_POOL_SIZE`                    | `10`                                       | Postgres pool size                     |
-| `DB_MIGRATE_ON_START`                   | `true`                                     | Apply migrations at boot               |
-| `MIGRATIONS_DIR`                        | `server/database/migrations`               | `/app/migrations` in the image         |
-| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                     | First superadmin's email               |
-| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                              | First superadmin's name                |
-| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                 | Signs the session cookie (32+ chars)   |
+| Variable                                | Default                                            | Purpose                                |
+| --------------------------------------- | -------------------------------------------------- | -------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | `https://www.crosslovemovement.org`                | Canonical + OG URLs                    |
+| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                        | Mail delivery                          |
+| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>` | Sender                                 |
+| `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                       | General fallback inbox                 |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                  | GitHub OAuth app for Studio editors    |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                          | GitHub OAuth secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_            | Comma-separated editor email allowlist |
+| `SEED_EVENTS`                           | `true`                                             | Seed one event on an empty database    |
+| `SEED_VOLUNTEER_PROGRAMMES`             | `true`                                             | Seed one programme + roles on empty DB |
+| `DATABASE_URL`                          | _(empty — database features off)_                  | Postgres connection string             |
+| `DATABASE_SSL`                          | `false`                                            | Enable TLS to the database             |
+| `DATABASE_POOL_SIZE`                    | `10`                                               | Postgres pool size                     |
+| `DB_MIGRATE_ON_START`                   | `true`                                             | Apply migrations at boot               |
+| `MIGRATIONS_DIR`                        | `server/database/migrations`                       | `/app/migrations` in the image         |
+| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                             | First superadmin's email               |
+| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                                      | First superadmin's name                |
+| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                         | Signs the session cookie (32+ chars)   |
 
 ---
 
