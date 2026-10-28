@@ -565,8 +565,23 @@ Every variable a template uses must be supplied — Resend rejects the send othe
 placeholder its file uses, so drift shows up in CI rather than in a customer's inbox. Aliases
 (`clm-event-registration`) are worth using over raw ids: staging and production can share one value.
 
-To seed a dashboard template, open the matching `/api/email-preview?kind=…` output, paste the markup,
-and replace the sample values with `{{{ VARIABLE }}}` placeholders from the table above.
+To seed a dashboard template, run `npm run emails:sync` (below) or paste the file into the editor
+manually and publish it.
+
+**Syncing the files to Resend.** The files are the source of truth, but a deploy does not push them:
+while an alias is set, Resend renders its own stored copy. After changing a template, run:
+
+```bash
+npm run emails:sync -- --dry-run   # list what would be pushed
+npm run emails:sync                # update or create, then publish
+```
+
+It reads every file, extracts the `{{{VARIABLE}}}` placeholders, sends them as the template's variable
+list, patches the template whose alias matches `RESEND_TEMPLATE_*` (creating it with that alias if it
+does not exist), and publishes it. Failures are reported per kind and the command exits non-zero.
+
+Run it locally or in CI with `RESEND_API_KEY` (or `NUXT_RESEND_API_KEY`) and the aliases in `.env` —
+the deployed container only carries the built assets, not the script or the source files.
 
 **Which path is used?** A kind uses Resend only when its env var is non-empty **and** the composer
 supplies variables. At boot the server prints one line, e.g.
