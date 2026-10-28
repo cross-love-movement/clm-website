@@ -1,3 +1,4 @@
+import { hasDatabase } from '../../database/client'
 import { parseOrThrow } from '../../utils/validation'
 import { eventRegistrationSchema } from '../../utils/schemas'
 import { registerForEvent } from '../../features/events/repository'
@@ -12,6 +13,17 @@ export default defineEventHandler(async (event) => {
   rateLimit(`events:${getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'}`, 5)
 
   const data = parseOrThrow(eventRegistrationSchema, body)
+
+  if (!hasDatabase()) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Registration is temporarily unavailable',
+      data: {
+        message:
+          'Online registration is unavailable right now. Please email apply@crosslovemovement.org and we will reserve your place.',
+      },
+    })
+  }
 
   const result = await registerForEvent({
     slug: data.eventSlug,

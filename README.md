@@ -362,8 +362,8 @@ A commit triggers the host's rebuild, and the change goes live with the rest of 
 enable it:
 
 1. Create a GitHub OAuth app at <https://github.com/settings/developers> → **New OAuth App**.
-   - Homepage URL: `https://www.clmnative.com`
-   - Authorization callback URL: `https://www.clmnative.com/__nuxt_studio/auth/github`
+   - Homepage URL: `https://www.crosslovemovement.org`
+   - Authorization callback URL: `https://www.crosslovemovement.org/__nuxt_studio/auth/github`
    - For local production-mode testing, add `http://localhost:3000/__nuxt_studio/auth/github`
 2. Set `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID` and `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` in the
    deployment environment (and in `.env` if testing locally). GitHub generates the secret — 40 hex
@@ -569,9 +569,7 @@ suspending accounts. Volunteers have no staff access. Guards run in route middle
 `manager`, `programme-manager`, `volunteer-manager`, `volunteer`) and again in the API, so a
 volunteer hitting `/api/admin/*` gets `403`.
 
-**Volunteer portal.** `/portal` is on hold as a feature surface. It shows the account and a link to
-the public calendar; linking event bookings to volunteer accounts comes later. Volunteers are
-intended to be invited after a volunteer application is approved, which is not built yet.
+**Volunteer portal.** `/portal` shows a volunteer their profile, status, and current placements. It is only reachable by `volunteer` accounts; staff are redirected to `/admin`. Volunteers are invited after an application is approved, so an account without a linked volunteer profile sees a prompt to apply.
 
 **First sign-in.** The seeded superadmin has no password: open `/forgot-password`, enter the seeded email, and follow the link from the server log (or the inbox once Resend is configured).
 
@@ -703,37 +701,49 @@ as an unprivileged user.
 1. **Create the resource** — Coolify → your project → **+ New** → **Application** → **Private
    repository (with GitHub App)** → `cross-love-movement/clm-website`, branch `main`. The GitHub App
    must be installed on the `cross-love-movement` organization, not just your personal account.
-2. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
+2. **Database** — add a **PostgreSQL 18** resource to the same project, then copy its _internal_
+   connection URL into `DATABASE_URL` on the application. The app applies migrations and seeds the
+   first superadmin on boot (`DB_MIGRATE_ON_START=true`).
+3. **Build pack** — choose **Dockerfile**. Nothing else to fill in: it builds `npm ci` +
    `npm run build` and runs `node .output/server/index.mjs`.
-3. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
-4. **Domain** — add `https://www.clmnative.com`, enable HTTPS. Coolify's Traefik forwards
+4. **Ports** — set _Ports Exposes_ to `3000`. The container already sets `HOST=0.0.0.0`.
+5. **Domain** — add `https://www.crosslovemovement.org`, enable HTTPS. Coolify's Traefik forwards
    `X-Forwarded-Proto`, which Studio uses to build the OAuth callback URL.
-5. **Environment variables** — see the table below.
-6. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
+6. **Environment variables** — see the table below.
+7. **Auto deploy** — enable the GitHub webhook. This is not optional: Studio publishes by
    committing to `main`, and that commit is what triggers the rebuild that makes the edit public.
-7. **Healthcheck** — the image defines a `HEALTHCHECK` hitting `/`. Coolify's own setting can be
-   left at its default, or set to GET `/`.
+8. **Healthcheck** — the image defines a `HEALTHCHECK` against `/api/health`, which returns `503`
+   when Postgres is unreachable. Point Coolify's own healthcheck at the same path.
 
 **No persistent volume is needed.** The content database is generated during the build and shipped
-read-only inside the image at `server/contents.sqlite`. Studio's drafts live in the editor's browser
-and are published to Git, not to the container's disk. Add a volume only if you later switch media
-storage to a local disk driver.
+read-only inside the image. Studio's drafts live in the editor's browser and are published to Git,
+not to the container's disk. Postgres holds every operational record; back that up instead. Add a
+volume only if you later switch media storage to a local disk driver.
 
 **Environment variables** (Coolify → Configuration → Environment Variables):
 
-| Variable                                | Required | Value                                      |
-| --------------------------------------- | -------- | ------------------------------------------ |
-| `NUXT_PUBLIC_SITE_URL`                  | yes      | `https://www.clmnative.com`                |
-| `NUXT_MAIL_TO`                          | yes      | Inbox that receives form submissions       |
-| `NUXT_MAIL_FROM`                        | no       | `Cross-Love Movement <info@clmnative.com>` |
-| `NUXT_RESEND_API_KEY`                   | for mail | Resend API key (omit to log to container)  |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS  | GitHub OAuth app client ID                 |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS  | GitHub OAuth app secret                    |
-| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS  | Comma-separated editor emails (allowlist)  |
+| Variable                                | Required   | Value                                              |
+| --------------------------------------- | ---------- | -------------------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | yes        | `https://www.crosslovemovement.org`                |
+| `DATABASE_URL`                          | yes        | Internal Postgres URL from the Coolify service     |
+| `NUXT_SESSION_PASSWORD`                 | yes        | 32+ random chars (`openssl rand -base64 32`)       |
+| `SEED_SUPERADMIN_EMAIL`                 | first boot | Address that becomes the first superadmin          |
+| `SEED_SUPERADMIN_NAME`                  | no         | Display name for that account                      |
+| `NUXT_MAIL_TO`                          | yes        | Inbox that receives form submissions               |
+| `NUXT_MAIL_FROM`                        | no         | `Cross-Love Movement <info@crosslovemovement.org>` |
+| `NUXT_RESEND_API_KEY`                   | for mail   | Resend API key (omit to log to container)          |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS    | GitHub OAuth app client ID                         |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS    | GitHub OAuth app secret                            |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS    | Comma-separated editor emails (allowlist)          |
 
-Mark the Studio secrets as **Build Variable: no** — they are only read at runtime.
+Mark every secret as **Build Variable: no** — they are only read at runtime.
 
-Set the GitHub OAuth app's callback URL to `https://www.clmnative.com/__nuxt_studio/auth/github`.
+**Before the first deploy:** verify `crosslovemovement.org` in Resend. `NUXT_MAIL_FROM` must use a
+verified domain or every transactional email (form notifications, event confirmations, invites,
+password resets) is rejected. Set `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` too — without it any GitHub
+account that authorises the OAuth app can commit to `main`.
+
+Set the GitHub OAuth app's callback URL to `https://www.crosslovemovement.org/__nuxt_studio/auth/github`.
 If the domain ever changes, or if Coolify sits behind another proxy that rewrites `Host`, set
 `NUXT_STUDIO_AUTH_GITHUB_REDIRECT_URL` to the same URL explicitly.
 

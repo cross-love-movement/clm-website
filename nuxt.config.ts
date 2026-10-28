@@ -83,16 +83,33 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Private: server-only. NUXT_RESEND_API_KEY also overrides this at runtime.
-    resendApiKey: process.env.NUXT_RESEND_API_KEY ?? '',
-    mailFrom: process.env.NUXT_MAIL_FROM ?? 'Cross-Love Movement <info@crosslovemovement.org>',
-    mailTo: process.env.NUXT_MAIL_TO ?? 'info@crosslovemovement.org',
+    // Private: server-only. Never read `process.env` here — Nuxt inlines the
+    // value into the server bundle at build time, secrets included. The static
+    // defaults below are safe; `NUXT_RESEND_API_KEY`, `NUXT_MAIL_FROM`, and
+    // `NUXT_MAIL_TO` replace them at runtime.
+    resendApiKey: '',
+    mailFrom: 'Cross-Love Movement <info@crosslovemovement.org>',
+    mailTo: 'info@crosslovemovement.org',
     public: {
-      siteUrl: process.env.NUXT_SITE_URL ?? 'https://www.crosslovemovement.org',
+      // Replaced at runtime by `NUXT_PUBLIC_SITE_URL`.
+      siteUrl: 'https://www.crosslovemovement.org',
     },
   },
 
   nitro: {
     compressPublicAssets: true,
+
+    // Baseline hardening. A full Content-Security-Policy is deliberately not
+    // set here: Studio, Google Fonts, and Vue's inline styles would all need
+    // auditing first.
+    routeRules: {
+      '/**': {
+        headers: {
+          'x-content-type-options': 'nosniff',
+          'x-frame-options': 'SAMEORIGIN',
+          'referrer-policy': 'strict-origin-when-cross-origin',
+        },
+      },
+    },
   },
 })

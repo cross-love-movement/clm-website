@@ -108,6 +108,17 @@ export async function completePasswordSetup(rawToken: string, password: string) 
   if (!userId) return null
 
   const database = useDatabase()
+
+  // A suspended account must not activate itself by replaying an invite token
+  // that was issued before the suspension.
+  const [account] = await database
+    .select({ status: users.status })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (!account || account.status === 'suspended') return null
+
   const now = new Date()
   const passwordHash = await hashPassword(password)
 

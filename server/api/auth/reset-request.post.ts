@@ -6,6 +6,10 @@ import { requestPasswordReset } from '../../features/auth/service'
 /**
  * Always answers the same way, whether or not the address exists. This is what
  * keeps the endpoint from being used to discover who has an account.
+ *
+ * The send is not awaited: awaiting a delivery only for real accounts would
+ * make the response measurably slower for known addresses, and a delivery
+ * failure must never turn into a different status code.
  */
 export default defineEventHandler(async (event) => {
   rateLimit(`auth-reset:${getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'}`, 5)
@@ -15,10 +19,12 @@ export default defineEventHandler(async (event) => {
   const result = await requestPasswordReset(data.email)
 
   if (result) {
-    await sendPasswordResetEmail(event, {
+    void sendPasswordResetEmail(event, {
       to: result.user.email,
       name: result.user.name,
       token: result.token,
+    }).catch((error) => {
+      console.error('[mail] password reset email could not be sent', error)
     })
   }
 

@@ -1,10 +1,16 @@
 import { requirePermission } from '../../../../features/auth/guards'
 import { listRegistrations } from '../../../../features/events/repository'
 
+const RISKY_PREFIX = /^[=+\-@\t\r]/
+
 function csvCell(value: string | number) {
   const text = String(value)
+  // Spreadsheet apps treat a leading =, +, -, or @ as a formula. A leading
+  // apostrophe forces the cell to text; Excel hides it, so the value still
+  // reads normally. Notes, names, and phone numbers all come from the public.
+  const safe = RISKY_PREFIX.test(text) ? `'${text}` : text
 
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
 }
 
 /**
