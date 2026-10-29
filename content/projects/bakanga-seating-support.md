@@ -5,8 +5,8 @@ summary: Twenty chairs for a community church in Bakanga, Bawku — a congregati
 location: Bakanga, Bawku
 status: completed
 timeframe: 4th Cross Sessions edition
-image: /images/project-gospel.svg
-imageAlt: Abstract artwork of sound waves rising inside a church arch
+image: https://assets.crosslovemovement.org/bakanga-bawku.jpeg
+imageAlt: Women and children seated on plastic chairs inside a mud-brick church in Bakanga, Bawku
 accent: clay
 featured: false
 goals:

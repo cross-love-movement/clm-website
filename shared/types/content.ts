@@ -32,6 +32,12 @@ export type IconName =
   | 'play'
   | 'download'
   | 'copy'
+  | 'logout'
+  | 'instagram'
+  | 'x'
+  | 'youtube'
+  | 'linkedin'
+  | 'whatsapp'
 
 export interface NavLink {
   label: string
@@ -41,6 +47,7 @@ export interface NavLink {
 export interface SocialLink {
   label: string
   href: string
+  icon: IconName
 }
 
 export interface Stat {
@@ -141,7 +148,7 @@ export const EVENT_CATEGORIES = [
 
 export type EventCategory = (typeof EVENT_CATEGORIES)[number]
 
-export const EVENT_STATUSES = ['draft', 'published', 'archived'] as const
+export const EVENT_STATUSES = ['draft', 'published', 'archived', 'cancelled'] as const
 
 export type EventStatus = (typeof EVENT_STATUSES)[number]
 
@@ -218,6 +225,26 @@ export interface AdminRegistration {
   createdAt: string
   checkedInAt: string | null
   cancelledAt: string | null
+}
+
+export const SUBSCRIBER_STATUSES = ['subscribed', 'unsubscribed'] as const
+
+export type SubscriberStatus = (typeof SUBSCRIBER_STATUSES)[number]
+
+/** One row in the admin newsletter list. */
+export interface NewsletterSubscriber {
+  id: string
+  email: string
+  status: SubscriberStatus
+  source: string
+  subscribedAt: string
+  unsubscribedAt: string | null
+}
+
+export interface NewsletterSummary {
+  subscribed: number
+  unsubscribed: number
+  total: number
 }
 
 export type PostCategory = 'story' | 'update' | 'reflection' | 'event'

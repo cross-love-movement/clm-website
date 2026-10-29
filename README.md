@@ -251,20 +251,38 @@ twice.
 
 **Admin screens** live under `/admin/events` and use the same endpoints, guarded by the staff
 session. `/admin/events` lists every event with live counts, `/admin/events/new` creates one,
-`/admin/events/:id` shows the registration table (search, check-in, cancel, CSV), and
-`/admin/events/:id/edit` edits the record. Reading needs staff access; writing needs the
-`canEdit` permission and registrations need `canManageRegistrations`.
+`/admin/events/:id` shows the registration table (search, check-in, cancel, CSV), the guest-message
+composer, and the event-level cancel action, and `/admin/events/:id/edit` edits the record. Reading
+needs staff access; writing needs the `canEdit` permission and registrations need
+`canManageRegistrations`.
+
+**Cancelling an event is not archiving.** Archiving hides an event from the calendar and sends
+nothing. `POST /api/admin/events/:id/cancel` sets the status to `cancelled`, takes the event off the
+public calendar, releases every confirmed and waitlisted booking in one transaction, and queues the
+`event-called-off` mail to each distinct address. A single guest cancelling their own booking still
+uses the `event-cancelled` mail, which carries their reference code; the event-level notice does not.
+Setting `cancelled` from the edit form does **not** email anyone, so the UI labels it.
+
+**Messaging guests.** `POST /api/admin/events/:id/message` queues a staff-written subject and body to
+the event's guests: `audience=confirmed` (the default) or `audience=all` to include the waitlist.
+Cancelled bookings are never written to, and one address receives one email even if it booked twice.
+The message is plain text; a blank line becomes a new paragraph, and links are left as text. Sends
+are limited to the event's own bookings — there is no site-wide broadcast list. Delivery runs through
+the outbox worker at ten messages every 20 seconds, so a large list spreads over time rather than
+hitting Resend's rate limit (1,000 guests is roughly 33 minutes).
 
 **Admin endpoints** (staff session required — see Accounts and portals):
 
-| Route                                               | Purpose                       |
-| --------------------------------------------------- | ----------------------------- |
-| `GET/POST /api/admin/events`                        | list every event, create one  |
-| `GET/PATCH /api/admin/events/:id`                   | read or edit one event        |
-| `GET /api/admin/events/registrations?event=slug`    | list bookings                 |
-| `GET …?format=csv`                                  | spreadsheet download          |
-| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived     |
-| `DELETE /api/admin/events/registrations/:id`        | cancel + promote the waitlist |
+| Route                                               | Purpose                             |
+| --------------------------------------------------- | ----------------------------------- |
+| `GET/POST /api/admin/events`                        | list every event, create one        |
+| `GET/PATCH /api/admin/events/:id`                   | read or edit one event              |
+| `POST /api/admin/events/:id/cancel`                 | cancel the event + email all guests |
+| `POST /api/admin/events/:id/message`                | message the event's guests          |
+| `GET /api/admin/events/registrations?event=slug`    | list bookings                       |
+| `GET …?format=csv`                                  | spreadsheet download                |
+| `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived           |
+| `DELETE /api/admin/events/registrations/:id`        | cancel + promote the waitlist       |
 
 **Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
 disables it) so the site has something to show.
@@ -332,13 +350,45 @@ added later, draft/publish approval belongs with that work.
 | Contact form — complaint                   | `admin@crosslovemovement.org`                 |
 | Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
 | Partnership form                           | `info@crosslovemovement.org`                  |
-| Newsletter signup                          | `info@crosslovemovement.org`                  |
 | Invite and password-reset replies          | `support@crosslovemovement.org` (Reply-To)    |
 | Unrouted fallback                          | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
 
 The mailboxes are defined once in `server/utils/mailboxes.ts`. These are recipients; the sending
 address still has to live on the domain verified in Resend. All inboxes must be routed in Cloudflare
 Email Routing or they will accept mail into a void.
+
+Newsletter signups are the exception: they are not routed to a staff inbox. The confirmation goes to
+the subscriber and the list lives in `/admin/newsletter`.
+
+### Newsletter
+
+The footer form writes to `newsletter_subscribers` and queues one confirmation to the subscriber
+using the `newsletter` mail. There is no staff copy — the list is the record, and the staff portal is
+where it is read.
+
+- A repeat signup for an address that is already subscribed is a no-op: no second row, no second
+  email. An address that unsubscribed earlier is put back on the list and receives the confirmation
+  again, because they asked.
+- Every mail carries a per-subscriber unsubscribe link
+  (`/newsletter/unsubscribe?token=…`). The page POSTs to the API on load rather than unsubscribing on
+  GET, so a mail scanner prefetching the link cannot remove someone by accident.
+- The admin screen shows counts, search, a CSV export, and removal at someone's request. Removal
+  keeps the row with status `unsubscribed`, so history stays visible and the address is never emailed
+  again.
+- “Send the monthly note” queues `newsletter-broadcast` once per subscribed address through the same
+  outbox as everything else. Delivery runs at ten every 20 seconds, so a large list spreads out
+  instead of hitting Resend's rate limit.
+
+Writing needs `canManageNewsletter`; superadmins always pass. Reading needs it too, because the list
+is personal data.
+
+| Route                                        | Purpose                      |
+| -------------------------------------------- | ---------------------------- |
+| `POST /api/newsletter`                       | public signup + confirmation |
+| `POST /api/newsletter/unsubscribe`           | token unsubscribe            |
+| `GET /api/admin/newsletter`                  | list + counts (`format=csv`) |
+| `POST /api/admin/newsletter/send`            | queue an issue               |
+| `POST /api/admin/newsletter/:id/unsubscribe` | staff removal                |
 
 To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
 site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
@@ -552,18 +602,30 @@ or alias**. Leave it blank to keep rendering the file in the app. Sending still 
 | `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                       |
 | `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                       |
 | `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                              |
+| `event-called-off`      | `RESEND_TEMPLATE_EVENT_CALLED_OFF`      | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`                                                                                                                     |
+| `event-message`         | `RESEND_TEMPLATE_EVENT_MESSAGE`         | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`, `MESSAGE_HTML`                                                                                                     |
 | `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                  |
 | `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
 | `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
 | `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
 | `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
 | `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
-| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`                                                                                                                                         |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                          |
+| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                               |
 
 Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
 **published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
 placeholder its file uses, so drift shows up in CI rather than in a customer's inbox. Aliases
 (`clm-event-registration`) are worth using over raw ids: staging and production can share one value.
+
+Variables ending in `_HTML` are inserted as markup by the local renderer; everything else is
+escaped. The only one today is `MESSAGE_HTML`, which `broadcastMail()` builds itself from staff text
+(escape, then split into paragraphs). Never name a variable `_HTML` for anything a member of the
+public typed — the suffix is a trust boundary.
+
+The newsletter opt-out link is `OPT_OUT_URL`, not `UNSUBSCRIBE_URL`: Resend reserves the latter for
+its own audience broadcasts, and a template that uses it fails to send. The link itself is built per
+subscriber in `server/features/newsletter/mail.ts`.
 
 To seed a dashboard template, run `npm run emails:sync` (below) or paste the file into the editor
 manually and publish it.
@@ -582,6 +644,34 @@ does not exist), and publishes it. Failures are reported per kind and the comman
 
 Run it locally or in CI with `RESEND_API_KEY` (or `NUXT_RESEND_API_KEY`) and the aliases in `.env` —
 the deployed container only carries the built assets, not the script or the source files.
+
+**Renaming an alias.** The alias lives in Resend, not in the template file, and Resend renames it in
+place (same template id). Use the helper rather than creating a second template:
+
+```bash
+npm run emails:rename -- --dry-run event-registration=clm-event-registration
+npm run emails:rename -- --write-env event-registration=clm-event-registration
+```
+
+The old alias is read from the kind's `RESEND_TEMPLATE_*` variable, so rename **before** changing the
+environment. `--write-env` rewrites those lines in `.env` after every rename succeeds; without it the
+command prints the lines to apply yourself. Then run `emails:sync` to republish under the new alias.
+Remember the deployment environment: an alias that exists in `.env` but not in Coolify leaves sends
+failing against a template that no longer exists.
+
+The naming scheme is `clm-<kind>`, so the environment variable, the log line, and the dashboard
+template all read the same: `RESEND_TEMPLATE_AUTH_INVITE` → `clm-auth-invite`.
+
+**Checking the Resend side without changing it.** `npm run emails:status` prints, per kind, the
+alias, whether it resolves, whether the template is published, and whether the record carries the
+alias named in `.env`. It exits non-zero if a send would fail, so it can gate a deploy:
+
+```bash
+npm run emails:status
+```
+
+Resend keeps an old alias resolving for a while after a rename, so the alias check catches an
+environment that was never updated even though the old sends still succeed.
 
 **Which path is used?** A kind uses Resend only when its env var is non-empty **and** the composer
 supplies variables. At boot the server prints one line, e.g.

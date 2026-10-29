@@ -140,5 +140,39 @@ withDefaults(
       <path d="m7 11 5 5 5-5" />
       <path d="M4 20h16" />
     </template>
+    <template v-else-if="name === 'logout'">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="m10 8 4 4-4 4" />
+      <path d="M14 12H4" />
+    </template>
+    <template v-else-if="name === 'instagram'">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" />
+    </template>
+    <template v-else-if="name === 'x'">
+      <path
+        fill="currentColor"
+        stroke="none"
+        d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"
+      />
+    </template>
+    <template v-else-if="name === 'youtube'">
+      <rect x="2.5" y="5.5" width="19" height="13" rx="4" />
+      <path d="m10 9 5 3-5 3V9Z" fill="currentColor" stroke="none" />
+    </template>
+    <template v-else-if="name === 'linkedin'">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path d="M7.6 10.6V17" />
+      <path d="M7.6 7.4v.01" />
+      <path d="M11.6 17v-6.4" />
+      <path d="M11.6 13.6c0-1.5 1-2.6 2.4-2.6s2.4 1.1 2.4 2.6V17" />
+    </template>
+    <template v-else-if="name === 'whatsapp'">
+      <path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.7-5.2A8.5 8.5 0 1 1 21 11.5Z" />
+      <path
+        d="M8.8 7.7h1.5l.9 2.2-1.1.9a7 7 0 0 0 3.1 3.1l.9-1.1 2.2.9v1.5a1.4 1.4 0 0 1-1.5 1.4A10.4 10.4 0 0 1 7.4 9.2a1.4 1.4 0 0 1 1.4-1.5Z"
+      />
+    </template>
   </svg>
 </template>

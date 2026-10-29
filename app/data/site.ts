@@ -62,6 +62,17 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
 ]
 
 export const socials: SocialLink[] = [
-  { label: 'WhatsApp', href: 'https://wa.me/233530502774' },
-  { label: 'cross-lovemovement.my.canva.site', href: 'https://cross-lovemovement.my.canva.site/' },
+  { label: 'Instagram', href: 'https://www.instagram.com/clm_native/', icon: 'instagram' },
+  { label: 'X', href: 'https://x.com/clm_native', icon: 'x' },
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/channel/UCbAS2leNz-vWamXQgxmPr0A',
+    icon: 'youtube',
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/company/cross-love-movement',
+    icon: 'linkedin',
+  },
+  { label: 'WhatsApp', href: 'https://wa.me/233530502774', icon: 'whatsapp' },
 ]

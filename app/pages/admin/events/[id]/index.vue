@@ -129,6 +129,123 @@ async function cancel(row: AdminRegistration) {
   }
 }
 
+/* ── Whole-event cancellation ─────────────────────────────────────────── */
+
+const isCancelled = computed(() => event.value?.status === 'cancelled')
+const confirmCancelEvent = ref(false)
+const cancellingEvent = ref(false)
+
+async function cancelEvent() {
+  if (!event.value) return
+
+  if (!confirmCancelEvent.value) {
+    confirmCancelEvent.value = true
+    return
+  }
+
+  if (cancellingEvent.value) return
+
+  cancellingEvent.value = true
+  flash.value = null
+
+  try {
+    const result = await $fetch<{ notified: number }>(
+      `/api/admin/events/${event.value.id}/cancel`,
+      {
+        method: 'POST',
+      },
+    )
+
+    flash.value = {
+      tone: 'success',
+      message: result.notified
+        ? `Event cancelled. Every booking was released and ${result.notified} ${
+            result.notified === 1 ? 'guest was' : 'guests were'
+          } emailed.`
+        : 'Event cancelled. There were no guests to email.',
+    }
+
+    await Promise.all([refreshEvent(), refreshRegistrations()])
+  } catch (caught) {
+    flash.value = { tone: 'error', message: errorMessage(caught) }
+  } finally {
+    cancellingEvent.value = false
+    confirmCancelEvent.value = false
+  }
+}
+
+/* ── Message guests ───────────────────────────────────────────────────── */
+
+const broadcast = reactive({
+  subject: '',
+  body: '',
+  audience: 'confirmed' as 'confirmed' | 'all',
+})
+
+const broadcastErrors = ref<Record<string, string>>({})
+const sendingMessage = ref(false)
+
+/** One address counts once, matching what the server queues. */
+function recipientCount(audience: 'confirmed' | 'all') {
+  return new Set(
+    registrations.value
+      .filter(
+        (row) => row.status === 'confirmed' || (audience === 'all' && row.status === 'waitlisted'),
+      )
+      .map((row) => row.email.trim().toLowerCase()),
+  ).size
+}
+
+const recipientCounts = computed(() => ({
+  confirmed: recipientCount('confirmed'),
+  all: recipientCount('all'),
+}))
+
+async function sendMessage() {
+  if (!event.value || sendingMessage.value) return
+
+  sendingMessage.value = true
+  broadcastErrors.value = {}
+  flash.value = null
+
+  try {
+    const result = await $fetch<{ recipients: number }>(
+      `/api/admin/events/${event.value.id}/message`,
+      {
+        method: 'POST',
+        body: {
+          subject: broadcast.subject,
+          body: broadcast.body,
+          audience: broadcast.audience,
+        },
+      },
+    )
+
+    flash.value = {
+      tone: 'success',
+      message: result.recipients
+        ? `Message queued for ${result.recipients} ${
+            result.recipients === 1 ? 'guest' : 'guests'
+          }. It goes out within a few minutes.`
+        : 'No guests matched that audience, so nothing was sent.',
+    }
+
+    if (result.recipients) {
+      broadcast.subject = ''
+      broadcast.body = ''
+    }
+
+    await refreshRegistrations()
+  } catch (caught) {
+    const payload = (caught as { data?: { data?: { errors?: Record<string, string> } } }).data?.data
+
+    broadcastErrors.value = payload?.errors ?? {}
+    flash.value = { tone: 'error', message: errorMessage(caught) }
+  } finally {
+    sendingMessage.value = false
+  }
+}
+
 useSeo({
   title: event.value ? event.value.title : 'Event',
   description: 'Manage a Cross-Love Movement event.',
@@ -182,7 +299,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           </p>
         </div>
 
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <BaseButton v-if="canEdit" :to="`/admin/events/${event.id}/edit`" size="sm">
             Edit event
           </BaseButton>
@@ -190,6 +307,35 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             Export CSV
             <template #icon><Icon name="download" :size="16" /></template>
           </BaseButton>
+
+          <template v-if="canEdit && !isCancelled">
+            <button
+              v-if="!confirmCancelEvent"
+              type="button"
+              class="rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:bg-red-50"
+              @click="confirmCancelEvent = true"
+            >
+              Cancel event
+            </button>
+            <template v-else>
+              <button
+                type="button"
+                class="rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-50"
+                :disabled="cancellingEvent"
+                @click="cancelEvent"
+              >
+                {{ cancellingEvent ? 'Cancelling…' : 'Confirm cancellation' }}
+              </button>
+              <button
+                type="button"
+                class="text-sm font-semibold text-ink-soft hover:text-ink"
+                :disabled="cancellingEvent"
+                @click="confirmCancelEvent = false"
+              >
+                Keep event
+              </button>
+            </template>
+          </template>
         </div>
       </div>
 
@@ -206,8 +352,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           <dt class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Where</dt>
           <dd class="mt-1.5 font-semibold text-ink">{{ event.venue }}</dd>
           <dd class="text-sm text-ink-soft">
-            {{ event.address || event.city }}<template v-if="event.address">, </template
-            >{{ event.city }}
+            {{ event.address ? `${event.address}, ${event.city}` : event.city }}
           </dd>
         </div>
 
@@ -241,6 +386,20 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         {{ formatDateTime(event.registrationDeadline) }}.
       </p>
 
+      <AlertBox v-if="isCancelled" tone="info" title="This event is cancelled" class="mt-6">
+        <p class="mt-1">
+          It is hidden from the public calendar and its bookings are released. Set the status back
+          to published from the edit page if it is going ahead after all.
+        </p>
+      </AlertBox>
+
+      <AlertBox v-else-if="confirmCancelEvent" tone="error" title="Cancel this event?" class="mt-6">
+        <p class="mt-1">
+          It will disappear from the public calendar, every booking will be released, and each guest
+          will be emailed the cancellation notice. This cannot be undone from here.
+        </p>
+      </AlertBox>
+
       <AlertBox
         v-if="flash"
         :tone="flash.tone"
@@ -262,11 +421,13 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           </div>
 
           <NuxtLink
+            v-if="!isCancelled"
             :to="`/events?event=${event.slug}`"
             class="text-sm font-semibold text-clay-700 hover:text-clay-900"
           >
             Open registration form
           </NuxtLink>
+          <p v-else class="text-sm font-semibold text-ink-soft">Registration closed</p>
         </div>
 
         <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -338,7 +499,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           v-else
           class="mt-6 overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft"
         >
-          <div class="overflow-x-auto">
+          <div class="relative overflow-x-auto">
             <table class="w-full min-w-[58rem] text-left text-sm">
               <thead class="border-b border-sand-200 bg-sand-100">
                 <tr class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
@@ -451,6 +612,92 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           Cancelling frees the seats immediately and promotes waitlisted guests in the order they
           joined. They receive an email automatically.
         </p>
+
+        <!-- Message guests -->
+        <div
+          v-if="recipientCounts.all > 0"
+          id="message"
+          class="mt-12 scroll-mt-24 rounded-3xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8"
+        >
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h3 class="text-xl text-ink">Message guests</h3>
+              <p class="mt-1 text-sm text-ink-soft">
+                Sends one email per address on this event. A blank line starts a new paragraph.
+              </p>
+            </div>
+            <p class="text-sm font-semibold text-ink-soft">
+              {{ recipientCounts[broadcast.audience] }}
+              {{ recipientCounts[broadcast.audience] === 1 ? 'recipient' : 'recipients' }}
+            </p>
+          </div>
+
+          <form class="mt-6 space-y-5" novalidate @submit.prevent="sendMessage">
+            <fieldset>
+              <legend class="text-sm font-semibold text-ink">Who should receive it?</legend>
+              <div class="mt-2.5 grid gap-2 sm:grid-cols-2">
+                <button
+                  v-for="option in [
+                    {
+                      value: 'confirmed',
+                      label: 'Confirmed guests',
+                      count: recipientCounts.confirmed,
+                    },
+                    { value: 'all', label: 'Confirmed and waitlist', count: recipientCounts.all },
+                  ] as const"
+                  :key="option.value"
+                  type="button"
+                  class="rounded-2xl border p-4 text-left transition"
+                  :class="
+                    broadcast.audience === option.value
+                      ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600/20'
+                      : 'border-sand-300 bg-white hover:border-brand-300'
+                  "
+                  :aria-pressed="broadcast.audience === option.value"
+                  @click="broadcast.audience = option.value"
+                >
+                  <span class="block text-sm font-semibold text-ink">{{ option.label }}</span>
+                  <span class="mt-0.5 block text-xs text-ink-soft">
+                    {{ option.count }} {{ option.count === 1 ? 'email' : 'emails' }}
+                  </span>
+                </button>
+              </div>
+            </fieldset>
+
+            <TextField
+              v-model="broadcast.subject"
+              label="Subject"
+              name="subject"
+              :maxlength="160"
+              :error="broadcastErrors.subject"
+              required
+            />
+
+            <TextareaField
+              v-model="broadcast.body"
+              label="Message"
+              name="body"
+              :rows="6"
+              :maxlength="10000"
+              hint="Plain text. Links are not made clickable."
+              :error="broadcastErrors.body"
+              required
+            />
+
+            <div class="flex flex-wrap items-center gap-4">
+              <BaseButton
+                type="submit"
+                :disabled="sendingMessage || !recipientCounts[broadcast.audience]"
+              >
+                {{ sendingMessage ? 'Sending…' : `Send to ${recipientCounts[broadcast.audience]}` }}
+                <template #icon><Icon name="mail" :size="16" /></template>
+              </BaseButton>
+              <p class="text-xs text-ink-soft">
+                Queued immediately, delivered within a few minutes.
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div

@@ -88,6 +88,7 @@ const statusOptions = [
   { value: 'draft', label: 'Draft' },
   { value: 'published', label: 'Published' },
   { value: 'archived', label: 'Archived' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 const cancelTo = computed(() =>
@@ -162,6 +163,7 @@ async function onSubmit() {
         v-model="form.status"
         label="Status"
         name="status"
+        hint="Setting Cancelled here does not email guests. Use Cancel event on the event page."
         :options="statusOptions"
         :error="errors.status"
       />

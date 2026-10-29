@@ -14,7 +14,7 @@ import type {
  */
 
 export const mission =
-  'To leverage faith, creativity and inclusion to empower youth in building sustainable societies.'
+  'To leverage faith, creativity, and inclusion to empower youth in building sustainable societies.'
 
 export const vision =
   'To be a hub that builds a succession of youth empowered to drive transgenerational impact in Ghana and beyond.'
@@ -66,7 +66,7 @@ export const values: ValueItem[] = [
   {
     title: 'Inclusion',
     description:
-      'We create space where all — irrespective of social, cultural, or denominational background — get a fair share of the benefits of our initiatives, while honouring the stakeholders who oversee our themes.',
+      'We create a space where all — irrespective of social, cultural, or denominational background — get a fair share of the benefits of our initiatives, while honouring the stakeholders who oversee our themes.',
     icon: 'users',
   },
   {

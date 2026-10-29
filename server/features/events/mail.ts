@@ -1,5 +1,6 @@
 import type { EventRow, RegistrationRow } from '../../database/schema'
-import { siteUrl } from '../../emails/catalog'
+import { sanitizeSubject, siteUrl } from '../../emails/catalog'
+import { messageHtml } from '../../emails/text'
 import type { ComposedMail, TemplateVariables } from '../../emails/types'
 
 const WHEN = new Intl.DateTimeFormat('en-GB', {
@@ -115,5 +116,60 @@ export function cancellationMail(event: EventRow, registration: RegistrationRow)
       ...SIGNATURE,
     ].join('\n'),
     variables: bookingVariables(event, registration),
+  }
+}
+
+/**
+ * The whole event is off — different from one guest cancelling a booking. No
+ * reference code: the guest does not need one any more.
+ */
+export function calledOffMail(event: EventRow, registration: RegistrationRow): ComposedMail {
+  return {
+    kind: 'event-called-off',
+    toEmail: registration.email,
+    subject: `Event cancelled — ${event.title}`,
+    body: [
+      `Hello ${registration.name},`,
+      '',
+      `We are sorry to let you know that ${event.title} has been cancelled.`,
+      '',
+      `When:  ${when(event)}`,
+      `Where: ${where(event)}`,
+      '',
+      'Your booking has been released and you do not need to do anything.',
+      'We will write to you if the event is rescheduled.',
+      ...SIGNATURE,
+    ].join('\n'),
+    variables: {
+      NAME: registration.name,
+      EVENT_TITLE: event.title,
+      WHEN: when(event),
+      WHERE: where(event),
+    },
+  }
+}
+
+/**
+ * Staff-written plain text becomes the little HTML the template needs. See
+ * `server/emails/text.ts`; the value goes into the `_HTML` variable, which the
+ * renderer inserts as markup because the app built this string.
+ */
+export function broadcastMail(
+  event: EventRow,
+  recipient: { name: string; email: string },
+  message: { subject: string; body: string },
+): ComposedMail {
+  return {
+    kind: 'event-message',
+    toEmail: recipient.email,
+    subject: sanitizeSubject(message.subject),
+    body: [`Hello ${recipient.name},`, '', message.body, ...SIGNATURE].join('\n'),
+    variables: {
+      NAME: recipient.name,
+      EVENT_TITLE: event.title,
+      WHEN: when(event),
+      WHERE: where(event),
+      MESSAGE_HTML: messageHtml(message.body),
+    },
   }
 }

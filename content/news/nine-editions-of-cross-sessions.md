@@ -5,14 +5,14 @@ summary: From one Easter gathering to a cross-denominational network of young cr
 publishedAt: '2026-10-20T09:00:00+00:00'
 author: CLM Team
 readingMinutes: 3
-image: /images/portfolio-stage.svg
-imageAlt: Abstract artwork of a stage lit for a performance
+image: https://assets.crosslovemovement.org/news-cross-sessions.JPG
+imageAlt: Young people behind a treble-clef cake with lit candles at a Cross Sessions celebration
 featured: false
 ---
 
 Cross Sessions started as a gathering of young creatives who wanted one night where the Word and the artistry could share a stage. Nine editions later, it is still that — but the room has grown.
 
-The event is hosted on Easter Sundays. Young people from Anglican, Presbyterian, Methodist, The Church of Pentecost, Roman Catholic, SDA, Evangelical Presbyterian, Deeper Life, and other traditions take part in one programme.
+The event is held each Easter Sunday. Young people from Anglican, Presbyterian, Methodist, The Church of Pentecost, Roman Catholic, SDA, Evangelical Presbyterian, Deeper Life, and other traditions take part in one programme.
 
 Each edition features young music and art talent, empowerment expositions, and Power-Point — the segment where a young leader leaves the audience with one lesson worth carrying home.
 

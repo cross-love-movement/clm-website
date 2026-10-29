@@ -10,6 +10,7 @@ const publishTones: Record<PublishStatus, string> = {
   published: 'bg-brand-100 text-brand-800',
   draft: 'bg-sand-200 text-ink-soft',
   archived: 'bg-clay-50 text-clay-700 ring-1 ring-clay-200',
+  cancelled: 'bg-red-50 text-red-700 ring-1 ring-red-200',
 }
 
 const bookingTones: Record<BookingStatus, string> = {
@@ -59,6 +60,7 @@ const permissionLabels: Record<Permission, string> = {
   canManagePeople: 'Manage people',
   canManageVolunteers: 'Manage volunteers',
   canManageProgrammes: 'Manage programmes',
+  canManageNewsletter: 'Manage newsletter',
 }
 
 export function permissionLabel(permission: Permission) {

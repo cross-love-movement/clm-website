@@ -328,7 +328,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             <dt class="font-semibold text-ink">Admin</dt>
             <dd class="text-ink-soft">
               Staff portal, with the permissions chosen at invite: edit events, manage
-              registrations, and manage people.
+              registrations, manage people, and send the newsletter.
             </dd>
           </div>
           <div>
@@ -412,7 +412,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         v-else
         class="mt-5 overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft"
       >
-        <div class="overflow-x-auto">
+        <div class="relative overflow-x-auto">
           <table class="w-full min-w-[62rem] text-left text-sm">
             <thead class="border-b border-sand-200 bg-sand-100">
               <tr class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">

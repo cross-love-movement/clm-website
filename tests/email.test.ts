@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import type {
   EventRow,
   RegistrationRow,
+  SubscriberRow,
   VolunteerApplicationRow,
   VolunteerRow,
 } from '../server/database/schema'
@@ -23,18 +24,20 @@ import {
 import {
   contactVariables,
   donationVariables,
-  newsletterVariables,
   partnershipVariables,
 } from '../server/emails/notifications'
 import type { TemplateVariables } from '../server/emails/types'
 import { inviteMail, passwordResetMail } from '../server/features/auth/mail'
 import {
+  broadcastMail,
+  calledOffMail,
   cancellationMail,
   confirmationMail,
   promotionMail,
   waitlistMail,
 } from '../server/features/events/mail'
 import { applicationNotification } from '../server/features/volunteers/mail'
+import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
 import { buildMailPayload } from '../server/utils/mailer'
 
 const templatesDir = fileURLToPath(new URL('../server/emails/templates/', import.meta.url))
@@ -119,12 +122,29 @@ const application: VolunteerApplicationRow = {
 
 const link = 'https://www.crosslovemovement.org/reset-password?token=abc'
 
+const subscriber: SubscriberRow = {
+  id: '00000000-0000-4000-8000-000000000005',
+  email: 'ama@example.com',
+  status: 'subscribed',
+  token: 'unsubscribe-token-abc123',
+  source: 'website',
+  subscribedAt: new Date('2026-01-01T00:00:00Z'),
+  unsubscribedAt: null,
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
+}
+
 /** The variables each kind actually sends. Must cover the template's placeholders. */
 const samples: Record<string, TemplateVariables> = {
   'event-registration': confirmationMail(event, registration).variables,
   'event-waitlist': waitlistMail(event, registration).variables,
   'event-promoted': promotionMail(event, registration).variables,
   'event-cancelled': cancellationMail(event, registration).variables,
+  'event-called-off': calledOffMail(event, registration).variables,
+  'event-message': broadcastMail(
+    event,
+    { name: registration.name, email: registration.email },
+    { subject: 'A change to the programme', body: 'The doors open at 8:30.' },
+  ).variables,
   'auth-invite': inviteMail({ name: 'Ama', role: 'volunteer', link }).variables,
   'auth-reset': passwordResetMail({ name: 'Ama', link }).variables,
   'volunteer-application': applicationNotification({
@@ -154,7 +174,11 @@ const samples: Record<string, TemplateVariables> = {
     type: 'Funding',
     message: 'Hello',
   }),
-  newsletter: newsletterVariables('ama@example.com'),
+  newsletter: welcomeMail(subscriber).variables,
+  'newsletter-broadcast': issueMail(subscriber, {
+    subject: 'October from the field',
+    body: 'A short update about the work.',
+  }).variables,
 }
 
 describe('email templates', () => {
@@ -243,6 +267,21 @@ describe('email rendering', () => {
 
     expect(html).not.toContain('<img src=x')
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+  })
+
+  it('inserts only `_HTML` variables as markup', () => {
+    const html = renderEmail(templateFile('event-message'), samples['event-message']!)
+
+    expect(html).toContain('<p style="margin: 0 0 14px;">The doors open at 8:30.</p>')
+
+    // A tag typed into the message is escaped before it reaches MESSAGE_HTML.
+    const escaped = broadcastMail(
+      event,
+      { name: registration.name, email: registration.email },
+      { subject: 'Test', body: '<b>not bold</b>' },
+    ).variables.MESSAGE_HTML
+
+    expect(escaped).toContain('&lt;b&gt;not bold&lt;/b&gt;')
   })
 
   it('flattens header injection attempts', () => {

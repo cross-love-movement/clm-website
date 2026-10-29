@@ -7,6 +7,7 @@ const { user } = useUserSession()
 const current = computed(() => user.value as SessionUser | null)
 const canManageProgrammes = computed(() => hasPermission(current.value, 'canManageProgrammes'))
 const canManageVolunteers = computed(() => hasPermission(current.value, 'canManageVolunteers'))
+const canManageNewsletter = computed(() => hasPermission(current.value, 'canManageNewsletter'))
 
 useSeo({
   title: 'Staff portal',
@@ -65,6 +66,21 @@ useSeo({
         </p>
         <BaseButton to="/admin/volunteers" variant="secondary" size="sm" class="mt-4 self-start">
           Manage volunteers
+        </BaseButton>
+      </article>
+
+      <article
+        v-if="canManageNewsletter"
+        class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
+      >
+        <Icon name="mail" :size="22" class="text-clay-600" />
+        <h2 class="mt-3 text-lg text-ink">Newsletter</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
+          See every address collected from the website, remove one at a request, and send the
+          monthly note to the subscribed list.
+        </p>
+        <BaseButton to="/admin/newsletter" variant="secondary" size="sm" class="mt-4 self-start">
+          Manage newsletter
         </BaseButton>
       </article>
     </div>

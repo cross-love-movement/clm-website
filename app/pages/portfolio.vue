@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { PortfolioCategory, PortfolioItem } from '#shared/types/content'
 
+import { heroImages } from '~/data/heroes'
+
 const { items, byCategory, categories, categoryLabels } = await usePortfolio()
 
 const active = ref<'all' | PortfolioCategory>('all')
@@ -49,6 +51,7 @@ useSeo({
       eyebrow="Portfolio"
       title="The work, in pictures and sound."
       description="Performances, recordings, outreach days, and the quiet practical work of supporting churches — a selected record of what we have been part of."
+      :image="heroImages.portfolio"
     >
       <BaseButton href="#work" variant="inverse">
         See the work

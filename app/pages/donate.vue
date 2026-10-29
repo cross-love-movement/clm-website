@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { givingPriorities } from '~/data/involve'
 import { donateFaqs } from '~/data/faqs'
+import { heroImages } from '~/data/heroes'
 
 const { site } = useSite()
 
@@ -18,6 +19,7 @@ useSeo({
       eyebrow="Donate"
       title="Your gift becomes an instrument, a stage, a trained volunteer."
       description="Not a campaign. Not a one-off photograph. Steady support that lets a small Ghanaian team keep showing up in the same churches and communities."
+      :image="heroImages.donate"
       tone="clay"
     >
       <BaseButton href="#give" variant="inverse">

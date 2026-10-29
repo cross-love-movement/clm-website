@@ -23,7 +23,7 @@ const next = computed(() => upcoming.value.slice(0, 2))
           v-for="event in next"
           :key="event.slug"
           :to="{ path: '/events', query: { event: event.slug }, hash: '#register' }"
-          class="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-gold-400/40 hover:bg-white/[0.07]"
+          class="group flex min-w-0 items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-gold-400/40 hover:bg-white/[0.07]"
         >
           <div
             class="flex w-16 shrink-0 flex-col items-center rounded-xl border border-white/10 bg-white/5 py-2"

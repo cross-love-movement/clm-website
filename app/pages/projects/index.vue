@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ProjectCategory } from '#shared/types/content'
 
+import { heroImages } from '~/data/heroes'
+
 const { projects, categories } = await useProjects()
 
 const active = ref<'all' | ProjectCategory>('all')
@@ -30,6 +32,7 @@ useSeo({
       eyebrow="Our projects"
       title="Work measured in seasons, not campaigns."
       description="Two classes of work: Christian Mission Projects with local churches, and Youth Empowerment Programmes for the next generation."
+      :image="heroImages.projects"
     >
       <BaseButton to="/donate" variant="inverse">
         Fund a programme

@@ -1,17 +1,6 @@
 import { requirePermission } from '../../../../features/auth/guards'
 import { listRegistrations } from '../../../../features/events/repository'
-
-const RISKY_PREFIX = /^[=+\-@\t\r]/
-
-function csvCell(value: string | number) {
-  const text = String(value)
-  // Spreadsheet apps treat a leading =, +, -, or @ as a formula. A leading
-  // apostrophe forces the cell to text; Excel hides it, so the value still
-  // reads normally. Notes, names, and phone numbers all come from the public.
-  const safe = RISKY_PREFIX.test(text) ? `'${text}` : text
-
-  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
-}
+import { csvLine } from '../../../../utils/csv'
 
 /**
  * GET /api/admin/events/registrations
@@ -41,7 +30,7 @@ export default defineEventHandler(async (event) => {
     const lines = [
       header.join(','),
       ...rows.map((row) =>
-        [
+        csvLine([
           row.reference,
           row.eventTitle,
           row.name,
@@ -52,9 +41,7 @@ export default defineEventHandler(async (event) => {
           row.createdAt.toISOString(),
           row.checkedInAt ? row.checkedInAt.toISOString() : '',
           row.notes,
-        ]
-          .map(csvCell)
-          .join(','),
+        ]),
       ),
     ]
 

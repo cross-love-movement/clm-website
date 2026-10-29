@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sum } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sum } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { Event, AdminEvent, AdminEventDetail } from '#shared/types/content'
@@ -12,8 +12,16 @@ import {
   mailOutbox,
   type EventRow,
   type RegistrationRow,
+  type RegistrationStatus,
 } from '../../database/schema'
-import { cancellationMail, confirmationMail, promotionMail, waitlistMail } from './mail'
+import {
+  broadcastMail,
+  calledOffMail,
+  cancellationMail,
+  confirmationMail,
+  promotionMail,
+  waitlistMail,
+} from './mail'
 import { generateReference } from './references'
 import type { EventInput } from './schemas'
 
@@ -401,4 +409,117 @@ export async function updateEvent(id: string, input: EventInput) {
     }
     throw error
   }
+}
+
+/** One email per address, so a guest who booked twice is not written to twice. */
+function uniqueRecipients(rows: RegistrationRow[]) {
+  const seen = new Map<string, RegistrationRow>()
+
+  for (const row of rows) {
+    const key = row.email.trim().toLowerCase()
+    if (!seen.has(key)) seen.set(key, row)
+  }
+
+  return [...seen.values()]
+}
+
+const LIVE_REGISTRATION_STATUSES = ['confirmed', 'waitlisted'] as const
+
+export type BroadcastAudience = 'confirmed' | 'all'
+
+export interface BroadcastInput {
+  subject: string
+  body: string
+  audience: BroadcastAudience
+}
+
+export type BroadcastResult = { ok: true; recipients: number } | { ok: false; reason: 'not-found' }
+
+/**
+ * Queues one message per guest on the event. Nothing is sent inline: the outbox
+ * worker delivers it, so a mail outage leaves the rows pending rather than
+ * losing the message.
+ */
+export async function broadcastToEvent(
+  eventId: string,
+  input: BroadcastInput,
+): Promise<BroadcastResult> {
+  const db = useDatabase()
+
+  return db.transaction(async (tx) => {
+    const [event] = await tx.select().from(events).where(eq(events.id, eventId)).limit(1)
+    if (!event) return { ok: false, reason: 'not-found' } as const
+
+    const statuses: RegistrationStatus[] =
+      input.audience === 'confirmed' ? ['confirmed'] : [...LIVE_REGISTRATION_STATUSES]
+
+    const rows = await tx
+      .select()
+      .from(eventRegistrations)
+      .where(
+        and(eq(eventRegistrations.eventId, eventId), inArray(eventRegistrations.status, statuses)),
+      )
+      .orderBy(asc(eventRegistrations.createdAt))
+
+    const recipients = uniqueRecipients(rows)
+    if (!recipients.length) return { ok: true, recipients: 0 } as const
+
+    await tx.insert(mailOutbox).values(recipients.map((row) => broadcastMail(event, row, input)))
+
+    return { ok: true, recipients: recipients.length } as const
+  })
+}
+
+export type CancelEventResult =
+  | { ok: true; notified: number }
+  | { ok: false; reason: 'not-found' | 'already-cancelled' }
+
+/**
+ * Marks the event cancelled and releases every booking. The event drops out of
+ * the public calendar (only `published` is listed), and each guest receives the
+ * event-level notice rather than the single-booking cancellation mail.
+ */
+export async function cancelEvent(id: string): Promise<CancelEventResult> {
+  const db = useDatabase()
+
+  return db.transaction(async (tx) => {
+    const [event] = await tx.select().from(events).where(eq(events.id, id)).for('update')
+    if (!event) return { ok: false, reason: 'not-found' } as const
+    if (event.status === 'cancelled') return { ok: false, reason: 'already-cancelled' } as const
+
+    await tx
+      .update(events)
+      .set({ status: 'cancelled', featured: false, updatedAt: new Date() })
+      .where(eq(events.id, id))
+
+    const live = await tx
+      .select()
+      .from(eventRegistrations)
+      .where(
+        and(
+          eq(eventRegistrations.eventId, id),
+          inArray(eventRegistrations.status, [...LIVE_REGISTRATION_STATUSES]),
+        ),
+      )
+      .for('update')
+
+    if (live.length) {
+      await tx
+        .update(eventRegistrations)
+        .set({ status: 'cancelled', cancelledAt: new Date() })
+        .where(
+          and(
+            eq(eventRegistrations.eventId, id),
+            inArray(eventRegistrations.status, [...LIVE_REGISTRATION_STATUSES]),
+          ),
+        )
+    }
+
+    const recipients = uniqueRecipients(live)
+    if (recipients.length) {
+      await tx.insert(mailOutbox).values(recipients.map((row) => calledOffMail(event, row)))
+    }
+
+    return { ok: true, notified: recipients.length } as const
+  })
 }

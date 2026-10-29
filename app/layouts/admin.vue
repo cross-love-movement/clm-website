@@ -21,6 +21,10 @@ const links = computed(() => {
     items.push({ label: 'Volunteers', to: '/admin/volunteers' })
   }
 
+  if (hasPermission(user.value as SessionUser | null, 'canManageNewsletter')) {
+    items.push({ label: 'Newsletter', to: '/admin/newsletter' })
+  }
+
   return items
 })
 </script>

@@ -1,25 +1,24 @@
 import type {
   EventRow,
   RegistrationRow,
+  SubscriberRow,
   VolunteerApplicationRow,
   VolunteerRow,
 } from '../database/schema'
 import { EMAIL_TEMPLATES, loadTemplate, renderEmail } from '../emails/catalog'
-import {
-  contactVariables,
-  donationVariables,
-  newsletterVariables,
-  partnershipVariables,
-} from '../emails/notifications'
+import { contactVariables, donationVariables, partnershipVariables } from '../emails/notifications'
 import type { TemplateVariables } from '../emails/types'
 import { inviteMail, passwordResetMail } from '../features/auth/mail'
 import {
+  broadcastMail,
+  calledOffMail,
   cancellationMail,
   confirmationMail,
   promotionMail,
   waitlistMail,
 } from '../features/events/mail'
 import { applicationNotification } from '../features/volunteers/mail'
+import { issueMail, welcomeMail } from '../features/newsletter/mail'
 
 /**
  * Development-only preview of every email, rendered from the same template
@@ -103,11 +102,32 @@ const sampleApplication: VolunteerApplicationRow = {
 
 const sampleLink = 'https://www.crosslovemovement.org/reset-password?token=sample-token'
 
+const sampleSubscriber: SubscriberRow = {
+  id: '00000000-0000-4000-8000-000000000005',
+  email: 'ama@example.com',
+  status: 'subscribed',
+  token: 'sample-unsubscribe-token',
+  source: 'website',
+  subscribedAt: new Date('2026-01-01T00:00:00Z'),
+  unsubscribedAt: null,
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
+}
+
 const samples: Record<string, () => TemplateVariables> = {
   'event-registration': () => confirmationMail(sampleEvent, sampleRegistration).variables,
   'event-waitlist': () => waitlistMail(sampleEvent, sampleRegistration).variables,
   'event-promoted': () => promotionMail(sampleEvent, sampleRegistration).variables,
   'event-cancelled': () => cancellationMail(sampleEvent, sampleRegistration).variables,
+  'event-called-off': () => calledOffMail(sampleEvent, sampleRegistration).variables,
+  'event-message': () =>
+    broadcastMail(
+      sampleEvent,
+      { name: sampleRegistration.name, email: sampleRegistration.email },
+      {
+        subject: 'Doors open at 8:30',
+        body: 'A quick note before the day.\n\nDoors open at 8:30, and the first session starts at 9:00.',
+      },
+    ).variables,
   'auth-invite': () =>
     inviteMail({ name: 'Ama Mensah', role: 'volunteer', link: sampleLink }).variables,
   'auth-reset': () => passwordResetMail({ name: 'Ama Mensah', link: sampleLink }).variables,
@@ -145,7 +165,12 @@ const samples: Record<string, () => TemplateVariables> = {
       type: 'Funding and volunteers',
       message: 'We can support transport for the choir this year.',
     }),
-  newsletter: () => newsletterVariables('ama@example.com'),
+  newsletter: () => welcomeMail(sampleSubscriber).variables,
+  'newsletter-broadcast': () =>
+    issueMail(sampleSubscriber, {
+      subject: 'October from the field',
+      body: 'A short update about the work.\n\nSecond paragraph with a little more detail.',
+    }).variables,
 }
 
 export default defineEventHandler(async (event) => {

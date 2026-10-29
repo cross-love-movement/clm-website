@@ -5,8 +5,8 @@ summary: A 2024 peace campaign that asked young people to lead — with a peace 
 location: Ghana
 status: completed
 timeframe: 2024 election season
-image: /images/project-community.svg
-imageAlt: Abstract artwork of overlapping circles and a small group of people
+image: https://assets.crosslovemovement.org/today-is-us-4.png
+imageAlt: "Today Is Us poster: hands joined around a T-shirt, with the Ghana flag and 'For peace advocacy in election 2024'"
 accent: clay
 featured: true
 goals:

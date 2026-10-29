@@ -5,8 +5,8 @@ summary: At the 5th Cross Sessions we funded an editing studio for a youth-led d
 publishedAt: '2026-10-08T09:00:00+00:00'
 author: CLM Team
 readingMinutes: 2
-image: /images/portfolio-studio.svg
-imageAlt: Abstract artwork of a microphone and studio light
+image: https://assets.crosslovemovement.org/alone-with-God_landscape.jpg
+imageAlt: A white desk with a laptop, chair and woven rug in the newly equipped Alone With God studio
 featured: false
 ---
 

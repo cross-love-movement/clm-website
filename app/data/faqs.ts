@@ -42,7 +42,7 @@ export const volunteerFaqs: FaqItem[] = [
   {
     question: 'Where do volunteers serve?',
     answer:
-      'Most activity is in Accra and Tema, with Cross Sessions in Bawku when scheduled. Tell us where you are based and we will be honest about what is practical.',
+      'Most activity is in Accra and Tema, with some outreach in Bawku. Tell us where you are based and we will be honest about what is practical.',
   },
   {
     question: 'Is there training?',
@@ -60,7 +60,7 @@ export const partnershipFaqs: FaqItem[] = [
   {
     question: 'How long does a partnership take to set up?',
     answer:
-      'Most partnerships begin within four to six weeks: an introductory call, a programme fit discussion, a short written agreement, and a start date.',
+      'Most partnerships begin within four to six weeks: an introductory call, a programme-fit discussion, a short written agreement, and a start date.',
   },
   {
     question: 'Can we choose which programme to support?',
