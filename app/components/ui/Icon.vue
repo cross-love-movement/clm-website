@@ -140,6 +140,11 @@ withDefaults(
       <path d="m7 11 5 5 5-5" />
       <path d="M4 20h16" />
     </template>
+    <template v-else-if="name === 'logout'">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="m10 8 4 4-4 4" />
+      <path d="M14 12H4" />
+    </template>
     <template v-else-if="name === 'instagram'">
       <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
       <circle cx="12" cy="12" r="4" />

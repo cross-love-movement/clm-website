@@ -32,6 +32,7 @@ export type IconName =
   | 'play'
   | 'download'
   | 'copy'
+  | 'logout'
   | 'instagram'
   | 'x'
   | 'youtube'

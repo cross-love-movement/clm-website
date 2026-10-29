@@ -130,7 +130,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       v-else
       class="mt-6 overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft"
     >
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <table class="w-full min-w-[48rem] text-left text-sm">
           <thead class="border-b border-sand-200 bg-sand-100">
             <tr class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">

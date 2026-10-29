@@ -352,8 +352,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           <dt class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Where</dt>
           <dd class="mt-1.5 font-semibold text-ink">{{ event.venue }}</dd>
           <dd class="text-sm text-ink-soft">
-            {{ event.address || event.city }}<template v-if="event.address">, </template
-            >{{ event.city }}
+            {{ event.address ? `${event.address}, ${event.city}` : event.city }}
           </dd>
         </div>
 
@@ -500,7 +499,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           v-else
           class="mt-6 overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft"
         >
-          <div class="overflow-x-auto">
+          <div class="relative overflow-x-auto">
             <table class="w-full min-w-[58rem] text-left text-sm">
               <thead class="border-b border-sand-200 bg-sand-100">
                 <tr class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">

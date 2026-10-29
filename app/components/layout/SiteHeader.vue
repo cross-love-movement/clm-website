@@ -56,10 +56,12 @@ onBeforeUnmount(() => {
       </nav>
 
       <div class="flex items-center gap-2">
-        <BaseButton to="/donate" variant="clay" size="sm" class="hidden sm:inline-flex">
-          Donate
-          <template #icon><Icon name="heart" :size="15" /></template>
-        </BaseButton>
+        <span class="hidden sm:inline-flex">
+          <BaseButton to="/donate" variant="clay" size="sm">
+            Donate
+            <template #icon><Icon name="heart" :size="15" /></template>
+          </BaseButton>
+        </span>
 
         <button
           type="button"
