@@ -52,7 +52,7 @@ const { values, errors, status, message, isSubmitting, isSuccess, submit } = use
     </form>
 
     <p v-else role="status" class="text-sm text-sand-100">
-      You’re in. Look out for the next update — and thank you.
+      You’re in. Check your inbox for a confirmation — and thank you.
     </p>
   </div>
 </template>

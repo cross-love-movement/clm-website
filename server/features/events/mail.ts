@@ -1,5 +1,6 @@
 import type { EventRow, RegistrationRow } from '../../database/schema'
-import { escapeHtml, sanitizeSubject, siteUrl } from '../../emails/catalog'
+import { sanitizeSubject, siteUrl } from '../../emails/catalog'
+import { messageHtml } from '../../emails/text'
 import type { ComposedMail, TemplateVariables } from '../../emails/types'
 
 const WHEN = new Intl.DateTimeFormat('en-GB', {
@@ -149,20 +150,10 @@ export function calledOffMail(event: EventRow, registration: RegistrationRow): C
 }
 
 /**
- * Staff-written plain text becomes the little HTML the template needs. Escaped
- * first, then newlines become `<br />`; `_HTML` variables are inserted raw by
- * the renderer because the app, not the public, built this string.
+ * Staff-written plain text becomes the little HTML the template needs. See
+ * `server/emails/text.ts`; the value goes into the `_HTML` variable, which the
+ * renderer inserts as markup because the app built this string.
  */
-export function messageHtml(message: string) {
-  return message
-    .split(/\n{2,}/)
-    .map(
-      (block) =>
-        `<p style="margin: 0 0 14px;">${escapeHtml(block.trim()).replace(/\n/g, '<br />')}</p>`,
-    )
-    .join('')
-}
-
 export function broadcastMail(
   event: EventRow,
   recipient: { name: string; email: string },

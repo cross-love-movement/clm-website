@@ -328,7 +328,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             <dt class="font-semibold text-ink">Admin</dt>
             <dd class="text-ink-soft">
               Staff portal, with the permissions chosen at invite: edit events, manage
-              registrations, and manage people.
+              registrations, manage people, and send the newsletter.
             </dd>
           </div>
           <div>

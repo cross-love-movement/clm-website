@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   'canManagePeople',
   'canManageVolunteers',
   'canManageProgrammes',
+  'canManageNewsletter',
 ] as const
 
 export type Permission = (typeof PERMISSIONS)[number]

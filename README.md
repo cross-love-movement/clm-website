@@ -350,13 +350,45 @@ added later, draft/publish approval belongs with that work.
 | Contact form — complaint                   | `admin@crosslovemovement.org`                 |
 | Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
 | Partnership form                           | `info@crosslovemovement.org`                  |
-| Newsletter signup                          | `info@crosslovemovement.org`                  |
 | Invite and password-reset replies          | `support@crosslovemovement.org` (Reply-To)    |
 | Unrouted fallback                          | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
 
 The mailboxes are defined once in `server/utils/mailboxes.ts`. These are recipients; the sending
 address still has to live on the domain verified in Resend. All inboxes must be routed in Cloudflare
 Email Routing or they will accept mail into a void.
+
+Newsletter signups are the exception: they are not routed to a staff inbox. The confirmation goes to
+the subscriber and the list lives in `/admin/newsletter`.
+
+### Newsletter
+
+The footer form writes to `newsletter_subscribers` and queues one confirmation to the subscriber
+using the `newsletter` mail. There is no staff copy — the list is the record, and the staff portal is
+where it is read.
+
+- A repeat signup for an address that is already subscribed is a no-op: no second row, no second
+  email. An address that unsubscribed earlier is put back on the list and receives the confirmation
+  again, because they asked.
+- Every mail carries a per-subscriber unsubscribe link
+  (`/newsletter/unsubscribe?token=…`). The page POSTs to the API on load rather than unsubscribing on
+  GET, so a mail scanner prefetching the link cannot remove someone by accident.
+- The admin screen shows counts, search, a CSV export, and removal at someone's request. Removal
+  keeps the row with status `unsubscribed`, so history stays visible and the address is never emailed
+  again.
+- “Send the monthly note” queues `newsletter-broadcast` once per subscribed address through the same
+  outbox as everything else. Delivery runs at ten every 20 seconds, so a large list spreads out
+  instead of hitting Resend's rate limit.
+
+Writing needs `canManageNewsletter`; superadmins always pass. Reading needs it too, because the list
+is personal data.
+
+| Route                                        | Purpose                      |
+| -------------------------------------------- | ---------------------------- |
+| `POST /api/newsletter`                       | public signup + confirmation |
+| `POST /api/newsletter/unsubscribe`           | token unsubscribe            |
+| `GET /api/admin/newsletter`                  | list + counts (`format=csv`) |
+| `POST /api/admin/newsletter/send`            | queue an issue               |
+| `POST /api/admin/newsletter/:id/unsubscribe` | staff removal                |
 
 To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
 site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
@@ -578,7 +610,8 @@ or alias**. Leave it blank to keep rendering the file in the app. Sending still 
 | `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
 | `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
 | `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
-| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`                                                                                                                                         |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                          |
+| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                               |
 
 Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
 **published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
@@ -589,6 +622,10 @@ Variables ending in `_HTML` are inserted as markup by the local renderer; everyt
 escaped. The only one today is `MESSAGE_HTML`, which `broadcastMail()` builds itself from staff text
 (escape, then split into paragraphs). Never name a variable `_HTML` for anything a member of the
 public typed — the suffix is a trust boundary.
+
+The newsletter opt-out link is `OPT_OUT_URL`, not `UNSUBSCRIBE_URL`: Resend reserves the latter for
+its own audience broadcasts, and a template that uses it fails to send. The link itself is built per
+subscriber in `server/features/newsletter/mail.ts`.
 
 To seed a dashboard template, run `npm run emails:sync` (below) or paste the file into the editor
 manually and publish it.

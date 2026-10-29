@@ -54,7 +54,3 @@ export function partnershipVariables(input: {
     MESSAGE: input.message,
   }
 }
-
-export function newsletterVariables(email: string): TemplateVariables {
-  return { SUBSCRIBER_EMAIL: email }
-}

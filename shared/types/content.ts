@@ -226,6 +226,26 @@ export interface AdminRegistration {
   cancelledAt: string | null
 }
 
+export const SUBSCRIBER_STATUSES = ['subscribed', 'unsubscribed'] as const
+
+export type SubscriberStatus = (typeof SUBSCRIBER_STATUSES)[number]
+
+/** One row in the admin newsletter list. */
+export interface NewsletterSubscriber {
+  id: string
+  email: string
+  status: SubscriberStatus
+  source: string
+  subscribedAt: string
+  unsubscribedAt: string | null
+}
+
+export interface NewsletterSummary {
+  subscribed: number
+  unsubscribed: number
+  total: number
+}
+
 export type PostCategory = 'story' | 'update' | 'reflection' | 'event'
 
 export interface Post {

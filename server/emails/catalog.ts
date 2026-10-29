@@ -35,6 +35,10 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   donation: { env: 'RESEND_TEMPLATE_DONATION', file: 'donation.html' },
   partnership: { env: 'RESEND_TEMPLATE_PARTNERSHIP', file: 'partnership.html' },
   newsletter: { env: 'RESEND_TEMPLATE_NEWSLETTER', file: 'newsletter.html' },
+  'newsletter-broadcast': {
+    env: 'RESEND_TEMPLATE_NEWSLETTER_BROADCAST',
+    file: 'newsletter-broadcast.html',
+  },
 }
 
 /** The published Resend template for a mail kind, if one is configured. */
