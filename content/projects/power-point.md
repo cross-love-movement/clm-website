@@ -5,8 +5,8 @@ summary: The empowerment segment inside Cross Sessions — one take-home lesson 
 location: Tema, Ghana
 status: active
 timeframe: Annual since 2025
-image: /images/project-artistes.svg
-imageAlt: Abstract artwork of a microphone lit by a warm spotlight
+image: https://assets.crosslovemovement.org/powerpoint-1.JPG
+imageAlt: Three young men on stage during a Power-Point session, one speaking into a microphone with a drum kit behind
 accent: brand
 featured: true
 goals:

@@ -30,8 +30,8 @@ const BOOTSTRAP_EVENTS: NewEvent[] = [
     registrationDeadline: new Date('2027-06-05T23:59:00+00:00'),
     status: 'published',
     featured: true,
-    image: '/images/portfolio-stage.svg',
-    imageAlt: 'Abstract artwork of a stage lit for a performance',
+    image: 'https://assets.crosslovemovement.org/PLY_logo_landscape.png',
+    imageAlt: 'People Like You logo: three white profile outlines with red, gold and green dots',
   },
 ]
 

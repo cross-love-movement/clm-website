@@ -9,7 +9,6 @@ import { partners } from '../app/data/partners'
 import { portfolioCategories, portfolioCategoryLabels } from '../app/data/portfolio'
 import { projectCategories } from '../app/data/projects'
 import { footerNav, primaryNav, site } from '../app/data/site'
-import { homeSlides } from '../app/data/slides'
 import { testimonialAudiences, testimonials } from '../app/data/testimonials'
 import type { PortfolioItem } from '../shared/types/content'
 import { applicationSchema } from '../server/features/volunteers/schemas'
@@ -19,6 +18,11 @@ import {
   eventRegistrationSchema,
   newsletterSchema,
 } from '../server/utils/schemas'
+
+/** Images may live in the repo (`/images/...`) or in the R2 bucket (absolute https URL). */
+function isImageSource(value: string) {
+  return value.startsWith('/images/') || value.startsWith('https://')
+}
 
 const newsFiles = import.meta.glob('../content/news/*.md', {
   query: '?raw',
@@ -162,20 +166,6 @@ describe('content', () => {
   })
 })
 
-describe('home carousel', () => {
-  it('has slides with captions and internal destinations', () => {
-    expect(homeSlides.length).toBeGreaterThan(0)
-
-    for (const slide of homeSlides) {
-      expect(slide.title.trim()).not.toBe('')
-      expect(slide.caption.trim().length).toBeGreaterThan(40)
-      expect(slide.imageAlt.trim()).not.toBe('')
-      expect(slide.image.startsWith('/images/')).toBe(true)
-      expect(slide.to.startsWith('/')).toBe(true)
-    }
-  })
-})
-
 describe('project content', () => {
   it('finds the markdown files', () => {
     expect(projects.length).toBeGreaterThan(0)
@@ -201,7 +191,7 @@ describe('project content', () => {
       expect(project.data.needs.length).toBeGreaterThan(0)
       expect(categories).toContain(project.data.category)
       expect(['active', 'completed', 'upcoming']).toContain(project.data.status)
-      expect(project.data.image.startsWith('/images/')).toBe(true)
+      expect(isImageSource(project.data.image)).toBe(true)
       expect(project.data.order).toBeGreaterThanOrEqual(0)
       expect(project.body.trim().length).toBeGreaterThan(100)
     }
@@ -240,7 +230,7 @@ describe('news content', () => {
       expect(post.data.readingMinutes).toBeGreaterThan(0)
       expect(categories).toContain(post.data.category)
       expect(Number.isNaN(new Date(post.data.publishedAt).getTime())).toBe(false)
-      expect(post.data.image.startsWith('/images/')).toBe(true)
+      expect(isImageSource(post.data.image)).toBe(true)
       expect(post.body.trim().length).toBeGreaterThan(200)
     }
   })
@@ -301,7 +291,7 @@ describe('portfolio content', () => {
       expect(item.year.trim()).not.toBe('')
       expect(item.location.trim()).not.toBe('')
       expect(categories).toContain(item.category)
-      expect(item.image.startsWith('/images/')).toBe(true)
+      expect(isImageSource(item.image)).toBe(true)
       expect(item.description.length).toBeGreaterThan(0)
       expect(item.tags.length).toBeGreaterThan(0)
       expect(item.order).toBeGreaterThanOrEqual(0)
@@ -355,7 +345,7 @@ describe('partners', () => {
       expect(partner.detail.trim()).not.toBe('')
       expect(partner.mark.trim()).not.toBe('')
       expect(types).toContain(partner.type)
-      if (partner.logo) expect(partner.logo.startsWith('/images/')).toBe(true)
+      if (partner.logo) expect(isImageSource(partner.logo)).toBe(true)
     }
   })
 

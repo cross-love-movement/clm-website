@@ -2,6 +2,7 @@
 import type { PostCategory } from '#shared/types/content'
 
 import { postCategoryLabels } from '~/data/news'
+import { heroImages } from '~/data/heroes'
 
 const { featured, latest, byCategory, categories } = await useNews()
 
@@ -33,6 +34,7 @@ useSeo({
       eyebrow="News & stories"
       title="Notes from the work."
       description="Updates from our programmes, reflections on faith and music, and the stories behind the people we serve with."
+      :image="heroImages.news"
     >
       <BaseButton href="#stories" variant="inverse">
         Read the latest

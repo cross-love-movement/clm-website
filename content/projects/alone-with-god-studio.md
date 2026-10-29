@@ -5,8 +5,8 @@ summary: Funds raised at the 5th Cross Sessions equipped an editing studio for A
 location: Online
 status: completed
 timeframe: 5th Cross Sessions edition
-image: /images/portfolio-studio.svg
-imageAlt: Abstract artwork of a microphone and studio light
+image: https://assets.crosslovemovement.org/alone-with-God_landscape.jpg
+imageAlt: A white desk with a laptop, chair and woven rug in the newly equipped Alone With God studio
 accent: brand
 featured: false
 goals:
@@ -24,7 +24,7 @@ needs:
 order: 3
 ---
 
-Alone With God Devotional is a team of young Christians who design devotions aimed at grooming young people morally and supporting their holistic development.
+Alone With God Devotional is a team of young Christians who design devotions aimed at shaping young people morally and supporting their holistic development.
 
 At the 5th edition of Cross Sessions, we raised funds to set up an editing studio for the team.
 

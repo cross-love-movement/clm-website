@@ -3,25 +3,29 @@ import type { HomeSlide } from '#shared/types/content'
 
 import { howToHelp } from '~/data/involve'
 import { pillars, stats, vision } from '~/data/about'
-import { homeSlides } from '~/data/slides'
 
 const { upcoming } = await useEvents()
 const { site } = useSite()
-const slides = computed<HomeSlide[]>(() => {
-  const events = upcoming.value.slice(0, 3)
 
-  if (!events.length) return homeSlides
-
-  return events.map((event) => ({
-    eyebrow: `${formatEventDate(event.startsAt)} · ${event.city}`,
-    title: event.title,
-    caption: event.summary,
-    image: event.image || '/images/portfolio-stage.svg',
-    imageAlt: event.imageAlt || `Artwork for ${event.title}`,
-    to: '/events',
-    cta: event.availability.open ? 'Register' : 'See the event',
-  }))
-})
+/**
+ * Only featured events whose registration is still open lead the homepage.
+ * Unfeaturing an event, closing its deadline, filling it, or archiving it
+ * removes it from here — no static fallback brings it back.
+ */
+const slides = computed<HomeSlide[]>(() =>
+  upcoming.value
+    .filter((event) => event.featured && event.availability.open)
+    .slice(0, 3)
+    .map((event) => ({
+      eyebrow: `${formatEventDate(event.startsAt)} · ${event.city}`,
+      title: event.title,
+      caption: event.summary,
+      image: event.image || '/images/portfolio-stage.svg',
+      imageAlt: event.imageAlt || `Artwork for ${event.title}`,
+      to: `/events?event=${encodeURIComponent(event.slug)}#register`,
+      cta: 'Register',
+    })),
+)
 const { featured } = await useProjects()
 const { featured: featuredTestimonials } = useTestimonials()
 
@@ -107,7 +111,7 @@ useSeo({
           <SectionHeading
             eyebrow="Our projects"
             title="The work, up close."
-            description="Sessions in churches, stages for emerging artistes, and volunteers teaching their own communities to waste less."
+            description="Sessions in churches, stages for emerging artistes, and volunteers mentoring young people in their own communities."
           />
           <BaseButton to="/projects" variant="secondary" class="self-start lg:self-auto">
             All projects

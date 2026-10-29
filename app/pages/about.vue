@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { mission, vision, values, stats, milestones, team, governance } from '~/data/about'
+import { heroImages } from '~/data/heroes'
 
 const { site } = useSite()
 const { testimonials } = useTestimonials()
@@ -18,6 +19,7 @@ useSeo({
       eyebrow="Who we are"
       title="Musicians and patriots, in the same room."
       description="Cross-Love Movement is a Ghanaian company limited by guarantee, formed in 2023 by musicians who wanted faith, music, and community engagement to do more than entertain."
+      :image="heroImages.about"
     >
       <BaseButton to="/volunteer" variant="inverse">
         Serve with us
@@ -246,7 +248,7 @@ useSeo({
     <CtaBanner
       eyebrow="Come and see"
       title="The best way to understand the work is to stand in it."
-      description="Join a Cross Session, help on a feeding day, or sit with us and talk about what you can offer."
+      description="Join a Cross Session, help at a programme day, or sit with us and talk about what you can offer."
       primary-label="Volunteer with us"
       primary-to="/volunteer"
       secondary-label="Get in touch"

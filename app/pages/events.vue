@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Event, EventCategory } from '#shared/types/content'
 import { eventFaqs } from '~/data/faqs'
+import { heroImages } from '~/data/heroes'
 
 const { upcoming, categoryLabels, refresh } = await useEvents()
 const route = useRoute()
@@ -66,7 +67,8 @@ useSeo({
     <PageHero
       eyebrow="Events"
       title="Come and stand in the room."
-      description="Cross Sessions, the People Like You symposium, and programme days. Everything here is free to attend — registration just helps us plan well."
+      description="Everything here is free to attend — registration just helps us plan well."
+      :image="heroImages.events"
     >
       <BaseButton href="#upcoming" variant="inverse">
         See what’s on

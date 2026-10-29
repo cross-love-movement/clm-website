@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { contactFaqs } from '~/data/faqs'
+import { heroImages } from '~/data/heroes'
 
 const { site } = useSite()
 
@@ -41,7 +42,7 @@ const details = [
 useSeo({
   title: 'Contact',
   description:
-    'Contact Cross-Love Movement in Tema, Accra — by email, phone, or the enquiry form. We reply within two working days.',
+    'Contact Cross-Love Movement in Tema, Ghana — by email, phone, or the enquiry form. We reply within two working days.',
   path: '/contact',
 })
 </script>
@@ -52,6 +53,7 @@ useSeo({
       eyebrow="Contact"
       title="Say hello. Ask anything."
       description="Whether you want to give, serve, partner, or simply understand the work better — a real person on our small team will answer."
+      :image="heroImages.contact"
     >
       <BaseButton :href="`mailto:${site.email}`" variant="inverse">
         Email us directly

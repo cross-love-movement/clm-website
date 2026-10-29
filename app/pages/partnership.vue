@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { partnerTiers } from '~/data/involve'
 import { partnershipFaqs } from '~/data/faqs'
+import { heroImages } from '~/data/heroes'
 
 const { site } = useSite()
 
@@ -60,6 +61,7 @@ const steps = [
       eyebrow="Partnership"
       title="Build something that outlasts the announcement."
       description="We work with companies, foundations, schools, and congregations who want their support to become a lasting part of a community, not a photograph."
+      :image="heroImages.partnership"
     >
       <BaseButton href="#enquire" variant="inverse">
         Start a conversation

@@ -93,7 +93,7 @@ export const donationOptions: DonationOption[] = [
   {
     amount: 300,
     label: 'GH₵300',
-    impact: 'Help put a working instrument in a missionary church',
+    impact: 'Help place an instrument in a missionary church',
   },
   {
     amount: 1000,
@@ -111,7 +111,7 @@ export const givingPriorities: { title: string; description: string; icon: IconN
   {
     title: 'Gospel outreach & church support',
     description:
-      'Cross Sessions, Awake With God, and building materials, seating, or equipment for local churches.',
+      'Cross Sessions, Awake With God, and practical support for local churches — building materials, seating, or equipment.',
     icon: 'book',
   },
   {

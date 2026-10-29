@@ -29,17 +29,19 @@ const accountLink = computed(() => {
             {{ site.description }}
           </p>
 
-          <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+          <div class="mt-6 flex flex-wrap gap-2">
             <a
               v-for="social in socials"
               :key="social.label"
               :href="social.href"
+              :aria-label="social.label"
+              :title="social.label"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-sm font-semibold text-sand-100 transition hover:text-gold-300"
+              class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-sand-100 transition hover:border-gold-400/40 hover:bg-white/10 hover:text-sand-50"
             >
-              {{ social.label }}
-              <Icon name="arrow-up-right" :size="13" />
+              <Icon :name="social.icon" :size="15" class="text-gold-300" />
+              <span class="sr-only">{{ social.label }}</span>
             </a>
           </div>
         </div>

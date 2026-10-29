@@ -2,6 +2,7 @@
 import type { PublicProgramme } from '#shared/types/volunteers'
 
 import { volunteerFaqs } from '~/data/faqs'
+import { heroImages } from '~/data/heroes'
 
 const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
   key: 'public-volunteer-programmes',
@@ -45,7 +46,7 @@ const expectations = [
   {
     title: 'No experience needed, mostly',
     description:
-      'Music mentors and outreach volunteers complete a short briefing. Recycling educators complete CLM’s training before teaching anyone else.',
+      'Music mentors and outreach volunteers complete a short briefing. Anyone working directly with young people completes our safeguarding briefing first.',
     icon: 'sprout' as const,
   },
   {
@@ -76,6 +77,7 @@ const steps = [
       eyebrow="Volunteer"
       title="Give a few hours. Change what is possible."
       description="Our programmes are carried by volunteers — musicians, media people, students, retirees — who give time they did not know they had."
+      :image="heroImages.volunteer"
     >
       <BaseButton href="#apply" variant="inverse">
         Apply to volunteer

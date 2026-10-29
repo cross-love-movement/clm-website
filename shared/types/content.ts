@@ -32,6 +32,11 @@ export type IconName =
   | 'play'
   | 'download'
   | 'copy'
+  | 'instagram'
+  | 'x'
+  | 'youtube'
+  | 'linkedin'
+  | 'whatsapp'
 
 export interface NavLink {
   label: string
@@ -41,6 +46,7 @@ export interface NavLink {
 export interface SocialLink {
   label: string
   href: string
+  icon: IconName
 }
 
 export interface Stat {
