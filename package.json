@@ -12,6 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "emails:sync": "node --env-file-if-exists=.env scripts/sync-emails.ts",
+    "emails:status": "node --env-file-if-exists=.env scripts/check-email-status.ts",
+    "emails:rename": "node --env-file-if-exists=.env scripts/rename-email-aliases.ts",
     "check": "vp check",
     "lint": "vp lint",
     "fmt": "vp fmt",

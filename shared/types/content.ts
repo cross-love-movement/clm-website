@@ -147,7 +147,7 @@ export const EVENT_CATEGORIES = [
 
 export type EventCategory = (typeof EVENT_CATEGORIES)[number]
 
-export const EVENT_STATUSES = ['draft', 'published', 'archived'] as const
+export const EVENT_STATUSES = ['draft', 'published', 'archived', 'cancelled'] as const
 
 export type EventStatus = (typeof EVENT_STATUSES)[number]
 

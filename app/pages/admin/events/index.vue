@@ -27,12 +27,14 @@ const counts = computed(() => ({
   published: events.value.filter((event) => event.status === 'published').length,
   draft: events.value.filter((event) => event.status === 'draft').length,
   archived: events.value.filter((event) => event.status === 'archived').length,
+  cancelled: events.value.filter((event) => event.status === 'cancelled').length,
 }))
 
 const filters = computed(() => [
   { value: 'all' as const, label: 'All', count: counts.value.all },
   { value: 'published' as const, label: 'Published', count: counts.value.published },
   { value: 'draft' as const, label: 'Drafts', count: counts.value.draft },
+  { value: 'cancelled' as const, label: 'Cancelled', count: counts.value.cancelled },
   { value: 'archived' as const, label: 'Archived', count: counts.value.archived },
 ])
 
@@ -239,8 +241,9 @@ useSeoMeta({ robots: 'noindex, nofollow' })
     </div>
 
     <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
-      Archived events stay out of the public calendar but keep their registrations. Deleting an
-      event with bookings is blocked on purpose.
+      Archived and cancelled events stay out of the public calendar but keep their registrations.
+      Cancelling from an event page also emails every registered guest; archiving does not. Deleting
+      an event with bookings is blocked on purpose.
     </p>
   </section>
 </template>

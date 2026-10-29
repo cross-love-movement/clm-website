@@ -23,7 +23,11 @@ export const eventCategory = pgEnum('event_category', [
   'showcase',
 ])
 
-export const eventStatus = pgEnum('event_status', ['draft', 'published', 'archived'])
+/**
+ * `cancelled` is different from `archived`: the event is not happening, the
+ * public calendar drops it, and every guest is emailed when it is set.
+ */
+export const eventStatus = pgEnum('event_status', ['draft', 'published', 'archived', 'cancelled'])
 
 export const registrationStatus = pgEnum('registration_status', [
   'confirmed',

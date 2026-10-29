@@ -20,6 +20,11 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   'event-waitlist': { env: 'RESEND_TEMPLATE_EVENT_WAITLIST', file: 'event-waitlist.html' },
   'event-promoted': { env: 'RESEND_TEMPLATE_EVENT_PROMOTED', file: 'event-promoted.html' },
   'event-cancelled': { env: 'RESEND_TEMPLATE_EVENT_CANCELLED', file: 'event-cancelled.html' },
+  'event-called-off': {
+    env: 'RESEND_TEMPLATE_EVENT_CALLED_OFF',
+    file: 'event-called-off.html',
+  },
+  'event-message': { env: 'RESEND_TEMPLATE_EVENT_MESSAGE', file: 'event-message.html' },
   'auth-invite': { env: 'RESEND_TEMPLATE_AUTH_INVITE', file: 'auth-invite.html' },
   'auth-reset': { env: 'RESEND_TEMPLATE_AUTH_RESET', file: 'auth-reset.html' },
   'volunteer-application': {
@@ -79,9 +84,20 @@ export function escapeHtml(value: string) {
 
 const PLACEHOLDER = /\{\{\{\s*([A-Z0-9_]+)\s*\}\}\}/g
 
-/** Replaces `{{{VARIABLE}}}` with escaped values. Used for preview and fallback. */
+/**
+ * Replaces `{{{VARIABLE}}}` with escaped values. Used for preview and fallback.
+ *
+ * Keys ending in `_HTML` are inserted as markup instead. They exist for values
+ * the app builds itself (a staff-written message split into paragraphs), never
+ * for anything typed straight into a public form. Resend's triple braces are
+ * unescaped too, so the same template behaves the same on both renderers.
+ */
 export function renderEmail(html: string, variables: TemplateVariables) {
-  return html.replace(PLACEHOLDER, (_, key: string) => escapeHtml(String(variables[key] ?? '')))
+  return html.replace(PLACEHOLDER, (_, key: string) => {
+    const value = String(variables[key] ?? '')
+
+    return key.endsWith('_HTML') ? value : escapeHtml(value)
+  })
 }
 
 /** Every variable a template file references. Used by the contract test. */

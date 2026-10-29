@@ -49,3 +49,12 @@ export const eventInputSchema = z
   )
 
 export type EventInput = z.infer<typeof eventInputSchema>
+
+/** A staff message to the guests of one event. */
+export const broadcastSchema = z.object({
+  subject: z.string().trim().min(3, 'Add a subject.').max(160),
+  body: z.string().trim().min(10, 'Write a message.').max(10_000),
+  audience: z.enum(['confirmed', 'all']).default('confirmed'),
+})
+
+export type BroadcastFormInput = z.infer<typeof broadcastSchema>

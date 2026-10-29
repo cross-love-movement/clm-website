@@ -14,6 +14,8 @@ import {
 import type { TemplateVariables } from '../emails/types'
 import { inviteMail, passwordResetMail } from '../features/auth/mail'
 import {
+  broadcastMail,
+  calledOffMail,
   cancellationMail,
   confirmationMail,
   promotionMail,
@@ -108,6 +110,16 @@ const samples: Record<string, () => TemplateVariables> = {
   'event-waitlist': () => waitlistMail(sampleEvent, sampleRegistration).variables,
   'event-promoted': () => promotionMail(sampleEvent, sampleRegistration).variables,
   'event-cancelled': () => cancellationMail(sampleEvent, sampleRegistration).variables,
+  'event-called-off': () => calledOffMail(sampleEvent, sampleRegistration).variables,
+  'event-message': () =>
+    broadcastMail(
+      sampleEvent,
+      { name: sampleRegistration.name, email: sampleRegistration.email },
+      {
+        subject: 'Doors open at 8:30',
+        body: 'A quick note before the day.\n\nDoors open at 8:30, and the first session starts at 9:00.',
+      },
+    ).variables,
   'auth-invite': () =>
     inviteMail({ name: 'Ama Mensah', role: 'volunteer', link: sampleLink }).variables,
   'auth-reset': () => passwordResetMail({ name: 'Ama Mensah', link: sampleLink }).variables,
