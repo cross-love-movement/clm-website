@@ -90,12 +90,6 @@ export interface TeamMember {
   bio: string
 }
 
-export interface Milestone {
-  year: string
-  title: string
-  description: string
-}
-
 export interface ProjectSummary {
   path: string
   title: string

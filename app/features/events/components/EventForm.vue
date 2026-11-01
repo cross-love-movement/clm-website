@@ -248,7 +248,13 @@ async function onSubmit() {
         type="checkbox"
         class="mt-0.5 size-4 shrink-0 accent-clay-600"
       />
-      <span>Feature this event on the homepage carousel</span>
+      <span>
+        Feature this event on the homepage carousel
+        <span class="mt-0.5 block text-xs text-ink-soft/70">
+          The hero shows three general slides, then up to three featured events with registration
+          open. The soonest three are shown, after the general slides.
+        </span>
+      </span>
     </label>
 
     <p v-if="message" class="text-sm font-medium text-red-700">{{ message }}</p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mission, vision, values, stats, milestones, team, governance } from '~/data/about'
+import { mission, vision, values, stats, team, governance } from '~/data/about'
 import { heroImages } from '~/data/heroes'
 
 const { site } = useSite()
@@ -110,31 +110,6 @@ useSeo({
           <h3 class="mt-4 text-lg text-ink">{{ value.title }}</h3>
           <p class="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">{{ value.description }}</p>
         </article>
-      </div>
-    </section>
-
-    <!-- Timeline -->
-    <section class="border-y border-sand-200 bg-sand-100 py-20 sm:py-24">
-      <div class="container-page grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-        <SectionHeading
-          eyebrow="The road so far"
-          title="Young, registered, and already working."
-          description="We would rather show you what is documented than what we hope you will assume."
-        />
-
-        <ol class="relative space-y-8 border-l border-sand-300 pl-8">
-          <li v-for="(milestone, index) in milestones" :key="index" class="relative">
-            <span
-              class="absolute -left-[2.28rem] top-1 flex size-4 items-center justify-center rounded-full border-2 border-clay-600 bg-sand-50"
-              aria-hidden="true"
-            />
-            <p class="font-display text-lg text-clay-700">{{ milestone.year }}</p>
-            <h3 class="mt-0.5 text-lg text-ink">{{ milestone.title }}</h3>
-            <p class="mt-1.5 text-[0.95rem] leading-relaxed text-ink-soft">
-              {{ milestone.description }}
-            </p>
-          </li>
-        </ol>
       </div>
     </section>
 

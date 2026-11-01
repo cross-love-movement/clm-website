@@ -36,6 +36,15 @@ function startTimer() {
 
 watch(running, startTimer)
 
+// A featured event can stop qualifying (full, deadline, unf featured) while the
+// page is open. Keep the index inside the current slide list.
+watch(
+  () => props.slides.length,
+  (count) => {
+    if (index.value >= count) index.value = 0
+  },
+)
+
 onMounted(() => {
   reducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   startTimer()
@@ -62,7 +71,7 @@ function onKeydown(event: KeyboardEvent) {
     v-if="current"
     class="relative isolate overflow-hidden bg-brand-950 text-sand-50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold-300"
     aria-roledescription="carousel"
-    aria-label="Events at Cross-Love Movement"
+    aria-label="Highlights at Cross-Love Movement"
     tabindex="0"
     @keydown="onKeydown"
     @mouseenter="holding = true"
