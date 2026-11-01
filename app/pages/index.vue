@@ -3,19 +3,25 @@ import type { HomeSlide } from '#shared/types/content'
 
 import { howToHelp } from '~/data/involve'
 import { pillars, stats, vision } from '~/data/about'
+import { generalHeroes } from '~/data/home'
 
 const { upcoming } = await useEvents()
 const { site } = useSite()
 
 /**
- * Only featured events whose registration is still open lead the homepage.
- * Unfeaturing an event, closing its deadline, filling it, or archiving it
- * removes it from here — no static fallback brings it back.
+ * The three general slides always lead. Featured events then join them while
+ * registration is still open. Unfeaturing an event, closing its deadline,
+ * filling it, or archiving it removes it — the general slides stay, so the
+ * hero never disappears.
  */
-const slides = computed<HomeSlide[]>(() =>
+
+/** Three event slots after the three general slides, so six dots at most. */
+const MAX_EVENT_SLIDES = 3
+
+const eventSlides = computed<HomeSlide[]>(() =>
   upcoming.value
     .filter((event) => event.featured && event.availability.open)
-    .slice(0, 3)
+    .slice(0, MAX_EVENT_SLIDES)
     .map((event) => ({
       eyebrow: `${formatEventDate(event.startsAt)} · ${event.city}`,
       title: event.title,
@@ -26,6 +32,8 @@ const slides = computed<HomeSlide[]>(() =>
       cta: 'Register',
     })),
 )
+
+const slides = computed<HomeSlide[]>(() => [...generalHeroes, ...eventSlides.value])
 const { featured } = await useProjects()
 const { featured: featuredTestimonials } = useTestimonials()
 

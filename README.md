@@ -93,7 +93,7 @@ clm-website/
 │  │                           # partners, home slides (plus category labels)
 │  ├─ layouts/default.vue      # Header + main + footer, skip link
 │  ├─ middleware/              # guest, admin (staff), manager (people), volunteer (portal)
-│  ├─ pages/                   # File-based routes, including /events, /news, /portfolio,
+│  ├─ pages/                   # File-based routes, including /events, /news,
 │  │                           # /login, /portal, /admin, /admin/events (CRUD + registrations)
 │  ├─ utils/                   # form.ts (control styles), dates.ts, events.ts, admin.ts
 │  ├─ app.vue
@@ -137,29 +137,32 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route               | Page             | Server route                  |
-| ------------------- | ---------------- | ----------------------------- |
-| `/`                 | Home             | —                             |
-| `/about`            | About            | —                             |
-| `/projects`         | Projects index   | —                             |
-| `/projects/[slug]`  | Project detail   | —                             |
-| `/events`           | Events           | `POST /api/events/register`   |
-| `/news`             | News index       | —                             |
-| `/news/[slug]`      | Article          | —                             |
-| `/portfolio`        | Portfolio        | —                             |
-| `/volunteer`        | Volunteer        | `POST /api/volunteer`         |
-| `/partnership`      | Partnership      | `POST /api/partnership`       |
-| `/contact`          | Contact          | `POST /api/contact`           |
-| `/donate`           | Donate           | `POST /api/donate`            |
-| footer newsletter   | —                | `POST /api/newsletter`        |
-| `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
-| `/login`            | Sign in          | `POST /api/auth/login`        |
-| `/admin`            | Staff overview   | —                             |
-| `/admin/events`     | Event management | `/api/admin/events`           |
-| `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
-| `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
-| `/admin/users`      | People           | `/api/admin/users`            |
-| `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
+| Route              | Page           | Server route                |
+| ------------------ | -------------- | --------------------------- |
+| `/`                | Home           | —                           |
+| `/about`           | About          | —                           |
+| `/projects`        | Projects index | —                           |
+| `/projects/[slug]` | Project detail | —                           |
+| `/events`          | Events         | `POST /api/events/register` |
+| `/news`            | News index     | —                           |
+| `/news/[slug]`     | Article        | —                           |
+| `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
+| `/partnership`     | Partnership    | `POST /api/partnership`     |
+| `/contact`         | Contact        | `POST /api/contact`         |
+
+The portfolio page is intentionally not routed while it has no work to show. The YAML in
+`content/portfolio/` and the matching data/types are kept, so bringing it back is a page file plus
+the two navigation entries.
+| `/donate` | Donate | `POST /api/donate` |
+| footer newsletter | — | `POST /api/newsletter` |
+| `/portal` | Volunteer portal | `GET /api/portal/assignments` |
+| `/login` | Sign in | `POST /api/auth/login` |
+| `/admin` | Staff overview | — |
+| `/admin/events` | Event management | `/api/admin/events` |
+| `/admin/programmes` | Programmes | `/api/admin/programmes` |
+| `/admin/volunteers` | Volunteers | `/api/admin/volunteers` |
+| `/admin/users` | People | `/api/admin/users` |
+| `/_studio` | — | Nuxt Studio (GitHub OAuth) |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -807,9 +810,9 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 - `npm test` — 60 tests passing (content files, event availability and references, permissions, template contract, email rendering, and Resend payload shape)
 - `npm run build` — passes, including Nuxt Content database generation with `node:sqlite`
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
-- Nuxt Content verified end to end: 6 project pages, 6 Markdown articles, 6 event YAML files, and 9
-  portfolio YAML files are indexed and served through `/projects`, `/news`, `/events`, and
-  `/portfolio`
+- Nuxt Content verified end to end: project pages, news articles, and event YAML are indexed and
+  served through `/projects`, `/news`, and `/events`. The portfolio collection is still indexed but
+  has no public route at present.
 - Project listing, project detail (Markdown body, goals, impact, needs), and related projects verified
 - News index, article pages, and the home news strip verified; article pages include `BlogPosting`
   JSON-LD, and unknown slugs return `404`

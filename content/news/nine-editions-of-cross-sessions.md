@@ -5,7 +5,7 @@ summary: From one Easter gathering to a cross-denominational network of young cr
 publishedAt: '2026-10-20T09:00:00+00:00'
 author: CLM Team
 readingMinutes: 3
-image: https://assets.crosslovemovement.org/news-cross-sessions.JPG
+image: https://assets.crosslovemovement.org/2025_Cross%20Sessions%207_Youthful%20Communities_%40CLM%20-%20Copy.JPG
 imageAlt: Young people behind a treble-clef cake with lit candles at a Cross Sessions celebration
 featured: false
 ---

@@ -5,8 +5,8 @@ summary: Five cultural backgrounds, one youth Muslim leader writing in local dia
 publishedAt: '2026-10-14T09:00:00+00:00'
 author: CLM Team
 readingMinutes: 3
-image: https://assets.crosslovemovement.org/today-is-us-5.png
-imageAlt: 'A young man in a Today Is Us T-shirt outside a church, beneath the campaign’s Psalm 34:14 banner'
+image: https://assets.crosslovemovement.org/2024_Today%20Is%20Us_%20GAEM%20Guan_%C2%A9CLM.png
+imageAlt: 'A young lady in a Today Is Us T-shirt'
 featured: false
 ---
 
