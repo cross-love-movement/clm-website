@@ -75,8 +75,8 @@ const steps = [
   <div>
     <PageHero
       eyebrow="Volunteer"
-      title="Give a few hours. Change what is possible."
-      description="Our programmes are carried by volunteers — musicians, media people, students, retirees — who give time they did not know they had."
+      title="Give a few hours"
+      description="All our programmes are carried by volunteers and we have a spot just for you!"
       :image="heroImages.volunteer"
     >
       <BaseButton href="#apply" variant="inverse">

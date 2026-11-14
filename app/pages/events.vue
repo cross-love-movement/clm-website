@@ -66,7 +66,7 @@ useSeo({
   <div>
     <PageHero
       eyebrow="Events"
-      title="Come and stand in the room."
+      title="Pin an Event. Change a Life."
       description="Everything here is free to attend — registration just helps us plan well."
       :image="heroImages.events"
     >
@@ -250,7 +250,7 @@ useSeo({
     <div class="mt-20 sm:mt-24">
       <CtaBanner
         eyebrow="Beyond the calendar"
-        title="The work continues after the last song."
+        title="The work continues long after the event is over."
         description="Give towards an event, host a Cross Session at your church, or volunteer on the day."
         primary-label="Donate"
         primary-to="/donate"

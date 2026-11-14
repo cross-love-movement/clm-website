@@ -30,8 +30,8 @@ useSeo({
   <div>
     <PageHero
       eyebrow="Our projects"
-      title="Work measured in seasons, not campaigns."
-      description="Two classes of work: Christian Mission Projects with local churches, and Youth Empowerment Programmes for the next generation."
+      title="Explore our projects"
+      description="Two classes of work: Christian Mission Projects and Youth Empowerment Programmes for the next generation."
       :image="heroImages.projects"
     >
       <BaseButton to="/donate" variant="inverse">
