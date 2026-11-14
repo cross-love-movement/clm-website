@@ -17,8 +17,8 @@ useSeo({
   <div>
     <PageHero
       eyebrow="Donate"
-      title="Your gift becomes an instrument, a stage, a trained volunteer."
-      description="Not a campaign. Not a one-off photograph. Steady support that lets a small Ghanaian team keep showing up in the same churches and communities."
+      title="Thank you for choosing to Donate"
+      description="Your gift becomes an instrument, a stage, a trained volunteer."
       :image="heroImages.donate"
       tone="clay"
     >

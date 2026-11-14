@@ -59,8 +59,8 @@ const steps = [
   <div>
     <PageHero
       eyebrow="Partnership"
-      title="Build something that outlasts the announcement."
-      description="We work with companies, foundations, schools, and congregations who want their support to become a lasting part of a community, not a photograph."
+      title="Partner with Cross-Love Movement"
+      description="Join our network of partners, donors, and volunteers to expand community outreaches and regional initiatives."
       :image="heroImages.partnership"
     >
       <BaseButton href="#enquire" variant="inverse">

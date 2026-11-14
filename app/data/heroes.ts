@@ -27,7 +27,7 @@ export const heroImages: Record<HeroKey, string | undefined> = {
   events: 'https://assets.crosslovemovement.org/Salvation%20Anthem%20(25).jpg',
   news: 'https://assets.crosslovemovement.org/2025_Cross%20Sessions%207_Academie%20De%20Musique%20CLassique%20Symphony_%40CLM.JPG',
   partnership:
-    'https://assets.crosslovemovement.org/2025_Youth%20Leaders%20Community%20Engagment_Training%20on%20Positive%20Peace%20Organised%20by%20Isaac%20Nkrumah-Dadzie_%40CLM.jpg',
+    'https://assets.crosslovemovement.org/TIU%20Peace%20Council%20Engagement.png',
   portfolio: undefined,
   projects: 'https://assets.crosslovemovement.org/TIU%20Project%20Visuals%20Akorfa%20Poster.png',
   volunteer:

@@ -35,12 +35,12 @@ export const pillars: Pillar[] = [
       'Capacity-building for young people: peace advocacy, creative mentorship, evangelism in the spaces youth already inhabit, and a career symposium for the next generation.',
     icon: 'sparkles',
   },
-  {
-    title: 'Cross Sessions',
-    description:
-      'Our annual flagship creative event, hosted on Easter Sunday, where a cross-denominational network of young creatives performs, exhibits, and raises funds for the projects.',
-    icon: 'music',
-  },
+  // {
+  //   title: 'Cross Sessions',
+  //   description:
+  //     'Our annual flagship creative event, hosted on Easter Sunday, where a cross-denominational network of young creatives performs, exhibits, and raises funds for the projects.',
+  //   icon: 'music',
+  // },
 ]
 
 export const values: ValueItem[] = [

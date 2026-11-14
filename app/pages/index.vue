@@ -54,8 +54,8 @@ useSeo({
         <div>
           <p class="eyebrow">Who we are</p>
           <h1 class="mt-3 text-3xl leading-tight sm:text-4xl">
-            Faith in Christ.
-            <em class="font-display italic text-clay-600">Creativity for change.</em>
+            A movement of
+            <em class="font-display italic text-clay-600">Young Creatives</em>
           </h1>
           <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
             {{ site.description }}
@@ -83,8 +83,8 @@ useSeo({
       <div class="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
         <SectionHeading
           eyebrow="What we do"
-          title="Three commitments, one movement."
-          description="Christian Mission Projects, Youth Empowerment Programmes, and Cross Sessions — the three strands our work keeps returning to."
+          title="Two commitments, one movement."
+          description="Christian Mission Projects and Youth Empowerment Programmes — the two strands our work keeps returning to."
         />
         <BaseButton to="/about" variant="ghost" size="md" class="self-start lg:self-auto">
           More about us
@@ -92,7 +92,7 @@ useSeo({
         </BaseButton>
       </div>
 
-      <div class="mt-12 grid gap-5 md:grid-cols-3">
+      <div class="mt-12 grid gap-5 md:grid-cols-2">
         <article
           v-for="(pillar, index) in pillars"
           :key="pillar.title"

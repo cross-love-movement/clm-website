@@ -32,7 +32,7 @@ useSeo({
   <div>
     <PageHero
       eyebrow="News & stories"
-      title="Notes from the work."
+      title="All we've done so far"
       description="Updates from our programmes, reflections on faith and music, and the stories behind the people we serve with."
       :image="heroImages.news"
     >

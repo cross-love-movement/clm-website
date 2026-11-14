@@ -22,7 +22,7 @@ export const generalHeroes: HomeSlide[] = [
   },
   {
     eyebrow: 'Volunteer',
-    title: 'Give a few hours. Change what is possible.',
+    title: 'Pin Your Passion to Purpose',
     caption:
       'Mentor a young person, help run Cross Sessions, or film the work — there is room for what you already know.',
     image:
@@ -33,11 +33,11 @@ export const generalHeroes: HomeSlide[] = [
   },
   {
     eyebrow: 'Partnership',
-    title: 'Build something that outlasts the announcement.',
+    title: 'Better Together',
     caption:
-      'Bring your church, company, school, or foundation alongside work that needs steady support.',
+      'Join our network of partners, donors, and volunteers to expand community outreaches and regional initiatives.',
     image:
-      'https://assets.crosslovemovement.org/2025_Youth%20Leaders%20Community%20Engagment_Training%20on%20Positive%20Peace%20Organised%20by%20Isaac%20Nkrumah-Dadzie_%40CLM.jpg',
+      'https://assets.crosslovemovement.org/TIU%20Peace%20Council%20Engagement.png',
     imageAlt:
       'A facilitator leading a youth leaders’ training on positive peace, with participants at a table and a projector screen behind',
     to: '/partnership',
