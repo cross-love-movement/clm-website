@@ -56,10 +56,11 @@ useSeo({
             something other than money. That question became Cross-Love Movement in 2018.
           </p>
           <p>
-            The name carries two mandates. The vertical one — <strong>faith in action</strong> — comes from the love
-            and sacrifice of Christ on the cross, and pushes belief beyond the pew into sacrificial
-            service, <em>(John 3:16a)</em>. The horizontal one — <strong>faith beyond boundaries</strong> — bridges social, cultural, and
-            denominational lines so young people can be resourced to live to their full potential.
+            The name carries two mandates. The vertical one — <strong>faith in action</strong> —
+            comes from the love and sacrifice of Christ on the cross, and pushes belief beyond the
+            pew into sacrificial service, <em>(John 3:16a)</em>. The horizontal one —
+            <strong>faith beyond boundaries</strong> — bridges social, cultural, and denominational
+            lines so young people can be resourced to live to their full potential.
           </p>
           <p>
             Today we are a Christian, non-denominational network of young corporate creatives and
@@ -172,7 +173,9 @@ useSeo({
         <div class="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             <p class="eyebrow text-gold-300">Accountability</p>
-            <h2 class="mt-3 text-3xl leading-tight">Registered in Ghana, operable under the law.</h2>
+            <h2 class="mt-3 text-3xl leading-tight">
+              Registered in Ghana, operable under the law.
+            </h2>
             <p class="mt-4 max-w-md text-[0.98rem] leading-relaxed text-sand-200/80">
               Cross-Love Movement is a company limited by guarantee, not an informal association.
               Our registration, tax identification, and constitutional objectives are available to

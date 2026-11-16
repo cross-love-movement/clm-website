@@ -36,8 +36,7 @@ export const generalHeroes: HomeSlide[] = [
     title: 'Better Together',
     caption:
       'Join our network of partners, donors, and volunteers to expand community outreaches and regional initiatives.',
-    image:
-      'https://assets.crosslovemovement.org/TIU%20Peace%20Council%20Engagement.png',
+    image: 'https://assets.crosslovemovement.org/TIU%20Peace%20Council%20Engagement.png',
     imageAlt:
       'A facilitator leading a youth leaders’ training on positive peace, with participants at a table and a projector screen behind',
     to: '/partnership',
