@@ -8,6 +8,7 @@ const current = computed(() => user.value as SessionUser | null)
 const canManageProgrammes = computed(() => hasPermission(current.value, 'canManageProgrammes'))
 const canManageVolunteers = computed(() => hasPermission(current.value, 'canManageVolunteers'))
 const canManageNewsletter = computed(() => hasPermission(current.value, 'canManageNewsletter'))
+const canManageDonations = computed(() => hasPermission(current.value, 'canManageDonations'))
 
 useSeo({
   title: 'Staff portal',
@@ -81,6 +82,21 @@ useSeo({
         </p>
         <BaseButton to="/admin/volunteers" variant="secondary" size="sm" class="mt-4 self-start">
           Manage volunteers
+        </BaseButton>
+      </article>
+
+      <article
+        v-if="canManageDonations"
+        class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
+      >
+        <Icon name="gift" :size="22" class="text-clay-600" />
+        <h2 class="mt-3 text-lg text-ink">Donations</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
+          See every gift started on the website, what Paystack confirmed, and export the records for
+          accounting.
+        </p>
+        <BaseButton to="/admin/donations" variant="secondary" size="sm" class="mt-4 self-start">
+          Manage donations
         </BaseButton>
       </article>
 
