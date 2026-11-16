@@ -15,6 +15,7 @@ const links = computed(() => {
 
   if (hasPermission(user.value as SessionUser | null, 'canManageProgrammes')) {
     items.push({ label: 'Programmes', to: '/admin/programmes' })
+    items.push({ label: 'Roles', to: '/admin/roles' })
   }
 
   if (hasPermission(user.value as SessionUser | null, 'canManageVolunteers')) {
@@ -23,6 +24,10 @@ const links = computed(() => {
 
   if (hasPermission(user.value as SessionUser | null, 'canManageNewsletter')) {
     items.push({ label: 'Newsletter', to: '/admin/newsletter' })
+  }
+
+  if (hasPermission(user.value as SessionUser | null, 'canManageDonations')) {
+    items.push({ label: 'Donations', to: '/admin/donations' })
   }
 
   return items

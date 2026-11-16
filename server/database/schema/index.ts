@@ -1,3 +1,4 @@
+export * from './donations'
 export * from './events'
 export * from './newsletter'
 export * from './users'

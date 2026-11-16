@@ -91,6 +91,8 @@ const sampleApplication: VolunteerApplicationRow = {
   id: '00000000-0000-4000-8000-000000000004',
   volunteerId: sampleVolunteer.id,
   programmeId: null,
+  eventId: null,
+  needId: null,
   opportunityId: null,
   area: 'Music and media',
   availability: 'Weekends',
@@ -133,7 +135,7 @@ const samples: Record<string, () => TemplateVariables> = {
   'auth-reset': () => passwordResetMail({ name: 'Ama Mensah', link: sampleLink }).variables,
   'volunteer-application': () =>
     applicationNotification({
-      toEmail: 'apply@crosslovemovement.org',
+      toEmail: 'volunteers@crosslovemovement.org',
       volunteer: sampleVolunteer,
       application: sampleApplication,
       programmeTitle: 'Cross Sessions',

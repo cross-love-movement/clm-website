@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sum } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, sum } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { Event, AdminEvent, AdminEventDetail } from '#shared/types/content'
@@ -521,5 +521,31 @@ export async function cancelEvent(id: string): Promise<CancelEventResult> {
     }
 
     return { ok: true, notified: recipients.length } as const
+  })
+}
+
+export type DeleteEventResult = { ok: true } | { ok: false; reason: 'not-found' | 'has-bookings' }
+
+/**
+ * Removes an event outright. Bookings are attendance records, so an event that
+ * ever had a registration is kept: cancel or archive it instead.
+ */
+export async function deleteEvent(id: string): Promise<DeleteEventResult> {
+  const db = useDatabase()
+
+  return db.transaction(async (tx) => {
+    const [event] = await tx.select().from(events).where(eq(events.id, id)).for('update')
+    if (!event) return { ok: false, reason: 'not-found' } as const
+
+    const [bookings] = await tx
+      .select({ total: count() })
+      .from(eventRegistrations)
+      .where(eq(eventRegistrations.eventId, id))
+
+    if (Number(bookings?.total ?? 0) > 0) return { ok: false, reason: 'has-bookings' } as const
+
+    await tx.delete(events).where(eq(events.id, id))
+
+    return { ok: true } as const
   })
 }

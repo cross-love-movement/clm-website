@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AdminEventDetail, AdminRegistration } from '#shared/types/content'
+import type { NeedWithRole, Role } from '#shared/types/volunteers'
 import { hasPermission, type SessionUser } from '#shared/types/auth'
 
 definePageMeta({ middleware: 'admin', layout: 'admin' })
@@ -13,6 +14,7 @@ const canEdit = computed(() => hasPermission(current.value, 'canEdit'))
 const canManageRegistrations = computed(() =>
   hasPermission(current.value, 'canManageRegistrations'),
 )
+const canManageProgrammes = computed(() => hasPermission(current.value, 'canManageProgrammes'))
 
 const {
   data: event,
@@ -171,6 +173,137 @@ async function cancelEvent() {
   } finally {
     cancellingEvent.value = false
     confirmCancelEvent.value = false
+  }
+}
+
+/* ── Volunteers needed ────────────────────────────────────────────────── */
+
+const { data: roleCatalogue } = await useFetch<Role[]>('/api/admin/opportunities', {
+  key: 'admin-roles',
+  default: () => [],
+  immediate: canManageProgrammes.value,
+})
+
+const { data: eventNeeds, refresh: refreshNeeds } = await useFetch<NeedWithRole[]>(
+  `/api/admin/events/${id}/needs`,
+  {
+    key: `admin-event-needs-${id}`,
+    default: () => [],
+    immediate: canManageProgrammes.value,
+  },
+)
+
+type NeedRow = {
+  id: string
+  title: string
+  roleStatus: string
+  selected: boolean
+  places: string
+  startsAt: string
+  endsAt: string
+  filled: number
+}
+
+function toLocalInput(iso?: string | null) {
+  if (!iso) return ''
+
+  return new Date(iso).toISOString().slice(0, 16)
+}
+
+const needRows = ref<NeedRow[]>([])
+
+watch(
+  [roleCatalogue, eventNeeds],
+  () => {
+    const attached = new Map((eventNeeds.value ?? []).map((need) => [need.id, need]))
+
+    needRows.value = (roleCatalogue.value ?? []).map((role) => {
+      const need = attached.get(role.id)
+
+      return {
+        id: role.id,
+        title: role.title,
+        roleStatus: role.status,
+        selected: Boolean(need),
+        places: need?.places === null || need?.places === undefined ? '' : String(need.places),
+        startsAt: toLocalInput(need?.startsAt),
+        endsAt: toLocalInput(need?.endsAt),
+        filled: need?.filled ?? 0,
+      }
+    })
+  },
+  { immediate: true },
+)
+
+const savingNeeds = ref(false)
+const needsMessage = ref('')
+const needsSaved = ref(false)
+
+async function saveNeeds() {
+  if (savingNeeds.value) return
+
+  savingNeeds.value = true
+  needsMessage.value = ''
+  needsSaved.value = false
+
+  try {
+    await $fetch(`/api/admin/events/${id}/needs`, {
+      method: 'PUT',
+      body: {
+        needs: needRows.value
+          .filter((row) => row.selected)
+          .map((row) => ({
+            opportunityId: row.id,
+            places: row.places === '' ? null : Number(row.places),
+            startsAt: row.startsAt ? new Date(row.startsAt).toISOString() : null,
+            endsAt: row.endsAt ? new Date(row.endsAt).toISOString() : null,
+          })),
+      },
+    })
+
+    await refreshNeeds()
+    needsSaved.value = true
+  } catch (caught) {
+    const payload = (caught as { data?: { data?: { message?: string } } }).data?.data
+
+    needsMessage.value = payload?.message ?? errorMessage(caught)
+  } finally {
+    savingNeeds.value = false
+  }
+}
+
+/* ── Delete ───────────────────────────────────────────────────────────── */
+
+const confirmDeleteEvent = ref(false)
+const deletingEvent = ref(false)
+
+async function removeEvent() {
+  if (!event.value) return
+
+  if (!confirmDeleteEvent.value) {
+    confirmDeleteEvent.value = true
+    return
+  }
+
+  if (deletingEvent.value) return
+
+  deletingEvent.value = true
+  flash.value = null
+
+  try {
+    // Typed as `string` on purpose: Nitro's route matcher otherwise narrows the
+    // method union for `/api/admin/events/:id` to GET only.
+    const endpoint: string = `/api/admin/events/${event.value.id}`
+
+    await $fetch(endpoint, { method: 'DELETE' })
+    await navigateTo('/admin/events')
+  } catch (caught) {
+    const payload = (caught as { data?: { data?: { message?: string } } }).data?.data
+
+    flash.value = { tone: 'error', message: payload?.message ?? errorMessage(caught) }
+    confirmDeleteEvent.value = false
+  } finally {
+    deletingEvent.value = false
   }
 }
 
@@ -706,6 +839,142 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       >
         Your account can view this event but not its registrations. Ask a superadmin if you need
         access.
+      </div>
+
+      <div
+        v-if="canManageProgrammes"
+        class="mt-12 rounded-3xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8"
+      >
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 class="text-xl text-ink">Volunteers needed</h2>
+            <p class="mt-1 text-sm text-ink-soft">
+              Tick the roles this event needs. Leave the number blank for no limit, and the times
+              blank for the whole day.
+            </p>
+          </div>
+          <NuxtLink
+            to="/admin/roles"
+            class="text-sm font-semibold text-clay-700 hover:text-clay-900"
+          >
+            Manage role types
+          </NuxtLink>
+        </div>
+
+        <div
+          v-if="!needRows.length"
+          class="mt-5 rounded-2xl border border-dashed border-sand-300 bg-sand-100 p-5 text-sm text-ink-soft"
+        >
+          There are no roles in the catalogue yet.
+          <NuxtLink
+            to="/admin/roles#create-role"
+            class="font-semibold text-clay-700 underline underline-offset-2"
+          >
+            Create a role first</NuxtLink
+          >.
+        </div>
+
+        <ul v-else class="mt-5 divide-y divide-sand-200 rounded-2xl border border-sand-200">
+          <li
+            v-for="row in needRows"
+            :key="row.id"
+            class="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <label class="flex flex-1 items-start gap-3">
+              <input
+                v-model="row.selected"
+                type="checkbox"
+                class="mt-0.5 size-4 shrink-0 accent-brand-700"
+              />
+              <span>
+                <span class="block text-sm font-semibold text-ink">{{ row.title }}</span>
+                <span class="text-xs text-ink-soft">
+                  <template v-if="row.selected">{{ row.filled }} placed</template>
+                  <template v-else-if="row.roleStatus === 'closed'">
+                    Closed role — hidden publicly
+                  </template>
+                  <template v-else>Not needed yet</template>
+                </span>
+              </span>
+            </label>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="w-28">
+                <span class="sr-only">People needed for {{ row.title }}</span>
+                <input
+                  v-model="row.places"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  placeholder="No limit"
+                  :disabled="!row.selected"
+                  class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none disabled:bg-sand-100 disabled:text-ink-soft/60"
+                />
+              </label>
+              <label class="w-44">
+                <span class="sr-only">Starts for {{ row.title }}</span>
+                <input
+                  v-model="row.startsAt"
+                  type="datetime-local"
+                  :disabled="!row.selected"
+                  class="w-full rounded-full border border-sand-300 bg-white px-3 py-2 text-xs text-ink focus:border-brand-400 focus:outline-none disabled:bg-sand-100 disabled:text-ink-soft/60"
+                />
+              </label>
+              <label class="w-44">
+                <span class="sr-only">Ends for {{ row.title }}</span>
+                <input
+                  v-model="row.endsAt"
+                  type="datetime-local"
+                  :disabled="!row.selected"
+                  class="w-full rounded-full border border-sand-300 bg-white px-3 py-2 text-xs text-ink focus:border-brand-400 focus:outline-none disabled:bg-sand-100 disabled:text-ink-soft/60"
+                />
+              </label>
+            </div>
+          </li>
+        </ul>
+
+        <p v-if="needsMessage" class="mt-4 text-sm font-medium text-red-700">{{ needsMessage }}</p>
+        <p v-if="needsSaved" class="mt-4 text-sm font-medium text-brand-800">
+          Volunteer needs saved.
+        </p>
+
+        <div class="mt-5 flex flex-wrap items-center gap-4">
+          <BaseButton :disabled="savingNeeds" @click="saveNeeds">
+            {{ savingNeeds ? 'Saving…' : 'Save volunteer needs' }}
+          </BaseButton>
+          <p class="text-xs text-ink-soft">Places and times show on the public volunteer page.</p>
+        </div>
+      </div>
+
+      <div v-if="canEdit" class="mt-12 rounded-3xl border border-red-200 bg-red-50/60 p-6">
+        <h2 class="text-lg font-semibold text-red-900">Delete this event</h2>
+        <p class="mt-1 text-sm leading-relaxed text-red-900/80">
+          Only an event that has never had a booking can be deleted. Once anyone has registered —
+          even if the booking was later cancelled — cancel or archive it instead so the record
+          survives.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            class="rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-50"
+            :disabled="deletingEvent"
+            @click="removeEvent"
+          >
+            {{
+              deletingEvent ? 'Deleting…' : confirmDeleteEvent ? 'Confirm delete' : 'Delete event'
+            }}
+          </button>
+          <button
+            v-if="confirmDeleteEvent"
+            type="button"
+            class="text-sm font-semibold text-ink-soft hover:text-ink"
+            :disabled="deletingEvent"
+            @click="confirmDeleteEvent = false"
+          >
+            Keep event
+          </button>
+        </div>
       </div>
     </template>
   </section>

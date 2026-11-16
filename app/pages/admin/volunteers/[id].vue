@@ -3,12 +3,13 @@ import type {
   Assignment,
   AssignmentStatus,
   BackgroundCheckStatus,
-  Opportunity,
+  NeedWithRole,
   Programme,
   ProgrammeSummary,
   VolunteerDetail,
   VolunteerStatus,
 } from '#shared/types/volunteers'
+import type { AdminEvent } from '#shared/types/content'
 import {
   ASSIGNMENT_STATUSES,
   BACKGROUND_CHECK_STATUSES,
@@ -31,6 +32,11 @@ const {
 
 const { data: programmes } = await useFetch<ProgrammeSummary[]>('/api/admin/programmes', {
   key: 'admin-programmes',
+  default: () => [],
+})
+
+const { data: events } = await useFetch<AdminEvent[]>('/api/admin/events', {
+  key: 'admin-events',
   default: () => [],
 })
 
@@ -150,7 +156,8 @@ async function saveSafeguarding() {
 /* Assignments --------------------------------------------------------- */
 
 const assignmentForm = reactive({
-  programmeId: '',
+  /** `programme:<id>` or `event:<id>` — a person serves at one or the other. */
+  where: '',
   opportunityId: 'none',
   roleTitle: '',
   status: 'planned',
@@ -159,40 +166,59 @@ const assignmentForm = reactive({
   notes: '',
 })
 
-const opportunities = ref<Opportunity[]>([])
-const loadingOpportunities = ref(false)
+const needs = ref<NeedWithRole[]>([])
+const loadingNeeds = ref(false)
 const addingAssignment = ref(false)
 const assignmentMessage = ref('')
 
 watch(
-  () => assignmentForm.programmeId,
-  async (programmeId) => {
+  () => assignmentForm.where,
+  async (where) => {
     assignmentForm.opportunityId = 'none'
-    opportunities.value = []
+    needs.value = []
 
-    if (!programmeId) return
+    if (!where) return
 
-    loadingOpportunities.value = true
+    const [kind, containerId] = where.split(':')
+    if (!containerId) return
+
+    loadingNeeds.value = true
 
     try {
-      const data = await $fetch<Programme>(`/api/admin/programmes/${programmeId}`)
-      opportunities.value = data.opportunities.filter((item) => item.status === 'open')
+      if (kind === 'event') {
+        needs.value = await $fetch<NeedWithRole[]>(`/api/admin/events/${containerId}/needs`)
+      } else {
+        const data = await $fetch<Programme>(`/api/admin/programmes/${containerId}`)
+        needs.value = data.needs
+      }
     } finally {
-      loadingOpportunities.value = false
+      loadingNeeds.value = false
     }
   },
 )
 
-const programmeOptions = computed(() =>
-  programmes.value.map((programme) => ({ value: programme.id, label: programme.title })),
-)
+/** Only live containers: nothing archived or cancelled, no drafts excluded. */
+const whereOptions = computed(() => [
+  ...programmes.value
+    .filter((programme) => programme.status === 'planned' || programme.status === 'active')
+    .map((programme) => ({
+      value: `programme:${programme.id}`,
+      label: `${programme.title} — programme`,
+    })),
+  ...events.value
+    .filter((event) => event.status === 'draft' || event.status === 'published')
+    .map((event) => ({ value: `event:${event.id}`, label: `${event.title} — event` })),
+])
 
-const opportunityOptions = computed(() => [
+const roleOptions = computed(() => [
   { value: 'none', label: 'No specific role' },
-  ...opportunities.value.map((opportunity) => ({
-    value: opportunity.id,
-    label: opportunity.title,
-  })),
+  ...needs.value
+    .filter((need) => need.status === 'open')
+    .map((need) => ({
+      value: need.id,
+      label:
+        need.places === null ? need.title : `${need.title} (${need.filled}/${need.places} placed)`,
+    })),
 ])
 
 const assignmentStatusOptions = ASSIGNMENT_STATUSES.map((status) => ({
@@ -201,7 +227,9 @@ const assignmentStatusOptions = ASSIGNMENT_STATUSES.map((status) => ({
 }))
 
 async function addAssignment() {
-  if (!assignmentForm.programmeId || addingAssignment.value) return
+  if (!assignmentForm.where || addingAssignment.value) return
+
+  const [kind, containerId] = assignmentForm.where.split(':')
 
   addingAssignment.value = true
   assignmentMessage.value = ''
@@ -211,7 +239,8 @@ async function addAssignment() {
       method: 'POST',
       body: {
         volunteerId: id,
-        programmeId: assignmentForm.programmeId,
+        programmeId: kind === 'programme' ? containerId : null,
+        eventId: kind === 'event' ? containerId : null,
         opportunityId:
           assignmentForm.opportunityId === 'none' ? null : assignmentForm.opportunityId,
         roleTitle: assignmentForm.roleTitle,
@@ -228,6 +257,7 @@ async function addAssignment() {
     assignmentForm.endsOn = ''
     assignmentForm.notes = ''
     assignmentForm.status = 'planned'
+    flash.value = { tone: 'success', message: 'Placement added.' }
     await refresh()
   } catch (caught) {
     assignmentMessage.value =
@@ -349,6 +379,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                   <p class="text-sm font-semibold text-ink">
                     {{
                       application.opportunityTitle ||
+                      application.eventTitle ||
                       application.programmeTitle ||
                       application.area ||
                       'General application'
@@ -358,8 +389,11 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                     {{ formatDateTime(application.createdAt) }}
                   </p>
                 </div>
-                <p v-if="application.programmeTitle" class="mt-1 text-xs text-ink-soft">
-                  {{ application.programmeTitle }}
+                <p
+                  v-if="application.programmeTitle || application.eventTitle"
+                  class="mt-1 text-xs text-ink-soft"
+                >
+                  {{ application.programmeTitle || application.eventTitle }}
                 </p>
                 <p class="mt-2 text-xs text-ink-soft">
                   Availability: {{ application.availability || '—' }}
@@ -378,7 +412,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             <h2 class="text-xl text-ink">Placements</h2>
 
             <div v-if="!volunteer.assignments.length" class="mt-3 text-sm text-ink-soft">
-              Not placed in a programme yet.
+              Not placed yet.
             </div>
 
             <div v-else class="mt-4 space-y-3">
@@ -392,6 +426,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                     {{
                       assignment.opportunityTitle ||
                       assignment.roleTitle ||
+                      assignment.eventTitle ||
                       assignment.programmeTitle
                     }}
                   </p>
@@ -402,7 +437,9 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                     {{ assignment.status }}
                   </span>
                 </div>
-                <p class="mt-1 text-xs text-ink-soft">{{ assignment.programmeTitle }}</p>
+                <p class="mt-1 text-xs text-ink-soft">
+                  {{ assignment.eventTitle || assignment.programmeTitle }}
+                </p>
                 <p
                   v-if="assignment.startsOn || assignment.endsOn"
                   class="mt-1 text-xs text-ink-soft"
@@ -450,24 +487,24 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 
               <div class="grid gap-4 sm:grid-cols-2">
                 <SelectField
-                  v-model="assignmentForm.programmeId"
-                  label="Programme"
-                  name="programmeId"
-                  :options="programmeOptions"
-                  placeholder="Choose a programme"
+                  v-model="assignmentForm.where"
+                  label="Where"
+                  name="where"
+                  :options="whereOptions"
+                  placeholder="Choose a programme or event"
                   required
                 />
                 <SelectField
                   v-model="assignmentForm.opportunityId"
                   label="Role"
                   name="opportunityId"
-                  :options="opportunityOptions"
+                  :options="roleOptions"
                   :placeholder="
-                    loadingOpportunities
+                    loadingNeeds
                       ? 'Loading roles…'
-                      : assignmentForm.programmeId
+                      : assignmentForm.where
                         ? 'Choose a role (optional)'
-                        : 'Choose a programme first'
+                        : 'Choose a programme or event first'
                   "
                 />
                 <TextField
@@ -497,7 +534,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                 {{ assignmentMessage }}
               </p>
 
-              <BaseButton type="submit" :disabled="addingAssignment || !assignmentForm.programmeId">
+              <BaseButton type="submit" :disabled="addingAssignment || !assignmentForm.where">
                 {{ addingAssignment ? 'Adding…' : 'Add placement' }}
               </BaseButton>
             </form>

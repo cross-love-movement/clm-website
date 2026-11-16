@@ -124,7 +124,10 @@ useSeo({
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h3 class="font-semibold text-ink">
                 {{
-                  assignment.opportunityTitle || assignment.roleTitle || assignment.programmeTitle
+                  assignment.opportunityTitle ||
+                  assignment.roleTitle ||
+                  assignment.eventTitle ||
+                  assignment.programmeTitle
                 }}
               </h3>
               <span
@@ -134,7 +137,9 @@ useSeo({
                 {{ assignment.status }}
               </span>
             </div>
-            <p class="mt-1 text-xs text-ink-soft">{{ assignment.programmeTitle }}</p>
+            <p class="mt-1 text-xs text-ink-soft">
+              {{ assignment.eventTitle || assignment.programmeTitle }}
+            </p>
             <p v-if="assignment.startsOn || assignment.endsOn" class="mt-1 text-xs text-ink-soft">
               {{ assignment.startsOn || '—' }} → {{ assignment.endsOn || '—' }}
             </p>

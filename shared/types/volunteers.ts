@@ -43,17 +43,34 @@ export const AVAILABILITY_OPTIONS = ['weekdays', 'evenings', 'weekends', 'flexib
 
 export type Availability = (typeof AVAILABILITY_OPTIONS)[number]
 
-export interface Opportunity {
+/** A reusable volunteer role. What a programme needs lives on the programme. */
+export interface Role {
   id: string
-  programmeId: string
   title: string
   description: string
   commitment: string
   requirements: string[]
-  slots: number | null
-  filled: number
   location: string
   status: OpportunityStatus
+}
+
+/** One role in the staff catalogue, with how widely it is used. */
+export interface AdminRole extends Role {
+  /** Live needs (programme or event) that ask for this role. */
+  needCount: number
+  /** People placed in this role, across every need. */
+  filled: number
+}
+
+/** A role as a specific programme or event needs it. */
+export interface NeedWithRole extends Role {
+  needId: string
+  /** People needed. Null means no limit. */
+  places: number | null
+  filled: number
+  /** Optional window: a slot on an event day, or a season on a programme. */
+  startsAt: string | null
+  endsAt: string | null
 }
 
 export interface ProgrammeSummary {
@@ -67,28 +84,36 @@ export interface ProgrammeSummary {
   contentPath: string
   startsAt: string | null
   endsAt: string | null
-  opportunityCount: number
+  /** Roles this programme needs. */
+  needCount: number
   volunteerCount: number
 }
 
 export interface Programme extends ProgrammeSummary {
   description: string
-  opportunities: Opportunity[]
+  needs: NeedWithRole[]
 }
 
-/** Public listing: open programmes with their open opportunities. */
-export interface PublicProgramme {
+/** Public listing: one way to volunteer, grouped by where the need sits. */
+export interface PublicRole {
+  /** Select value: need id for programme/event needs, role id for a general role. */
   id: string
-  slug: string
+  kind: 'programme' | 'event' | 'general'
+  needId: string | null
+  roleId: string
+  programmeId: string | null
+  eventId: string | null
+  programmeTitle: string | null
+  eventTitle: string | null
+  /** ISO start of the event, so the card can show the date. */
+  eventStartsAt: string | null
   title: string
-  type: ProgrammeType
-  summary: string
+  description: string
+  commitment: string
+  requirements: string[]
   location: string
-  startsAt: string | null
-  opportunities: Pick<
-    Opportunity,
-    'id' | 'title' | 'commitment' | 'location' | 'description' | 'requirements'
-  >[]
+  /** People needed. Null means no limit, or a general role. */
+  places: number | null
 }
 
 export interface VolunteerApplication {
@@ -96,6 +121,9 @@ export interface VolunteerApplication {
   volunteerId: string
   programmeId: string | null
   programmeTitle: string | null
+  eventId: string | null
+  eventTitle: string | null
+  needId: string | null
   opportunityId: string | null
   opportunityTitle: string | null
   area: string
@@ -109,8 +137,11 @@ export interface Assignment {
   id: string
   volunteerId: string
   volunteerName?: string
-  programmeId: string
-  programmeTitle: string
+  programmeId: string | null
+  programmeTitle: string | null
+  eventId: string | null
+  eventTitle: string | null
+  needId: string | null
   opportunityId: string | null
   opportunityTitle: string | null
   roleTitle: string

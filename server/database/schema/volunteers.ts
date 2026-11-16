@@ -11,6 +11,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
+import { events } from './events'
 import { users } from './users'
 
 export const programmeType = pgEnum('programme_type', [
@@ -83,13 +84,14 @@ export const programmes = pgTable(
   (table) => [index('programmes_status_starts_idx').on(table.status, table.startsAt)],
 )
 
+/**
+ * The reusable catalogue of volunteer roles. A role describes a kind of work
+ * (mentor, media, logistics); where it is needed lives in `volunteerNeeds`.
+ */
 export const volunteerOpportunities = pgTable(
   'volunteer_opportunities',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    programmeId: uuid('programme_id')
-      .notNull()
-      .references(() => programmes.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     description: text('description').notNull().default(''),
     commitment: text('commitment').notNull().default(''),
@@ -97,16 +99,53 @@ export const volunteerOpportunities = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
-    /** Null means unlimited. */
-    slots: integer('slots'),
     location: text('location').notNull().default(''),
     status: opportunityStatus('status').notNull().default('open'),
+    /** Soft delete: kept so past applications still show their role title. */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('opportunities_status_deleted_idx').on(table.status, table.deletedAt)],
+)
+
+/**
+ * A concrete demand for a role: how many people, and where. It belongs to a
+ * programme (seasonal work), to an event (a dated need), or to neither — in
+ * which case the role is offered as a general volunteer role.
+ */
+export const volunteerNeeds = pgTable(
+  'volunteer_needs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    opportunityId: uuid('opportunity_id')
+      .notNull()
+      .references(() => volunteerOpportunities.id, { onDelete: 'cascade' }),
+    programmeId: uuid('programme_id').references(() => programmes.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id').references(() => events.id, { onDelete: 'cascade' }),
+    /** People needed. Null means no limit. */
+    places: integer('places'),
+    /** Optional window: a slot on an event day, or a season on a programme. */
+    startsAt: timestamp('starts_at', { withTimezone: true }),
+    endsAt: timestamp('ends_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('opportunities_programme_status_idx').on(table.programmeId, table.status),
-    check('opportunity_slots_non_negative', sql`${table.slots} is null or ${table.slots} >= 0`),
+    index('volunteer_needs_programme_idx').on(table.programmeId),
+    index('volunteer_needs_event_idx').on(table.eventId),
+    check(
+      'volunteer_need_places_non_negative',
+      sql`${table.places} is null or ${table.places} >= 0`,
+    ),
+    check(
+      'volunteer_need_single_container',
+      sql`num_nonnulls(${table.programmeId}, ${table.eventId}) <= 1`,
+    ),
+    check(
+      'volunteer_need_has_container',
+      sql`num_nonnulls(${table.programmeId}, ${table.eventId}) = 1`,
+    ),
   ],
 )
 
@@ -156,6 +195,8 @@ export const volunteerApplications = pgTable(
       .notNull()
       .references(() => volunteers.id, { onDelete: 'cascade' }),
     programmeId: uuid('programme_id').references(() => programmes.id, { onDelete: 'set null' }),
+    eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+    needId: uuid('need_id').references(() => volunteerNeeds.id, { onDelete: 'set null' }),
     opportunityId: uuid('opportunity_id').references(() => volunteerOpportunities.id, {
       onDelete: 'set null',
     }),
@@ -176,9 +217,10 @@ export const volunteerAssignments = pgTable(
     volunteerId: uuid('volunteer_id')
       .notNull()
       .references(() => volunteers.id, { onDelete: 'cascade' }),
-    programmeId: uuid('programme_id')
-      .notNull()
-      .references(() => programmes.id, { onDelete: 'restrict' }),
+    /** Exactly one of `programmeId` / `eventId` is set: where the person serves. */
+    programmeId: uuid('programme_id').references(() => programmes.id, { onDelete: 'restrict' }),
+    eventId: uuid('event_id').references(() => events.id, { onDelete: 'restrict' }),
+    needId: uuid('need_id').references(() => volunteerNeeds.id, { onDelete: 'set null' }),
     opportunityId: uuid('opportunity_id').references(() => volunteerOpportunities.id, {
       onDelete: 'set null',
     }),
@@ -194,12 +236,18 @@ export const volunteerAssignments = pgTable(
   (table) => [
     index('assignments_volunteer_status_idx').on(table.volunteerId, table.status),
     index('assignments_programme_status_idx').on(table.programmeId, table.status),
+    index('assignments_event_status_idx').on(table.eventId, table.status),
+    check(
+      'assignment_single_container',
+      sql`num_nonnulls(${table.programmeId}, ${table.eventId}) = 1`,
+    ),
   ],
 )
 
 export type ProgrammeRow = typeof programmes.$inferSelect
 export type NewProgramme = typeof programmes.$inferInsert
 export type OpportunityRow = typeof volunteerOpportunities.$inferSelect
+export type VolunteerNeedRow = typeof volunteerNeeds.$inferSelect
 export type VolunteerRow = typeof volunteers.$inferSelect
 export type VolunteerApplicationRow = typeof volunteerApplications.$inferSelect
 export type AssignmentRow = typeof volunteerAssignments.$inferSelect

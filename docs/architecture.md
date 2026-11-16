@@ -39,18 +39,18 @@ flowchart TD
 
 ### Where each thing lives
 
-| Thing                   | Plane                                           | Why                                           |
-| ----------------------- | ----------------------------------------------- | --------------------------------------------- |
-| News posts              | Content                                         | Editorial, long-form, image-led               |
-| Project stories         | Content                                         | Marketing narrative                           |
-| Portfolio pieces        | Content                                         | Gallery content                               |
-| About, FAQs, site copy  | Content                                         | Rarely changes                                |
-| **Events**              | **Operations**                                  | Capacity, CRUD, registrations, status changes |
-| **Registrations**       | **Operations**                                  | Records, codes, check-in                      |
-| **Volunteers**          | **Operations**                                  | Application status, skills, availability      |
-| **Users / roles**       | **Operations**                                  | Auth, permissions                             |
-| **Donations / pledges** | **Operations**                                  | Money, receipts, reporting                    |
-| Partners                | Content now, DB if relationships become managed | Editorial list today                          |
+| Thing                  | Plane                                           | Why                                           |
+| ---------------------- | ----------------------------------------------- | --------------------------------------------- |
+| News posts             | Content                                         | Editorial, long-form, image-led               |
+| Project stories        | Content                                         | Marketing narrative                           |
+| Portfolio pieces       | Content                                         | Gallery content                               |
+| About, FAQs, site copy | Content                                         | Rarely changes                                |
+| **Events**             | **Operations**                                  | Capacity, CRUD, registrations, status changes |
+| **Registrations**      | **Operations**                                  | Records, codes, check-in                      |
+| **Volunteers**         | **Operations**                                  | Application status, skills, availability      |
+| **Users / roles**      | **Operations**                                  | Auth, permissions                             |
+| **Donations**          | **Operations**                                  | Paystack charges, receipts, reporting         |
+| Partners               | Content now, DB if relationships become managed | Editorial list today                          |
 
 Hybrid case: if a project needs operational data (budget, beneficiaries, milestones), keep its **story page** in Content and add a `projects` row in Postgres keyed by the content path. The narrative stays editable in Studio; the numbers become queryable.
 
@@ -180,6 +180,7 @@ Format: `PREFIX-XXXXXX` — a short event prefix plus Crockford base32 (no `I`, 
 | --------------------------------------------------- | ------------------------------------------ |
 | `GET/POST /api/admin/events`                        | List every event, create one               |
 | `GET/PATCH /api/admin/events/:id`                   | Read or edit one event                     |
+| `DELETE /api/admin/events/:id`                      | Delete an event that has no bookings       |
 | `GET /api/admin/events/registrations?event=slug`    | List bookings (add `format=csv` to export) |
 | `POST /api/admin/events/registrations/:id/check-in` | Check in                                   |
 | `DELETE /api/admin/events/registrations/:id`        | Cancel, release seats, promote waitlist    |
@@ -236,13 +237,14 @@ Roles decide which portal an account can open. Permissions decide what staff can
 
 The permission flags are stored on `users.permissions`:
 
-| Permission               | Grants                                                  |
-| ------------------------ | ------------------------------------------------------- |
-| `canEdit`                | Create and edit events                                  |
-| `canManageRegistrations` | View bookings, check in, cancel, release seats, CSV     |
-| `canManagePeople`        | Open the people screen and invite volunteers            |
-| `canManageVolunteers`    | Applications, safeguarding records, invites, placements |
-| `canManageProgrammes`    | Create programmes and the volunteer roles inside them   |
+| Permission               | Grants                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `canEdit`                | Create and edit events                                                        |
+| `canManageRegistrations` | View bookings, check in, cancel, release seats, CSV                           |
+| `canManagePeople`        | Open the people screen and invite volunteers                                  |
+| `canManageVolunteers`    | Applications, safeguarding records, invites, placements                       |
+| `canManageProgrammes`    | Programmes, their role line-up, event volunteer needs, and the role catalogue |
+| `canManageDonations`     | Gifts, payment records, and the CSV export                                    |
 
 Only `superadmin` can change roles, edit permissions, or suspend an account. Role is never read
 from the request body in any endpoint that mutates a user. Guests get nothing, volunteers get a
@@ -321,16 +323,16 @@ A true monorepo is unnecessary while there is one Nuxt app. These folders alread
 
 ## 6. Delivery plan
 
-| Phase                       | Scope                                                                                                                           | Outcome                                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                                                                      |
-| **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | **Done** — events live in Postgres, bookings return references, waitlist promotes automatically |
-| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Staff and volunteers sign in and land in the right place                                        |
-| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | **Done** — `/admin/events` manages the calendar and its bookings                                |
-| **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                        |
-| **5. Volunteers**           | Programmes, opportunities, applications, invite, placements, safeguarding                                                       | **Core done** — `/admin/programmes` and `/admin/volunteers`; shifts/hours and reports next      |
-| **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                                                                 |
-| **7. Projects**             | Operational rows linked to Content stories                                                                                      | Only when reporting needs them                                                                  |
+| Phase                       | Scope                                                                                                                           | Outcome                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **0. Foundations**          | Postgres in Coolify, Drizzle, client, migrations, health check, deploy step, local `docker compose`                             | Deployable with a database                                                                              |
+| **1. Events core**          | `events` + `event_registrations` + waitlist, public API, registration with reference + email outbox, move events out of Content | **Done** — events live in Postgres, bookings return references, waitlist promotes automatically         |
+| **2. Accounts and portals** | `nuxt-auth-utils`, invite/login/reset, users + roles, `/portal` and `/admin` shells, route guards                               | Staff and volunteers sign in and land in the right place                                                |
+| **3. Admin events**         | CRUD UI, publish/archive, registration table, search, CSV, check-in, cancel, waitlist promotion                                 | **Done** — `/admin/events` manages the calendar and its bookings                                        |
+| **4. Reliability**          | Outbox worker, reminder email, backups, retention, audit log                                                                    | Safe to run a real event                                                                                |
+| **5. Volunteers**           | Programmes, roles, applications, invite, placements, safeguarding                                                               | **Core done** — `/admin/programmes`, `/admin/roles`, `/admin/volunteers`; shifts/hours and reports next |
+| **6. Money**                | Donations/pledges, receipts, reporting                                                                                          | Only if online giving is wanted                                                                         |
+| **7. Projects**             | Operational rows linked to Content stories                                                                                      | Only when reporting needs them                                                                          |
 
 Phases 0–3 are the real scope for "event management". Phase 4 is what makes it trustworthy.
 

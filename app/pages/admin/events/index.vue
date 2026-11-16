@@ -242,8 +242,8 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 
     <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
       Archived and cancelled events stay out of the public calendar but keep their registrations.
-      Cancelling from an event page also emails every registered guest; archiving does not. Deleting
-      an event with bookings is blocked on purpose.
+      Cancelling from an event page also emails every registered guest; archiving does not. An event
+      can only be deleted while it has no bookings — after that, cancel or archive it.
     </p>
   </section>
 </template>

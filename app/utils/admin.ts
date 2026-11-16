@@ -61,6 +61,7 @@ const permissionLabels: Record<Permission, string> = {
   canManageVolunteers: 'Manage volunteers',
   canManageProgrammes: 'Manage programmes',
   canManageNewsletter: 'Manage newsletter',
+  canManageDonations: 'Manage donations',
 }
 
 export function permissionLabel(permission: Permission) {

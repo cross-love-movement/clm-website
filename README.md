@@ -137,32 +137,36 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route              | Page           | Server route                |
-| ------------------ | -------------- | --------------------------- |
-| `/`                | Home           | —                           |
-| `/about`           | About          | —                           |
-| `/projects`        | Projects index | —                           |
-| `/projects/[slug]` | Project detail | —                           |
-| `/events`          | Events         | `POST /api/events/register` |
-| `/news`            | News index     | —                           |
-| `/news/[slug]`     | Article        | —                           |
-| `/volunteer`       | Volunteer      | `POST /api/volunteer`       |
-| `/partnership`     | Partnership    | `POST /api/partnership`     |
-| `/contact`         | Contact        | `POST /api/contact`         |
+| Route               | Page             | Server route                  |
+| ------------------- | ---------------- | ----------------------------- |
+| `/`                 | Home             | —                             |
+| `/about`            | About            | —                             |
+| `/projects`         | Projects index   | —                             |
+| `/projects/[slug]`  | Project detail   | —                             |
+| `/events`           | Events           | `POST /api/events/register`   |
+| `/news`             | News index       | —                             |
+| `/news/[slug]`      | Article          | —                             |
+| `/volunteer`        | Volunteer        | `POST /api/volunteer`         |
+| `/partnership`      | Partnership      | `POST /api/partnership`       |
+| `/contact`          | Contact          | `POST /api/contact`           |
+| `/donate`           | Donate           | `POST /api/donate`            |
+| `/donate/complete`  | Payment return   | `GET /api/donate/verify`      |
+| `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
+| `/login`            | Sign in          | `POST /api/auth/login`        |
+| `/admin`            | Staff overview   | —                             |
+| `/admin/events`     | Event management | `/api/admin/events`           |
+| `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
+| `/admin/roles`      | Volunteer roles  | `/api/admin/opportunities`    |
+| `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
+| `/admin/donations`  | Donations        | `/api/admin/donations`        |
+| `/admin/users`      | People           | `/api/admin/users`            |
+| `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
+
+The footer newsletter form posts to `POST /api/newsletter`; it has no page of its own.
 
 The portfolio page is intentionally not routed while it has no work to show. The YAML in
 `content/portfolio/` and the matching data/types are kept, so bringing it back is a page file plus
 the two navigation entries.
-| `/donate` | Donate | `POST /api/donate` |
-| footer newsletter | — | `POST /api/newsletter` |
-| `/portal` | Volunteer portal | `GET /api/portal/assignments` |
-| `/login` | Sign in | `POST /api/auth/login` |
-| `/admin` | Staff overview | — |
-| `/admin/events` | Event management | `/api/admin/events` |
-| `/admin/programmes` | Programmes | `/api/admin/programmes` |
-| `/admin/volunteers` | Volunteers | `/api/admin/volunteers` |
-| `/admin/users` | People | `/api/admin/users` |
-| `/_studio` | — | Nuxt Studio (GitHub OAuth) |
 
 Each page sets its own title, description, Open Graph tags, and canonical URL via `useSeo()`.
 
@@ -266,6 +270,16 @@ public calendar, releases every confirmed and waitlisted booking in one transact
 uses the `event-cancelled` mail, which carries their reference code; the event-level notice does not.
 Setting `cancelled` from the edit form does **not** email anyone, so the UI labels it.
 
+**Deleting is for mistakes, not housekeeping.** `DELETE /api/admin/events/:id` removes an event
+outright, but only while it has no bookings at all — registrations are attendance records, and the
+foreign key refuses the delete anyway. Once anyone has registered, cancel (emails guests) or
+archive (silent) instead.
+
+**Volunteers needed.** The event page carries a **Volunteers needed** section: tick roles from the
+catalogue, set a headcount and an optional start/end time, and `PUT /api/admin/events/:id/needs`
+replaces the line-up. Published events with open needs appear on `/volunteer`, and a cancelled or
+archived event drops out of that list automatically — the role catalogue itself is untouched.
+
 **Messaging guests.** `POST /api/admin/events/:id/message` queues a staff-written subject and body to
 the event's guests: `audience=confirmed` (the default) or `audience=all` to include the waitlist.
 Cancelled bookings are never written to, and one address receives one email even if it booked twice.
@@ -280,8 +294,10 @@ hitting Resend's rate limit (1,000 guests is roughly 33 minutes).
 | --------------------------------------------------- | ----------------------------------- |
 | `GET/POST /api/admin/events`                        | list every event, create one        |
 | `GET/PATCH /api/admin/events/:id`                   | read or edit one event              |
+| `DELETE /api/admin/events/:id`                      | delete an event with no bookings    |
 | `POST /api/admin/events/:id/cancel`                 | cancel the event + email all guests |
 | `POST /api/admin/events/:id/message`                | message the event's guests          |
+| `GET/PUT /api/admin/events/:id/needs`               | read or replace its volunteer needs |
 | `GET /api/admin/events/registrations?event=slug`    | list bookings                       |
 | `GET …?format=csv`                                  | spreadsheet download                |
 | `POST /api/admin/events/registrations/:id/check-in` | mark a booking as arrived           |
@@ -299,44 +315,56 @@ collecting them in earnest.
 Volunteers are the second operational entity. The code mirrors events:
 
 ```
-app/pages/admin/programmes/   programme list, create, edit, roles
+app/pages/admin/programmes/   programme list, create, edit
+app/pages/admin/roles/        volunteer role list, create, edit, close/delete
 app/pages/admin/volunteers/   applications, safeguarding, placements
-app/features/volunteers/      programme form and future shared components
+app/features/volunteers/      programme and role forms
 server/features/volunteers/   repository, schemas, application mail
-server/api/volunteer/         public opportunities
-server/api/admin/             programmes, opportunities, volunteers, assignments
+server/api/volunteer/         public open roles
+server/api/admin/             programmes, roles, volunteers, assignments
 server/api/portal/            a volunteer's own placements
 ```
 
 The model separates the person, the work, and the placement:
 
-| Entity                    | Purpose                                                                    |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `programmes`              | The work volunteers can join, with an optional link to a content story     |
-| `volunteer_opportunities` | Roles inside a programme, with slots and requirements                      |
-| `volunteers`              | The person, including safeguarding fields and an optional linked `user_id` |
-| `volunteer_applications`  | Every public submission, kept for history                                  |
-| `volunteer_assignments`   | Who is placed in which programme/role                                      |
+| Entity                    | Purpose                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `programmes`              | The work volunteers can join, with an optional link to a content story         |
+| `volunteer_opportunities` | The role catalogue: what each kind of role involves, with requirements         |
+| `volunteer_needs`         | A role needed somewhere: on a programme, on an event, with places and a window |
+| `volunteers`              | The person, including safeguarding fields and an optional linked `user_id`     |
+| `volunteer_applications`  | Every public submission, kept for history                                      |
+| `volunteer_assignments`   | Who is placed where: a programme or an event, optionally a role                |
 
-**Roles are data, not code.** Admins create and close them under `/admin/programmes`; the public
-`/volunteer` page and the application form read the open ones from
-`/api/volunteer/opportunities`. Adding or changing a role does not require a deploy. If no roles
-are open, the page still accepts a general application.
+**Roles are a catalogue, not code.** Admins manage them at `/admin/roles`: create a role, edit any
+field, close it to stop new applications, or delete it. Closing hides it on every programme;
+deleting removes it from the catalogue and from any programme that listed it, but keeps the row so
+past applications still read their role title. The role itself carries no headcount.
+
+**Needs are the bridge.** A **volunteer need** is one role needed somewhere: on a programme, on an
+event, and with a headcount (blank means no limit) plus an optional time window. The same role can be
+needed on several programmes and events with a different headcount each time. Staff tick roles on the
+programme form and in **Volunteers needed** on the event page. A role that is needed nowhere is
+offered as a **general volunteer role** — always open, no headcount, nothing to schedule (web
+developer, for instance). The public page lists event needs first (soonest event first), then
+programme needs, then general roles, from `/api/volunteer/opportunities`; adding or changing anything
+does not require a deploy. If nothing is open, the page still accepts a general application.
 
 **Flow.** The public `/volunteer` form stores an application, queues a notification to
-`apply@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
+`volunteers@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
 fails, the row is retried by the background worker. Staff do not need to be signed in to learn
 that someone applied.
 Staff review at `/admin/volunteers`, invite the volunteer (creating a `volunteer` account), then
-place them into a programme at `/admin/programmes`. Volunteers see their placements at `/portal`.
-Assigning to an opportunity with slots locks the row and refuses to overfill.
+place them into a programme or an event at `/admin/volunteers/:id`. Volunteers see their placements
+at `/portal`. Placing someone into a role locks the need row and refuses to overfill its places.
 
 **Safeguarding** lives on the volunteer row: date of birth, emergency contact, consent timestamp,
 briefing date, background-check status, and internal notes. It is only visible with
 `canManageVolunteers`.
 
 **Bootstrap data.** On a fresh database one programme (People Like You 2027) and five roles are
-seeded (`SEED_VOLUNTEER_PROGRAMMES=false` disables it) so the public form is not empty.
+seeded (`SEED_VOLUNTEER_PROGRAMMES=false` disables it). The four day roles are needs on the matching
+event, and mentoring is a need on the programme, so both paths are visible immediately.
 
 **Not built yet:** approval/decline emails, shifts and hours logging, reports, and volunteer content
 grants. Content editing stays with developers/GitHub or Nuxt Studio for now; if scoped editors are
@@ -346,10 +374,10 @@ added later, draft/publish approval belongs with that work.
 
 | Trigger                                    | Inbox                                         |
 | ------------------------------------------ | --------------------------------------------- |
-| Volunteer application                      | `apply@crosslovemovement.org`                 |
-| Contact form — volunteering                | `apply@crosslovemovement.org`                 |
-| Donation form                              | `donate@crosslovemovement.org`                |
-| Contact form — donation                    | `donate@crosslovemovement.org`                |
+| Volunteer application                      | `volunteers@crosslovemovement.org`            |
+| Contact form — volunteering                | `volunteers@crosslovemovement.org`            |
+| Donation form                              | `donations@crosslovemovement.org`             |
+| Contact form — donation                    | `donations@crosslovemovement.org`             |
 | Contact form — complaint                   | `admin@crosslovemovement.org`                 |
 | Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
 | Partnership form                           | `info@crosslovemovement.org`                  |
@@ -392,6 +420,34 @@ is personal data.
 | `GET /api/admin/newsletter`                  | list + counts (`format=csv`) |
 | `POST /api/admin/newsletter/send`            | queue an issue               |
 | `POST /api/admin/newsletter/:id/unsubscribe` | staff removal                |
+
+### Donations
+
+Online giving runs through [Paystack](https://paystack.com) in GHS. The donor chooses an amount, the
+server creates a `donations` row with our own reference (`CLM-DON-…`), and Paystack's hosted checkout
+takes the card or mobile-money details. **The donor pays exactly the amount they chose** — the
+processing fee comes out of settlement and is never added on top.
+
+A gift is only marked `succeeded` from a verified Paystack response, by either route:
+
+1. the thank-you page calls `GET /api/donate/verify?reference=…` server-side, or
+2. `POST /api/paystack/webhook` receives `charge.success`, after checking the HMAC-SHA512 signature
+   of the raw body against the secret key.
+
+Both paths are idempotent: the status transition is guarded, and `receipt_sent_at` makes sure the
+donor and `donations@` each get exactly one email. Monthly gifts create (or reuse) one Paystack plan
+per amount in `donation_plans`; renewals carry a Paystack reference of their own and are recorded by
+the webhook. Without `NUXT_PAYSTACK_SECRET_KEY`, the form falls back to the old pledge email, so
+previews and local development never dead-end.
+
+| Route                        | Purpose                              |
+| ---------------------------- | ------------------------------------ |
+| `POST /api/donate`           | validate, create the row, initialise |
+| `GET /api/donate/verify`     | verify a reference after checkout    |
+| `POST /api/paystack/webhook` | signed charge events                 |
+| `GET /api/admin/donations`   | list + totals (`format=csv`)         |
+
+Register `https://www.crosslovemovement.org/api/paystack/webhook` in the Paystack dashboard.
 
 To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
 site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
@@ -599,22 +655,23 @@ variables send as plain text.
 or alias**. Leave it blank to keep rendering the file in the app. Sending still supplies `from`,
 `to`, `subject`, and `Reply-To`, so routing and subject lines stay in the repository.
 
-| Kind                    | Environment variable                    | Variables                                                                                                                                                  |
-| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                 |
-| `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                       |
-| `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                       |
-| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                              |
-| `event-called-off`      | `RESEND_TEMPLATE_EVENT_CALLED_OFF`      | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`                                                                                                                     |
-| `event-message`         | `RESEND_TEMPLATE_EVENT_MESSAGE`         | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`, `MESSAGE_HTML`                                                                                                     |
-| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                  |
-| `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
-| `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
-| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
-| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
-| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
-| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                          |
-| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                               |
+| Kind                    | Environment variable                    | Variables                                                                                                                                                           |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                          |
+| `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                                |
+| `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                                |
+| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                                       |
+| `event-called-off`      | `RESEND_TEMPLATE_EVENT_CALLED_OFF`      | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`                                                                                                                              |
+| `event-message`         | `RESEND_TEMPLATE_EVENT_MESSAGE`         | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`, `MESSAGE_HTML`                                                                                                              |
+| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                           |
+| `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                                     |
+| `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `EVENT`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
+| `donation-receipt`      | `RESEND_TEMPLATE_DONATION_RECEIPT`      | `DONOR_NAME`, `AMOUNT`, `FREQUENCY`, `DATE`, `METHOD`, `REFERENCE`, `NOTE`                                                                                          |
+| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                                 |
+| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                                |
+| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                         |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                                   |
+| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                                        |
 
 Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
 **published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
@@ -787,6 +844,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 | `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                        | Mail delivery                          |
 | `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>` | Sender                                 |
 | `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                       | General fallback inbox                 |
+| `NUXT_PAYSTACK_SECRET_KEY`              | _(empty — online giving falls back to pledges)_    | Paystack secret key (`sk_live_…`)      |
+| `NUXT_PAYSTACK_API_URL`                 | `https://api.paystack.co`                          | Paystack base URL (tests/mocks)        |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                  | GitHub OAuth app for Studio editors    |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                          | GitHub OAuth secret                    |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_            | Comma-separated editor email allowlist |
@@ -849,7 +908,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 3. **Legal pages** — privacy policy, safeguarding policy, and the latest report. Only link to real
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
-5. **Payments** — connect a gateway if online giving is required (see above).
+5. **Payments** — set `NUXT_PAYSTACK_SECRET_KEY`, register the webhook URL in Paystack, and make
+   one small live gift before announcing online giving.
 6. **Event data** — events and registrations live in `DATABASE_URL`. Keep one replica, schedule
    nightly Postgres backups, and agree a retention period for registrant names, emails, and phone
    numbers. The admin CRUD screens are the next phase; until then, events are created with SQL.
@@ -925,6 +985,7 @@ volume only if you later switch media storage to a local disk driver.
 | `NUXT_MAIL_TO`                          | yes        | Inbox that receives form submissions               |
 | `NUXT_MAIL_FROM`                        | no         | `Cross-Love Movement <info@crosslovemovement.org>` |
 | `NUXT_RESEND_API_KEY`                   | for mail   | Resend API key (omit to log to container)          |
+| `NUXT_PAYSTACK_SECRET_KEY`              | for giving | Paystack secret key (`sk_live_…`)                  |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS    | GitHub OAuth app client ID                         |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS    | GitHub OAuth app secret                            |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS    | Comma-separated editor emails (allowlist)          |

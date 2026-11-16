@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     // Keep the public form usable if the operations database is unavailable.
     await sendMail({
       tag: 'volunteer-application',
-      to: MAILBOXES.apply,
+      to: MAILBOXES.volunteers,
       replyTo: data.email,
       subject: sanitizeSubject(`Volunteer application — ${data.area || 'general'} — ${data.name}`),
       text: [
@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
         CITY: data.city,
         AVAILABILITY: data.availability,
         PROGRAMME: '—',
+        EVENT: '—',
         ROLE: '—',
         INTEREST: data.area || '—',
         EXPERIENCE: take(data.experience || '—'),
@@ -66,10 +67,11 @@ export default defineEventHandler(async (event) => {
 
   await database.insert(mailOutbox).values(
     applicationNotification({
-      toEmail: MAILBOXES.apply,
+      toEmail: MAILBOXES.volunteers,
       volunteer: result.volunteer,
       application: result.application,
       programmeTitle: result.programmeTitle,
+      eventTitle: result.eventTitle,
       opportunityTitle: result.opportunityTitle,
       adminUrl: `${site}/admin/volunteers/${result.volunteer.id}`,
     }),

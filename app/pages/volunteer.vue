@@ -1,35 +1,20 @@
 <script setup lang="ts">
-import type { PublicProgramme } from '#shared/types/volunteers'
+import type { PublicRole } from '#shared/types/volunteers'
 
 import { volunteerFaqs } from '~/data/faqs'
 import { heroImages } from '~/data/heroes'
 
-const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
-  key: 'public-volunteer-programmes',
+const { data: roles } = await useFetch<PublicRole[]>('/api/volunteer/opportunities', {
+  key: 'public-volunteer-roles',
   default: () => [],
 })
 
-const openRoles = computed(() =>
-  programmes.value.flatMap((programme) =>
-    programme.opportunities.map((opportunity) => ({
-      id: opportunity.id,
-      title: opportunity.title,
-      commitment: opportunity.commitment,
-      location: opportunity.location || programme.location,
-      description: opportunity.description,
-      requirements: opportunity.requirements,
-      programmeId: programme.id,
-      programmeTitle: programme.title,
-    })),
-  ),
-)
+const openRoles = computed(() => roles.value)
 
-const selectedProgrammeId = ref('')
-const selectedOpportunityId = ref('')
+const selectedRoleId = ref('')
 
-function applyFor(role: { programmeId: string; id: string }) {
-  selectedProgrammeId.value = role.programmeId
-  selectedOpportunityId.value = role.id
+function applyFor(role: { id: string }) {
+  selectedRoleId.value = role.id
   nextTick(() => {
     document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
@@ -46,19 +31,19 @@ const expectations = [
   {
     title: 'No experience needed, mostly',
     description:
-      'Music mentors and outreach volunteers complete a short briefing. Anyone working directly with young people completes our safeguarding briefing first.',
+      'Mentors and outreach volunteers complete a short briefing. Anyone working directly with young people completes our safeguarding briefing first.',
     icon: 'sprout' as const,
   },
   {
     title: 'We ask for consistency',
     description:
-      'Children notice when you miss a week. We would rather you commit to something small and keep it than something large you drop.',
+      'Consistency is key. We would rather you commit to something small and keep it than something large you drop.',
     icon: 'calendar' as const,
   },
   {
     title: 'You will not be dropped in',
     description:
-      'Every volunteer is paired with a team lead, briefed before the first day, and never sent alone into a community.',
+      'Every volunteer is paired with a team lead and briefed before the first day. We work as a team on every assignment.',
     icon: 'shield' as const,
   },
 ]
@@ -117,7 +102,7 @@ const steps = [
         <SectionHeading
           eyebrow="Open roles"
           title="Roles that are open now."
-          description="Posted by the team. If nothing fits your life today, send a general application and we will match you when something opens."
+          description="Some roles are for a specific event, some run for a season, and others — like web development — are open at any time. If nothing fits your life today, send a general application and we will match you when something opens."
         />
 
         <div v-if="openRoles.length" class="mt-12 grid gap-5 lg:grid-cols-2">
@@ -130,7 +115,14 @@ const steps = [
               <div>
                 <h3 class="text-xl text-ink">{{ role.title }}</h3>
                 <p class="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-clay-700">
-                  {{ role.programmeTitle }}
+                  <template v-if="role.eventTitle">
+                    {{ role.eventTitle }}
+                    <template v-if="role.eventStartsAt">
+                      · {{ formatDateShort(role.eventStartsAt) }}</template
+                    >
+                  </template>
+                  <template v-else-if="role.programmeTitle">{{ role.programmeTitle }}</template>
+                  <template v-else>General volunteer role</template>
                 </p>
               </div>
               <span
@@ -159,8 +151,12 @@ const steps = [
               </li>
             </ul>
 
-            <p v-if="role.location" class="mt-4 text-sm text-ink-soft">
-              {{ role.location }}
+            <p v-if="role.location || role.places !== null" class="mt-4 text-sm text-ink-soft">
+              <span v-if="role.location">{{ role.location }}</span>
+              <span v-if="role.location && role.places !== null"> · </span>
+              <span v-if="role.places !== null">
+                {{ role.places }} {{ role.places === 1 ? 'place' : 'places' }}
+              </span>
             </p>
 
             <div
@@ -225,10 +221,7 @@ const steps = [
         </div>
 
         <div class="rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
-          <VolunteerForm
-            :initial-programme-id="selectedProgrammeId"
-            :initial-opportunity-id="selectedOpportunityId"
-          />
+          <VolunteerForm :initial-role-id="selectedRoleId" />
         </div>
       </div>
     </section>
