@@ -61,8 +61,10 @@ export function buildMailPayload(input: {
  *  - pasted into a Resend template, selected by a `RESEND_TEMPLATE_*` var
  *  - rendered here with the same variables, for preview and fallback
  *
- * Without `NUXT_RESEND_API_KEY` the message is printed to the server console,
- * so local development and form testing work without an account.
+ * Without `NUXT_RESEND_API_KEY` the message is printed to the server console in
+ * development, so form testing works without an account. In production the
+ * same situation is a configuration error: the message is not printed and the
+ * send fails, rather than being recorded as delivered when it never left.
  */
 export async function sendMail({ subject, text, replyTo, to, tag, variables }: MailInput) {
   const config = useRuntimeConfig()
@@ -81,6 +83,18 @@ export async function sendMail({ subject, text, replyTo, to, tag, variables }: M
   const html = template && variables ? renderEmail(template, variables) : undefined
 
   if (!config.resendApiKey) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(`[mail] ${tag ?? 'message'} not sent: NUXT_RESEND_API_KEY is not configured`)
+
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Mail is not configured',
+        data: {
+          message: 'Email delivery is not configured. Please contact us directly.',
+        },
+      })
+    }
+
     console.info(
       [
         '',

@@ -6,6 +6,16 @@ const INTERVAL_MS = 20_000
 
 /** Background sender for the mail outbox. Safe with a single replica. */
 export default defineNitroPlugin((nitroApp) => {
+  const config = useRuntimeConfig()
+
+  if (config.resendApiKey) {
+    console.info('[mail] Resend API key is configured')
+  } else {
+    console.warn(
+      '[mail] NUXT_RESEND_API_KEY is not set — mail cannot be delivered in this environment',
+    )
+  }
+
   // Say which kinds are served by Resend and which fall back to the files in
   // server/emails/templates, so the deploy log answers this without guessing.
   const routes = mailRoutes()

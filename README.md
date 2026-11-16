@@ -624,8 +624,10 @@ two ways:
 - **In this app** for previews and as the fallback, rendered with `escapeHtml`.
 - **In Resend** by pasting the same file into a template; `{{{VARIABLE}}}` is the syntax both sides use.
 
-With no `NUXT_RESEND_API_KEY` the message is printed to the server console, so local testing works
-without an account.
+With no `NUXT_RESEND_API_KEY` the message is printed to the server console in development, so
+local testing works without an account. In production the same state is a configuration error:
+the send fails and the outbox row stays retryable, rather than being recorded as delivered when
+nothing left the server. `GET /api/health` reports `mail: configured` or `mail: not-configured`.
 
 | File                             | Covers                                                              |
 | -------------------------------- | ------------------------------------------------------------------- |
@@ -786,7 +788,7 @@ export SEED_SUPERADMIN_EMAIL=you@example.com
 npm run dev
 ```
 
-`GET /api/health` reports `database: up`, `not-configured`, or `503`. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+`GET /api/health` reports `database: up`, `not-configured`, or `503`, plus `mail: configured` or `mail: not-configured`. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
 
 See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
 
@@ -838,27 +840,27 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 
 ## Environment variables
 
-| Variable                                | Default                                            | Purpose                                |
-| --------------------------------------- | -------------------------------------------------- | -------------------------------------- |
-| `NUXT_PUBLIC_SITE_URL`                  | `https://www.crosslovemovement.org`                | Canonical + OG URLs                    |
-| `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                        | Mail delivery                          |
-| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>` | Sender                                 |
-| `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                       | General fallback inbox                 |
-| `NUXT_PAYSTACK_SECRET_KEY`              | _(empty — online giving falls back to pledges)_    | Paystack secret key (`sk_live_…`)      |
-| `NUXT_PAYSTACK_API_URL`                 | `https://api.paystack.co`                          | Paystack base URL (tests/mocks)        |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                  | GitHub OAuth app for Studio editors    |
-| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                          | GitHub OAuth secret                    |
-| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_            | Comma-separated editor email allowlist |
-| `SEED_EVENTS`                           | `true`                                             | Seed one event on an empty database    |
-| `SEED_VOLUNTEER_PROGRAMMES`             | `true`                                             | Seed one programme + roles on empty DB |
-| `DATABASE_URL`                          | _(empty — database features off)_                  | Postgres connection string             |
-| `DATABASE_SSL`                          | `false`                                            | Enable TLS to the database             |
-| `DATABASE_POOL_SIZE`                    | `10`                                               | Postgres pool size                     |
-| `DB_MIGRATE_ON_START`                   | `true`                                             | Apply migrations at boot               |
-| `MIGRATIONS_DIR`                        | `server/database/migrations`                       | `/app/migrations` in the image         |
-| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                             | First superadmin's email               |
-| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                                      | First superadmin's name                |
-| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                         | Signs the session cookie (32+ chars)   |
+| Variable                                | Default                                              | Purpose                                |
+| --------------------------------------- | ---------------------------------------------------- | -------------------------------------- |
+| `NUXT_PUBLIC_SITE_URL`                  | `https://www.crosslovemovement.org`                  | Canonical + OG URLs                    |
+| `NUXT_RESEND_API_KEY`                   | _(empty — logs in development; fails in production)_ | Mail delivery                          |
+| `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>`   | Sender                                 |
+| `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                         | General fallback inbox                 |
+| `NUXT_PAYSTACK_SECRET_KEY`              | _(empty — online giving falls back to pledges)_      | Paystack secret key (`sk_live_…`)      |
+| `NUXT_PAYSTACK_API_URL`                 | `https://api.paystack.co`                            | Paystack base URL (tests/mocks)        |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                    | GitHub OAuth app for Studio editors    |
+| `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                            | GitHub OAuth secret                    |
+| `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_              | Comma-separated editor email allowlist |
+| `SEED_EVENTS`                           | `true`                                               | Seed one event on an empty database    |
+| `SEED_VOLUNTEER_PROGRAMMES`             | `true`                                               | Seed one programme + roles on empty DB |
+| `DATABASE_URL`                          | _(empty — database features off)_                    | Postgres connection string             |
+| `DATABASE_SSL`                          | `false`                                              | Enable TLS to the database             |
+| `DATABASE_POOL_SIZE`                    | `10`                                                 | Postgres pool size                     |
+| `DB_MIGRATE_ON_START`                   | `true`                                               | Apply migrations at boot               |
+| `MIGRATIONS_DIR`                        | `server/database/migrations`                         | `/app/migrations` in the image         |
+| `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                               | First superadmin's email               |
+| `SEED_SUPERADMIN_NAME`                  | `Super Admin`                                        | First superadmin's name                |
+| `NUXT_SESSION_PASSWORD`                 | _(required in production)_                           | Signs the session cookie (32+ chars)   |
 
 ---
 
