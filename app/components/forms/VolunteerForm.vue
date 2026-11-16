@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { PublicProgramme } from '#shared/types/volunteers'
+import type { PublicRole } from '#shared/types/volunteers'
 
 const props = withDefaults(
   defineProps<{
-    initialProgrammeId?: string
-    initialOpportunityId?: string
+    /** Pairing id from the public list: a role on a specific programme. */
+    initialRoleId?: string
   }>(),
-  { initialProgrammeId: '', initialOpportunityId: '' },
+  { initialRoleId: '' },
 )
 
-const { data: programmes } = await useFetch<PublicProgramme[]>('/api/volunteer/opportunities', {
-  key: 'public-volunteer-programmes',
+const { data: roles } = await useFetch<PublicRole[]>('/api/volunteer/opportunities', {
+  key: 'public-volunteer-roles',
   default: () => [],
 })
 
@@ -22,7 +22,7 @@ const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useF
     phone: '',
     city: '',
     availability: '',
-    programmeId: 'none',
+    needId: 'none',
     opportunityId: 'none',
     message: '',
     experience: '',
@@ -31,52 +31,45 @@ const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useF
   },
 )
 
-const programmeOptions = computed(() => [
-  { value: 'none', label: 'No preference — place me where I am needed' },
-  ...programmes.value.map((programme) => ({
-    value: programme.id,
-    label: `${programme.title}${programme.location ? ` — ${programme.location}` : ''}`,
-  })),
+/** The select binds to the opening id; the API wants the need and role separately. */
+const selectedRoleId = ref('none')
+
+const selectedRole = computed(
+  () => roles.value.find((role) => role.id === selectedRoleId.value) ?? null,
+)
+
+function roleLabel(role: PublicRole) {
+  const where = role.eventTitle
+    ? `${role.eventTitle}${role.eventStartsAt ? ` · ${formatDateShort(role.eventStartsAt)}` : ''}`
+    : (role.programmeTitle ?? 'General volunteer')
+
+  return `${role.title} — ${where}${role.commitment ? ` · ${role.commitment}` : ''}`
+}
+
+const roleOptions = computed(() => [
+  { value: 'none', label: 'No specific role — place me where I am needed' },
+  ...roles.value.map((role) => ({ value: role.id, label: roleLabel(role) })),
 ])
 
-const selectedProgramme = computed(
-  () => programmes.value.find((programme) => programme.id === values.programmeId) ?? null,
-)
-
-const opportunityOptions = computed(() => {
-  const base = [{ value: 'none', label: 'No specific role' }]
-  const programme = selectedProgramme.value
-
-  if (!programme) return base
-
-  return [
-    ...base,
-    ...programme.opportunities.map((opportunity) => ({
-      value: opportunity.id,
-      label: `${opportunity.title}${opportunity.commitment ? ` — ${opportunity.commitment}` : ''}`,
-    })),
-  ]
-})
-
 watch(
-  () => values.programmeId,
-  (programmeId) => {
-    const programme = programmes.value.find((item) => item.id === programmeId)
-
-    if (!programme?.opportunities.some((item) => item.id === values.opportunityId)) {
-      values.opportunityId = 'none'
-    }
-  },
-)
-
-watch(
-  () => [props.initialProgrammeId, props.initialOpportunityId] as const,
-  ([programmeId, opportunityId]) => {
-    if (programmeId) values.programmeId = programmeId
-    if (opportunityId) values.opportunityId = opportunityId
+  () => props.initialRoleId,
+  (roleId) => {
+    if (roleId) selectedRoleId.value = roleId
   },
   { immediate: true },
 )
+
+async function onSubmit() {
+  values.needId = selectedRole.value?.needId ?? 'none'
+  values.opportunityId = selectedRole.value?.roleId ?? 'none'
+
+  await submit()
+}
+
+function resetForm() {
+  selectedRoleId.value = props.initialRoleId || 'none'
+  reset()
+}
 
 const availabilityOptions = [
   { value: 'weekdays', label: 'Weekday daytime' },
@@ -93,13 +86,13 @@ const availabilityOptions = [
       <button
         type="button"
         class="mt-3 text-sm font-semibold text-brand-800 underline underline-offset-2"
-        @click="reset"
+        @click="resetForm"
       >
         Submit another application
       </button>
     </AlertBox>
 
-    <form v-else novalidate class="space-y-5" @submit.prevent="submit">
+    <form v-else novalidate class="space-y-5" @submit.prevent="onSubmit">
       <div class="grid gap-5 sm:grid-cols-2">
         <TextField
           v-model="values.name"
@@ -141,18 +134,11 @@ const availabilityOptions = [
           :error="errors.city"
         />
         <SelectField
-          v-model="values.programmeId"
-          label="Programme"
-          name="programmeId"
-          :options="programmeOptions"
-          hint="Choose a programme, or let us place you."
-          :error="errors.programmeId"
-        />
-        <SelectField
-          v-model="values.opportunityId"
+          v-model="selectedRoleId"
           label="Role"
-          name="opportunityId"
-          :options="opportunityOptions"
+          name="role"
+          :options="roleOptions"
+          hint="Choose a role, or let us place you where you are needed."
           :error="errors.opportunityId"
         />
         <SelectField
