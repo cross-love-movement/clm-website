@@ -39,18 +39,18 @@ flowchart TD
 
 ### Where each thing lives
 
-| Thing                   | Plane                                           | Why                                           |
-| ----------------------- | ----------------------------------------------- | --------------------------------------------- |
-| News posts              | Content                                         | Editorial, long-form, image-led               |
-| Project stories         | Content                                         | Marketing narrative                           |
-| Portfolio pieces        | Content                                         | Gallery content                               |
-| About, FAQs, site copy  | Content                                         | Rarely changes                                |
-| **Events**              | **Operations**                                  | Capacity, CRUD, registrations, status changes |
-| **Registrations**       | **Operations**                                  | Records, codes, check-in                      |
-| **Volunteers**          | **Operations**                                  | Application status, skills, availability      |
-| **Users / roles**       | **Operations**                                  | Auth, permissions                             |
-| **Donations / pledges** | **Operations**                                  | Money, receipts, reporting                    |
-| Partners                | Content now, DB if relationships become managed | Editorial list today                          |
+| Thing                  | Plane                                           | Why                                           |
+| ---------------------- | ----------------------------------------------- | --------------------------------------------- |
+| News posts             | Content                                         | Editorial, long-form, image-led               |
+| Project stories        | Content                                         | Marketing narrative                           |
+| Portfolio pieces       | Content                                         | Gallery content                               |
+| About, FAQs, site copy | Content                                         | Rarely changes                                |
+| **Events**             | **Operations**                                  | Capacity, CRUD, registrations, status changes |
+| **Registrations**      | **Operations**                                  | Records, codes, check-in                      |
+| **Volunteers**         | **Operations**                                  | Application status, skills, availability      |
+| **Users / roles**      | **Operations**                                  | Auth, permissions                             |
+| **Donations**          | **Operations**                                  | Paystack charges, receipts, reporting         |
+| Partners               | Content now, DB if relationships become managed | Editorial list today                          |
 
 Hybrid case: if a project needs operational data (budget, beneficiaries, milestones), keep its **story page** in Content and add a `projects` row in Postgres keyed by the content path. The narrative stays editable in Studio; the numbers become queryable.
 
@@ -244,6 +244,7 @@ The permission flags are stored on `users.permissions`:
 | `canManagePeople`        | Open the people screen and invite volunteers                                  |
 | `canManageVolunteers`    | Applications, safeguarding records, invites, placements                       |
 | `canManageProgrammes`    | Programmes, their role line-up, event volunteer needs, and the role catalogue |
+| `canManageDonations`     | Gifts, payment records, and the CSV export                                    |
 
 Only `superadmin` can change roles, edit permissions, or suspend an account. Role is never read
 from the request body in any endpoint that mutates a user. Guests get nothing, volunteers get a

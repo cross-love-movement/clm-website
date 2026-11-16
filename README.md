@@ -150,6 +150,7 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 | `/partnership`      | Partnership      | `POST /api/partnership`       |
 | `/contact`          | Contact          | `POST /api/contact`           |
 | `/donate`           | Donate           | `POST /api/donate`            |
+| `/donate/complete`  | Payment return   | `GET /api/donate/verify`      |
 | `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
 | `/login`            | Sign in          | `POST /api/auth/login`        |
 | `/admin`            | Staff overview   | —                             |
@@ -157,6 +158,7 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 | `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
 | `/admin/roles`      | Volunteer roles  | `/api/admin/opportunities`    |
 | `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
+| `/admin/donations`  | Donations        | `/api/admin/donations`        |
 | `/admin/users`      | People           | `/api/admin/users`            |
 | `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
 
@@ -419,6 +421,34 @@ is personal data.
 | `POST /api/admin/newsletter/send`            | queue an issue               |
 | `POST /api/admin/newsletter/:id/unsubscribe` | staff removal                |
 
+### Donations
+
+Online giving runs through [Paystack](https://paystack.com) in GHS. The donor chooses an amount, the
+server creates a `donations` row with our own reference (`CLM-DON-…`), and Paystack's hosted checkout
+takes the card or mobile-money details. **The donor pays exactly the amount they chose** — the
+processing fee comes out of settlement and is never added on top.
+
+A gift is only marked `succeeded` from a verified Paystack response, by either route:
+
+1. the thank-you page calls `GET /api/donate/verify?reference=…` server-side, or
+2. `POST /api/paystack/webhook` receives `charge.success`, after checking the HMAC-SHA512 signature
+   of the raw body against the secret key.
+
+Both paths are idempotent: the status transition is guarded, and `receipt_sent_at` makes sure the
+donor and `donations@` each get exactly one email. Monthly gifts create (or reuse) one Paystack plan
+per amount in `donation_plans`; renewals carry a Paystack reference of their own and are recorded by
+the webhook. Without `NUXT_PAYSTACK_SECRET_KEY`, the form falls back to the old pledge email, so
+previews and local development never dead-end.
+
+| Route                        | Purpose                              |
+| ---------------------------- | ------------------------------------ |
+| `POST /api/donate`           | validate, create the row, initialise |
+| `GET /api/donate/verify`     | verify a reference after checkout    |
+| `POST /api/paystack/webhook` | signed charge events                 |
+| `GET /api/admin/donations`   | list + totals (`format=csv`)         |
+
+Register `https://www.crosslovemovement.org/api/paystack/webhook` in the Paystack dashboard.
+
 To publish a project, article, or portfolio piece, edit a file under `content/`, commit it, and the
 site rebuilds — from GitHub's web editor, a local editor, or Nuxt Studio. No separate CMS is hosted,
 and the public pages keep the same layout, components, and theme. Events and volunteers are the
@@ -625,22 +655,23 @@ variables send as plain text.
 or alias**. Leave it blank to keep rendering the file in the app. Sending still supplies `from`,
 `to`, `subject`, and `Reply-To`, so routing and subject lines stay in the repository.
 
-| Kind                    | Environment variable                    | Variables                                                                                                                                                  |
-| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                 |
-| `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                       |
-| `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                       |
-| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                              |
-| `event-called-off`      | `RESEND_TEMPLATE_EVENT_CALLED_OFF`      | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`                                                                                                                     |
-| `event-message`         | `RESEND_TEMPLATE_EVENT_MESSAGE`         | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`, `MESSAGE_HTML`                                                                                                     |
-| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                  |
-| `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                            |
-| `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
-| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                        |
-| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                       |
-| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                |
-| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                          |
-| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                               |
+| Kind                    | Environment variable                    | Variables                                                                                                                                                           |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `event-registration`    | `RESEND_TEMPLATE_EVENT_REGISTRATION`    | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`, `EVENT_URL`                                                                                          |
+| `event-waitlist`        | `RESEND_TEMPLATE_EVENT_WAITLIST`        | same as registration                                                                                                                                                |
+| `event-promoted`        | `RESEND_TEMPLATE_EVENT_PROMOTED`        | same as registration                                                                                                                                                |
+| `event-cancelled`       | `RESEND_TEMPLATE_EVENT_CANCELLED`       | `NAME`, `EVENT_TITLE`, `REFERENCE`, `WHEN`, `WHERE`, `PLACES`                                                                                                       |
+| `event-called-off`      | `RESEND_TEMPLATE_EVENT_CALLED_OFF`      | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`                                                                                                                              |
+| `event-message`         | `RESEND_TEMPLATE_EVENT_MESSAGE`         | `NAME`, `EVENT_TITLE`, `WHEN`, `WHERE`, `MESSAGE_HTML`                                                                                                              |
+| `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                           |
+| `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                                     |
+| `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `EVENT`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
+| `donation-receipt`      | `RESEND_TEMPLATE_DONATION_RECEIPT`      | `DONOR_NAME`, `AMOUNT`, `FREQUENCY`, `DATE`, `METHOD`, `REFERENCE`, `NOTE`                                                                                          |
+| `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                                 |
+| `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                                |
+| `partnership`           | `RESEND_TEMPLATE_PARTNERSHIP`           | `ORGANISATION`, `CONTACT_NAME`, `PARTNER_EMAIL`, `PHONE`, `TYPE`, `MESSAGE`                                                                                         |
+| `newsletter`            | `RESEND_TEMPLATE_NEWSLETTER`            | `SUBSCRIBER_EMAIL`, `OPT_OUT_URL`                                                                                                                                   |
+| `newsletter-broadcast`  | `RESEND_TEMPLATE_NEWSLETTER_BROADCAST`  | `SUBSCRIBER_EMAIL`, `SUBJECT`, `MESSAGE_HTML`, `OPT_OUT_URL`                                                                                                        |
 
 Every variable a template uses must be supplied — Resend rejects the send otherwise — and only
 **published** templates can be sent to. `tests/email.test.ts` asserts each composer supplies every
@@ -813,6 +844,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 | `NUXT_RESEND_API_KEY`                   | _(empty — logs to console)_                        | Mail delivery                          |
 | `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>` | Sender                                 |
 | `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                       | General fallback inbox                 |
+| `NUXT_PAYSTACK_SECRET_KEY`              | _(empty — online giving falls back to pledges)_    | Paystack secret key (`sk_live_…`)      |
+| `NUXT_PAYSTACK_API_URL`                 | `https://api.paystack.co`                          | Paystack base URL (tests/mocks)        |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | _(empty — Studio login disabled)_                  | GitHub OAuth app for Studio editors    |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | _(empty)_                                          | GitHub OAuth secret                    |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | _(empty — anyone with access can edit)_            | Comma-separated editor email allowlist |
@@ -875,7 +908,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 3. **Legal pages** — privacy policy, safeguarding policy, and the latest report. Only link to real
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
-5. **Payments** — connect a gateway if online giving is required (see above).
+5. **Payments** — set `NUXT_PAYSTACK_SECRET_KEY`, register the webhook URL in Paystack, and make
+   one small live gift before announcing online giving.
 6. **Event data** — events and registrations live in `DATABASE_URL`. Keep one replica, schedule
    nightly Postgres backups, and agree a retention period for registrant names, emails, and phone
    numbers. The admin CRUD screens are the next phase; until then, events are created with SQL.
@@ -951,6 +985,7 @@ volume only if you later switch media storage to a local disk driver.
 | `NUXT_MAIL_TO`                          | yes        | Inbox that receives form submissions               |
 | `NUXT_MAIL_FROM`                        | no         | `Cross-Love Movement <info@crosslovemovement.org>` |
 | `NUXT_RESEND_API_KEY`                   | for mail   | Resend API key (omit to log to container)          |
+| `NUXT_PAYSTACK_SECRET_KEY`              | for giving | Paystack secret key (`sk_live_…`)                  |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_ID`     | for CMS    | GitHub OAuth app client ID                         |
 | `NUXT_STUDIO_AUTH_GITHUB_CLIENT_SECRET` | for CMS    | GitHub OAuth app secret                            |
 | `NUXT_STUDIO_AUTH_GITHUB_MODERATORS`    | for CMS    | Comma-separated editor emails (allowlist)          |
