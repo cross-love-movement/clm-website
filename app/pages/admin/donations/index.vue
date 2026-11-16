@@ -76,6 +76,35 @@ function statusTone(value: DonationStatus) {
   }
 }
 
+const actingId = ref('')
+const flash = ref<{ tone: 'success' | 'error'; message: string } | null>(null)
+
+function errorMessage(caught: unknown) {
+  const payload = (caught as { data?: { statusMessage?: string; message?: string } }).data
+
+  return payload?.statusMessage || payload?.message || 'That did not work. Please try again.'
+}
+
+async function resendReceipt(donation: DonationSummary) {
+  if (actingId.value) return
+
+  actingId.value = donation.id
+  flash.value = null
+
+  try {
+    await $fetch(`/api/admin/donations/${donation.id}/resend`, { method: 'POST' })
+    flash.value = {
+      tone: 'success',
+      message: `Receipt queued for ${donation.reference}. It goes out within a few minutes.`,
+    }
+    await refresh()
+  } catch (caught) {
+    flash.value = { tone: 'error', message: errorMessage(caught) }
+  } finally {
+    actingId.value = ''
+  }
+}
+
 useSeo({
   title: 'Donations',
   description: 'Gifts received through the website.',
@@ -159,6 +188,10 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       </label>
     </div>
 
+    <AlertBox v-if="flash" :tone="flash.tone" class="mt-6">
+      {{ flash.message }}
+    </AlertBox>
+
     <div v-if="pending && !data.donations.length" class="mt-6 text-sm text-ink-soft">
       Loading donations…
     </div>
@@ -188,6 +221,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             <th scope="col" class="px-4 py-3">Method</th>
             <th scope="col" class="px-4 py-3">Status</th>
             <th scope="col" class="px-4 py-3">Reference</th>
+            <th scope="col" class="px-4 py-3"><span class="sr-only">Receipt</span></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-sand-200">
@@ -222,6 +256,18 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             </td>
             <td class="whitespace-nowrap px-4 py-4 font-mono text-xs text-ink-soft">
               {{ donation.reference }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-4">
+              <button
+                v-if="donation.status === 'succeeded'"
+                type="button"
+                class="rounded-full border border-sand-300 px-3 py-1.5 text-xs font-semibold text-ink-soft transition hover:border-brand-400 hover:text-ink disabled:opacity-50"
+                :disabled="actingId === donation.id"
+                @click="resendReceipt(donation)"
+              >
+                {{ actingId === donation.id ? 'Queueing…' : 'Resend receipt' }}
+              </button>
+              <span v-else class="text-ink-soft/60">—</span>
             </td>
           </tr>
         </tbody>

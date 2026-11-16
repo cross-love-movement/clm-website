@@ -31,7 +31,7 @@ function channelLabel(channel: string | null) {
   }
 }
 
-/** The donor's receipt. One per settled donation, enforced by claimDonationReceipt. */
+/** The donor's receipt. One per settled donation, enforced by the receipt claim. */
 export function receiptMail(donation: DonationRow): ComposedMail {
   const amount = formatAmount(donation.amountPesewas, donation.currency)
   const date = paidOn(donation)

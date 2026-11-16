@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, ne, or, sum } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, ne, or, sum } from 'drizzle-orm'
 
 import type { DonationStatus, DonationSummary, DonationTotals } from '#shared/types/donations'
 
@@ -141,18 +141,6 @@ export async function recordRecurringCharge(payload: PaystackTransaction) {
     .returning()
 
   return row ?? null
-}
-
-/** True exactly once per donation, so a receipt is queued only once. */
-export async function claimDonationReceipt(id: string) {
-  const db = useDatabase()
-  const [row] = await db
-    .update(donations)
-    .set({ receiptSentAt: new Date() })
-    .where(and(eq(donations.id, id), isNull(donations.receiptSentAt)))
-    .returning({ id: donations.id })
-
-  return Boolean(row)
 }
 
 /** One Paystack plan per monthly amount; created on first use and shared after. */

@@ -37,6 +37,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (donation.status === 'succeeded') {
+    // A donor revisiting the thank-you page can recover a receipt that was
+    // claimed but never queued, for example by an older build.
+    await queueDonationReceipts(donation)
+
     return { ...summary, status: 'succeeded' as const }
   }
 

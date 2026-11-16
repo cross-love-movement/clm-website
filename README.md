@@ -435,17 +435,21 @@ A gift is only marked `succeeded` from a verified Paystack response, by either r
    of the raw body against the secret key.
 
 Both paths are idempotent: the status transition is guarded, and `receipt_sent_at` makes sure the
-donor and `donations@` each get exactly one email. Monthly gifts create (or reuse) one Paystack plan
+donor and `donations@` each get exactly one email. The claim and the outbox rows are written in one
+transaction, so a failed write can be retried rather than leaving a settled gift marked as handled.
+If a receipt never arrives, staff can send it again from `/admin/donations`.
+Monthly gifts create (or reuse) one Paystack plan
 per amount in `donation_plans`; renewals carry a Paystack reference of their own and are recorded by
 the webhook. Without `NUXT_PAYSTACK_SECRET_KEY`, the form falls back to the old pledge email, so
 previews and local development never dead-end.
 
-| Route                        | Purpose                              |
-| ---------------------------- | ------------------------------------ |
-| `POST /api/donate`           | validate, create the row, initialise |
-| `GET /api/donate/verify`     | verify a reference after checkout    |
-| `POST /api/paystack/webhook` | signed charge events                 |
-| `GET /api/admin/donations`   | list + totals (`format=csv`)         |
+| Route                                  | Purpose                              |
+| -------------------------------------- | ------------------------------------ |
+| `POST /api/donate`                     | validate, create the row, initialise |
+| `GET /api/donate/verify`               | verify a reference after checkout    |
+| `POST /api/paystack/webhook`           | signed charge events                 |
+| `GET /api/admin/donations`             | list + totals (`format=csv`)         |
+| `POST /api/admin/donations/:id/resend` | clear the claim and resend receipt   |
 
 Register `https://www.crosslovemovement.org/api/paystack/webhook` in the Paystack dashboard.
 
