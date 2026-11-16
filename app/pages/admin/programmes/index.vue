@@ -29,8 +29,8 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         <p class="eyebrow">Staff portal</p>
         <h1 class="mt-3 text-3xl leading-tight sm:text-4xl">Programmes</h1>
         <p class="mt-2 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-          Set up the work volunteers can join and the roles inside each programme. Volunteers see
-          open programmes on the public volunteer page.
+          Set up the work volunteers can join, and choose the roles each programme needs with a
+          headcount for every role.
         </p>
       </div>
 
@@ -54,7 +54,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       <Icon name="sprout" :size="28" class="mx-auto text-clay-600" />
       <h2 class="mt-3 text-lg text-ink">No programmes yet.</h2>
       <p class="mt-2 text-sm text-ink-soft">
-        Create one, then add the roles volunteers can apply for.
+        Create one, then tick the roles it needs and give each one a headcount.
       </p>
       <BaseButton to="/admin/programmes/new" size="sm" class="mt-5">Create a programme</BaseButton>
     </div>
@@ -93,7 +93,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           </div>
           <div>
             <dt class="sr-only">Roles</dt>
-            <dd>{{ programme.opportunityCount }} roles</dd>
+            <dd>{{ programme.needCount }} roles</dd>
           </div>
           <div>
             <dt class="sr-only">Volunteers</dt>

@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import type { Role } from '#shared/types/volunteers'
+
 definePageMeta({ middleware: ['admin', 'programme-manager'], layout: 'admin' })
+
+const { data: roles } = await useFetch<Role[]>('/api/admin/opportunities', {
+  key: 'admin-roles',
+  default: () => [],
+})
 
 useSeo({
   title: 'New programme',
@@ -18,7 +25,8 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       <div>
         <h1 class="text-3xl leading-tight sm:text-4xl">New programme</h1>
         <p class="mt-2 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-          Start with the programme itself. You will add volunteer roles on the next screen.
+          Set the programme up, then tick the volunteer roles it needs and give each one a
+          headcount.
         </p>
       </div>
 
@@ -31,7 +39,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
     </div>
 
     <div class="mt-8 rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
-      <ProgrammeForm mode="create" />
+      <ProgrammeForm mode="create" :roles="roles" />
     </div>
   </section>
 </template>

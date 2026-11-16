@@ -23,7 +23,7 @@ useSeo({
       Welcome back, {{ current?.name || 'team' }}.
     </h1>
     <p class="mt-3 max-w-2xl text-[0.95rem] leading-relaxed text-ink-soft">
-      Events, programmes, and volunteers live under their own tabs. People, roles, and access live
+      Events, programmes, volunteers, and roles each have a tab of their own. People and access live
       under the People tab.
     </p>
 
@@ -47,10 +47,25 @@ useSeo({
         <Icon name="sprout" :size="22" class="text-clay-600" />
         <h2 class="mt-3 text-lg text-ink">Programmes</h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Set up the work volunteers can join and the roles inside each programme.
+          Set up the work volunteers can join, and choose the roles each programme needs.
         </p>
         <BaseButton to="/admin/programmes" variant="secondary" size="sm" class="mt-4 self-start">
           Manage programmes
+        </BaseButton>
+      </article>
+
+      <article
+        v-if="canManageProgrammes"
+        class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
+      >
+        <Icon name="users" :size="22" class="text-clay-600" />
+        <h2 class="mt-3 text-lg text-ink">Volunteer roles</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
+          Keep a shared catalogue of roles. Create or edit one here, then attach it to a programme
+          with a headcount.
+        </p>
+        <BaseButton to="/admin/roles" variant="secondary" size="sm" class="mt-4 self-start">
+          Manage roles
         </BaseButton>
       </article>
 
