@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vite-plus/test'
 
 import type {
+  DonationRow,
   EventRow,
   RegistrationRow,
   SubscriberRow,
@@ -38,6 +39,7 @@ import {
 } from '../server/features/events/mail'
 import { applicationNotification } from '../server/features/volunteers/mail'
 import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
+import { receiptMail } from '../server/features/donations/mail'
 import { buildMailPayload } from '../server/utils/mailer'
 import { MAILBOXES, mailboxForContactTopic } from '../server/utils/mailboxes'
 
@@ -136,6 +138,28 @@ const subscriber: SubscriberRow = {
   updatedAt: new Date('2026-01-01T00:00:00Z'),
 }
 
+const donation: DonationRow = {
+  id: '00000000-0000-4000-8000-000000000006',
+  reference: 'CLM-DON-TEST123456',
+  status: 'succeeded',
+  amountPesewas: 50_000,
+  currency: 'GHS',
+  frequency: 'monthly',
+  donorName: 'Ama Mensah',
+  donorEmail: 'ama@example.com',
+  donorPhone: '',
+  note: 'For Cross Sessions',
+  channel: 'card',
+  planCode: null,
+  customerCode: null,
+  subscriptionCode: null,
+  paidAt: new Date('2026-01-01T00:00:00Z'),
+  receiptSentAt: null,
+  payload: null,
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
+}
+
 /** The variables each kind actually sends. Must cover the template's placeholders. */
 const samples: Record<string, TemplateVariables> = {
   'event-registration': confirmationMail(event, registration).variables,
@@ -170,6 +194,7 @@ const samples: Record<string, TemplateVariables> = {
     amount: 'GH₵100',
     frequency: 'monthly',
   }),
+  'donation-receipt': receiptMail(donation).variables,
   partnership: partnershipVariables({
     organisation: 'Acme',
     contactName: 'Kwesi',
