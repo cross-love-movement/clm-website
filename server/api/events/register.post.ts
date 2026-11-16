@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Registration is temporarily unavailable',
       data: {
         message:
-          'Online registration is unavailable right now. Please email apply@crosslovemovement.org and we will reserve your place.',
+          'Online registration is unavailable right now. Please email volunteers@crosslovemovement.org and we will reserve your place.',
       },
     })
   }

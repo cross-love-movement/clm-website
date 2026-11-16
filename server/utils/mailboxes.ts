@@ -3,9 +3,9 @@
  * or reply-to cannot drift to the wrong inbox.
  */
 export const MAILBOXES = {
-  apply: 'apply@crosslovemovement.org',
+  volunteers: 'volunteers@crosslovemovement.org',
   admin: 'admin@crosslovemovement.org',
-  donate: 'donate@crosslovemovement.org',
+  donations: 'donations@crosslovemovement.org',
   support: 'support@crosslovemovement.org',
   info: 'info@crosslovemovement.org',
 } as const
@@ -14,9 +14,9 @@ export const MAILBOXES = {
 export function mailboxForContactTopic(topic: string) {
   switch (topic) {
     case 'volunteering':
-      return MAILBOXES.apply
+      return MAILBOXES.volunteers
     case 'donation':
-      return MAILBOXES.donate
+      return MAILBOXES.donations
     case 'complaint':
       return MAILBOXES.admin
     case 'general':

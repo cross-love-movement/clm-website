@@ -39,6 +39,7 @@ import {
 import { applicationNotification } from '../server/features/volunteers/mail'
 import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
 import { buildMailPayload } from '../server/utils/mailer'
+import { MAILBOXES, mailboxForContactTopic } from '../server/utils/mailboxes'
 
 const templatesDir = fileURLToPath(new URL('../server/emails/templates/', import.meta.url))
 
@@ -111,6 +112,8 @@ const application: VolunteerApplicationRow = {
   id: '00000000-0000-4000-8000-000000000004',
   volunteerId: volunteer.id,
   programmeId: null,
+  eventId: null,
+  needId: null,
   opportunityId: null,
   area: 'Music and media',
   availability: 'Weekends',
@@ -148,7 +151,7 @@ const samples: Record<string, TemplateVariables> = {
   'auth-invite': inviteMail({ name: 'Ama', role: 'volunteer', link }).variables,
   'auth-reset': passwordResetMail({ name: 'Ama', link }).variables,
   'volunteer-application': applicationNotification({
-    toEmail: 'apply@crosslovemovement.org',
+    toEmail: 'volunteers@crosslovemovement.org',
     volunteer,
     application,
     programmeTitle: 'Cross Sessions',
@@ -371,5 +374,27 @@ describe('Resend payload', () => {
 
     expect(payload.template).toBeUndefined()
     expect(payload.html).toBe('<p>Branded body</p>')
+  })
+})
+
+describe('mailbox routing', () => {
+  it('routes volunteers and donations to their own inboxes', () => {
+    expect(MAILBOXES.volunteers).toBe('volunteers@crosslovemovement.org')
+    expect(MAILBOXES.donations).toBe('donations@crosslovemovement.org')
+
+    expect(mailboxForContactTopic('volunteering')).toBe(MAILBOXES.volunteers)
+    expect(mailboxForContactTopic('donation')).toBe(MAILBOXES.donations)
+    expect(mailboxForContactTopic('complaint')).toBe(MAILBOXES.admin)
+    expect(mailboxForContactTopic('partnership')).toBe(MAILBOXES.info)
+    expect(mailboxForContactTopic('anything else')).toBe(MAILBOXES.info)
+  })
+
+  it('leaves no retired address in any template', () => {
+    for (const kind of Object.keys(EMAIL_TEMPLATES)) {
+      const html = templateFile(kind)
+
+      expect(html, `${kind} still prints apply@`).not.toContain('apply@crosslovemovement.org')
+      expect(html, `${kind} still prints donate@`).not.toContain('donate@crosslovemovement.org')
+    }
   })
 })

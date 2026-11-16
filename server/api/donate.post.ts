@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   await sendMail({
     tag: 'donation',
-    to: MAILBOXES.donate,
+    to: MAILBOXES.donations,
     replyTo: data.email,
     subject: sanitizeSubject(`Giving interest — ${amount} ${data.frequency} — ${data.name}`),
     text: [

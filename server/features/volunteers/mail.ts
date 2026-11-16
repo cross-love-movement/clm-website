@@ -7,6 +7,7 @@ export function applicationNotification(input: {
   volunteer: VolunteerRow
   application: VolunteerApplicationRow
   programmeTitle: string | null
+  eventTitle?: string | null
   opportunityTitle: string | null
   adminUrl?: string
 }): ComposedMail {
@@ -14,8 +15,9 @@ export function applicationNotification(input: {
 
   const interest = [
     input.programmeTitle ? `Programme: ${input.programmeTitle}` : '',
+    input.eventTitle ? `Event: ${input.eventTitle}` : '',
     input.opportunityTitle ? `Role: ${input.opportunityTitle}` : '',
-    !input.programmeTitle && !input.opportunityTitle && application.area
+    !input.programmeTitle && !input.eventTitle && !input.opportunityTitle && application.area
       ? `Interest: ${application.area}`
       : '',
   ].filter(Boolean)
@@ -42,7 +44,11 @@ export function applicationNotification(input: {
   ].filter((line, index, all) => line !== '' || all[index - 1] !== '')
 
   const interestLabel =
-    input.opportunityTitle || input.programmeTitle || application.area || 'general'
+    input.opportunityTitle ||
+    input.eventTitle ||
+    input.programmeTitle ||
+    application.area ||
+    'general'
 
   return {
     kind: 'volunteer-application',
@@ -57,8 +63,14 @@ export function applicationNotification(input: {
       CITY: volunteer.city,
       AVAILABILITY: application.availability || volunteer.availability || '—',
       PROGRAMME: input.programmeTitle || '—',
+      EVENT: input.eventTitle || '—',
       ROLE: input.opportunityTitle || '—',
-      INTEREST: (!input.programmeTitle && !input.opportunityTitle && application.area) || '—',
+      INTEREST:
+        (!input.programmeTitle &&
+          !input.eventTitle &&
+          !input.opportunityTitle &&
+          application.area) ||
+        '—',
       EXPERIENCE: take(application.experience || '—'),
       MESSAGE: take(application.message || '—'),
       CONSENT_AT: application.consentAt.toISOString(),

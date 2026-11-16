@@ -1,5 +1,7 @@
+import { eq } from 'drizzle-orm'
+
 import { useDatabase } from './client'
-import { programmes, volunteerOpportunities } from './schema'
+import { events, programmes, volunteerNeeds, volunteerOpportunities } from './schema'
 
 /**
  * A bootstrap programme so the public volunteer form has something real to
@@ -31,9 +33,8 @@ export async function seedVolunteerProgrammes() {
 
   if (!programme) return 0
 
-  await database.insert(volunteerOpportunities).values([
+  const roles = [
     {
-      programmeId: programme.id,
       title: 'Mentor',
       description:
         'Guide small groups of young people through career, faith, and life conversations.',
@@ -43,51 +44,82 @@ export async function seedVolunteerProgrammes() {
         'Comfortable working with young people',
         'Complete the safeguarding briefing',
       ],
-      slots: 40,
       location: 'Tema',
-      status: 'open',
+      /** Places this programme needs in the role. */
+      places: 40,
     },
     {
-      programmeId: programme.id,
       title: 'Registration desk',
       description: 'Welcome guests, check names, and hand out materials on the day.',
       commitment: 'Event day',
       requirements: ['Comfortable with a busy front desk', 'Available from 07:30'],
-      slots: 12,
       location: 'Tema',
-      status: 'open',
+      places: 12,
     },
     {
-      programmeId: programme.id,
       title: 'Media & photography',
       description: 'Capture the day for the website and social channels.',
       commitment: 'Event day',
       requirements: ['Own camera or phone with good video', 'Some editing experience helps'],
-      slots: 4,
       location: 'Tema',
-      status: 'open',
+      places: 4,
     },
     {
-      programmeId: programme.id,
       title: 'Logistics',
       description: 'Setup, seating, sound support, and pack-down.',
       commitment: 'Event day',
       requirements: ['Comfortable with practical setup and carrying supplies'],
-      slots: 10,
       location: 'Tema',
-      status: 'open',
+      places: 10,
     },
     {
-      programmeId: programme.id,
       title: 'Welfare',
       description: 'Look after speakers, volunteers, and guests through the day.',
       commitment: 'Event day',
       requirements: ['Warm, calm manner', 'Complete the safeguarding briefing'],
-      slots: 6,
       location: 'Tema',
-      status: 'open',
+      places: 6,
     },
-  ])
+  ]
 
-  return 6
+  const inserted = await database
+    .insert(volunteerOpportunities)
+    .values(
+      roles.map((role) => ({
+        title: role.title,
+        description: role.description,
+        commitment: role.commitment,
+        requirements: role.requirements,
+        location: role.location,
+        status: 'open' as const,
+      })),
+    )
+    .returning({ id: volunteerOpportunities.id, title: volunteerOpportunities.title })
+
+  const placesByTitle = new Map(roles.map((role) => [role.title, role.places]))
+
+  // The symposium exists as an event too; its day roles belong to the event,
+  // while mentoring keeps running under the programme.
+  const [event] = await database
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.slug, 'people-like-you-2027'))
+    .limit(1)
+
+  const eventTitles = new Set(['Registration desk', 'Media & photography', 'Logistics', 'Welfare'])
+
+  await database.insert(volunteerNeeds).values(
+    inserted.map((row) => {
+      const onEvent = Boolean(event) && eventTitles.has(row.title)
+
+      return {
+        programmeId: onEvent ? null : programme.id,
+        eventId: onEvent ? (event?.id ?? null) : null,
+        opportunityId: row.id,
+        places: placesByTitle.get(row.title) ?? null,
+      }
+    }),
+  )
+
+  return 1 + inserted.length
 }
