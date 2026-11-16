@@ -26,7 +26,7 @@ useSeo({
         Choose an amount
         <template #icon><Icon name="heart" :size="17" /></template>
       </BaseButton>
-      <p class="text-sm text-sand-100/80">Every gift acknowledged within two working days.</p>
+      <p class="text-sm text-sand-100/80">Receipt in your inbox immediately.</p>
     </PageHero>
 
     <!-- Give -->
@@ -35,8 +35,8 @@ useSeo({
         <div class="rounded-4xl border border-sand-200 bg-white p-6 shadow-soft sm:p-8">
           <h2 class="text-2xl">Make a gift</h2>
           <p class="mt-2 text-sm text-ink-soft">
-            Choose a one-time or monthly gift. We will email verified transfer details and a
-            receipt.
+            Choose a one-time or monthly gift and pay securely by card or mobile money. Your receipt
+            arrives immediately.
           </p>
           <div class="mt-7">
             <DonateForm />

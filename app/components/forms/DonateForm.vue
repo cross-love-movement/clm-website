@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { donationOptions } from '~/data/involve'
 
-const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useForm('/api/donate', {
+const values = reactive({
   name: '',
   email: '',
   amount: 300,
-  frequency: 'one-time',
+  frequency: 'one-time' as 'one-time' | 'monthly',
   note: '',
   company: '',
 })
+
+const errors = ref<Record<string, string>>({})
+const message = ref('')
+const succeeded = ref(false)
+const submitting = ref(false)
+const isSubmitting = submitting
+const isSuccess = computed(() => succeeded.value)
 
 const choice = ref<number | 'custom'>(300)
 const custom = ref('')
@@ -41,11 +48,80 @@ const frequencies: { value: 'one-time' | 'monthly'; label: string }[] = [
   { value: 'one-time', label: 'One-time' },
   { value: 'monthly', label: 'Monthly' },
 ]
+
+interface DonationStart {
+  mode: 'redirect' | 'pledge'
+  authorizationUrl?: string
+  message?: string
+}
+
+async function submit() {
+  if (submitting.value) return
+
+  errors.value = {}
+  message.value = ''
+  succeeded.value = false
+
+  if (activeAmount.value < 50) {
+    errors.value = { amount: 'The minimum gift is GH₵50.' }
+    return
+  }
+
+  submitting.value = true
+
+  try {
+    const result = await $fetch<DonationStart>('/api/donate', {
+      method: 'POST',
+      body: {
+        name: values.name,
+        email: values.email,
+        amount: activeAmount.value,
+        frequency: values.frequency,
+        note: values.note,
+        company: values.company,
+      },
+    })
+
+    if (result.mode === 'redirect' && result.authorizationUrl) {
+      // Paystack's hosted checkout owns the card and mobile-money steps.
+      window.location.assign(result.authorizationUrl)
+      return
+    }
+
+    succeeded.value = true
+    message.value = result.message ?? 'Thank you — your gift has been recorded.'
+  } catch (caught) {
+    const payload = (
+      caught as { data?: { data?: { message?: string; errors?: Record<string, string> } } }
+    ).data?.data
+
+    errors.value = payload?.errors ?? {}
+    message.value =
+      payload?.message ??
+      'We could not start that gift. Please try again, or email donations@crosslovemovement.org.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+function reset() {
+  values.name = ''
+  values.email = ''
+  values.note = ''
+  values.company = ''
+  values.frequency = 'one-time'
+  choice.value = 300
+  custom.value = ''
+  values.amount = 300
+  errors.value = {}
+  message.value = ''
+  succeeded.value = false
+}
 </script>
 
 <template>
   <div>
-    <AlertBox v-if="isSuccess" tone="success" title="Thank you — we have your pledge">
+    <AlertBox v-if="isSuccess" tone="success" title="Thank you — we have your gift">
       <p class="mt-1">{{ message }}</p>
       <button
         type="button"
@@ -184,13 +260,13 @@ const frequencies: { value: 'one-time' | 'monthly'; label: string }[] = [
       <p v-if="message && !isSuccess" class="text-sm font-medium text-red-700">{{ message }}</p>
 
       <BaseButton type="submit" size="lg" block :disabled="isSubmitting">
-        {{ isSubmitting ? 'Sending…' : `Give ${formatCedis(activeAmount)}` }}
+        {{ isSubmitting ? 'Opening secure checkout…' : `Give ${formatCedis(activeAmount)}` }}
         <template #icon><Icon name="heart" :size="17" /></template>
       </BaseButton>
 
       <p class="text-center text-xs leading-relaxed text-ink-soft">
-        We will email transfer details and a receipt within two working days. No card details are
-        collected on this website.
+        You will pay securely on Paystack by card or mobile money. The fee is covered by us, so the
+        amount you choose is the amount you give. No card details are stored on this website.
       </p>
 
       <input
