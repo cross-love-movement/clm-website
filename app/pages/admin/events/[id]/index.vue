@@ -594,7 +594,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
               v-model="search"
               type="search"
               placeholder="Search reference or guest…"
-              class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none"
+              class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none"
             />
           </label>
         </div>
@@ -908,7 +908,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                   inputmode="numeric"
                   placeholder="No limit"
                   :disabled="!row.selected"
-                  class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none disabled:bg-sand-100 disabled:text-ink-soft/60"
+                  class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none disabled:bg-sand-100 disabled:text-ink-soft/60"
                 />
               </label>
               <label class="w-44">

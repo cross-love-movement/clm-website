@@ -18,7 +18,7 @@
         class="container-page flex flex-wrap items-center justify-between gap-2 py-4 text-xs text-ink-soft"
       >
         <p>Cross-Love Movement · Volunteer portal</p>
-        <p class="text-ink-soft/70">Registered company limited by guarantee in Ghana</p>
+        <p class="text-ink-soft/80">Registered company limited by guarantee in Ghana</p>
       </div>
     </footer>
   </div>

@@ -250,7 +250,7 @@ async function onSubmit() {
       />
       <span>
         Feature this event on the homepage carousel
-        <span class="mt-0.5 block text-xs text-ink-soft/70">
+        <span class="mt-0.5 block text-xs text-ink-soft/80">
           The hero shows three general slides, then up to three featured events with registration
           open. The soonest three are shown, after the general slides.
         </span>

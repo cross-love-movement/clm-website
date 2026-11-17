@@ -137,7 +137,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 
     <div class="mt-8 grid gap-4 sm:grid-cols-3">
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Settled</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Settled</p>
         <p class="mt-2 font-display text-3xl text-ink">
           {{ money(data.totals.succeededPesewas) }}
         </p>
@@ -147,12 +147,12 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         </p>
       </div>
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Pending</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Pending</p>
         <p class="mt-2 font-display text-3xl text-ink">{{ data.totals.pendingCount }}</p>
         <p class="mt-1 text-xs text-ink-soft">Not confirmed by Paystack yet</p>
       </div>
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Records</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Records</p>
         <p class="mt-2 font-display text-3xl text-ink">{{ data.donations.length }}</p>
         <p class="mt-1 text-xs text-ink-soft">In this view</p>
       </div>
@@ -183,7 +183,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           v-model="search"
           type="search"
           placeholder="Search a donor, email, or reference…"
-          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none"
+          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none"
         />
       </label>
     </div>

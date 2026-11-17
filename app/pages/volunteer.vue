@@ -170,7 +170,7 @@ const steps = [
                 Apply for this role
                 <Icon name="arrow-right" :size="15" />
               </button>
-              <span class="text-xs text-ink-soft/70">Training provided</span>
+              <span class="text-xs text-ink-soft/80">Training provided</span>
             </div>
           </article>
         </div>

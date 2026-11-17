@@ -85,19 +85,19 @@ useSeo({
             class="mt-8 grid grid-cols-1 gap-x-6 gap-y-4 border-y border-sand-200 py-5 sm:grid-cols-3"
           >
             <div>
-              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/70">
+              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/80">
                 Where
               </dt>
               <dd class="mt-1 text-sm font-semibold text-ink">{{ project.location }}</dd>
             </div>
             <div>
-              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/70">
+              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/80">
                 Timeframe
               </dt>
               <dd class="mt-1 text-sm font-semibold text-ink">{{ project.timeframe }}</dd>
             </div>
             <div>
-              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/70">
+              <dt class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft/80">
                 Focus
               </dt>
               <dd class="mt-1 text-sm font-semibold text-ink">

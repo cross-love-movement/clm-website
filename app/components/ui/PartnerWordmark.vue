@@ -47,7 +47,7 @@ const tones: Record<PartnerType, string> = {
         {{ partner.name }}
       </span>
       <span
-        class="block truncate text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-soft/70"
+        class="block truncate text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-soft/80"
       >
         {{ partner.detail }}
       </span>

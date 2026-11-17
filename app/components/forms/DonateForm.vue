@@ -257,7 +257,9 @@ function reset() {
         :error="errors.note"
       />
 
-      <p v-if="message && !isSuccess" class="text-sm font-medium text-red-700">{{ message }}</p>
+      <p v-if="message && !isSuccess" role="alert" class="text-sm font-medium text-red-700">
+        {{ message }}
+      </p>
 
       <BaseButton type="submit" size="lg" block :disabled="isSubmitting">
         {{ isSubmitting ? 'Opening secure checkout…' : `Give ${formatCedis(activeAmount)}` }}

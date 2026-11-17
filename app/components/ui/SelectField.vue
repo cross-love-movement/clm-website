@@ -41,7 +41,7 @@ withDefaults(
       <Icon
         name="chevron-down"
         :size="18"
-        class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-soft/70"
+        class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-soft/80"
       />
     </div>
   </FieldWrapper>

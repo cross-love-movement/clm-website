@@ -9,7 +9,7 @@ const paused = ref(false)
     <div class="container-page flex flex-wrap items-center justify-between gap-4">
       <h2
         id="partners-heading"
-        class="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-ink-soft/70"
+        class="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-ink-soft/80"
       >
         Churches, ministries &amp; partners
       </h2>

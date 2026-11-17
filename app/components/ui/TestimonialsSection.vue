@@ -57,7 +57,7 @@ withDefaults(
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold text-ink">{{ item.name }}</p>
             <p class="text-xs leading-snug text-ink-soft">{{ item.role }}</p>
-            <p class="text-xs leading-snug text-ink-soft/70">{{ item.location }}</p>
+            <p class="text-xs leading-snug text-ink-soft/80">{{ item.location }}</p>
           </div>
         </figcaption>
       </figure>

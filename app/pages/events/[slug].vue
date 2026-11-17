@@ -131,11 +131,11 @@ const hasPassed = computed(() => {
             class="grid gap-5 rounded-3xl border border-sand-200 bg-white p-6 shadow-soft sm:grid-cols-2"
           >
             <div>
-              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/70">When</dt>
+              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/80">When</dt>
               <dd class="mt-1 text-sm font-semibold text-ink">{{ when }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/70">Where</dt>
+              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/80">Where</dt>
               <dd class="mt-1 text-sm text-ink">
                 {{ current.venue }}
                 <span v-if="current.address" class="block text-ink-soft">
@@ -144,11 +144,11 @@ const hasPassed = computed(() => {
               </dd>
             </div>
             <div>
-              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/70">Places</dt>
+              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/80">Places</dt>
               <dd class="mt-1 text-sm font-semibold text-ink">{{ seatsLabel }}</dd>
             </div>
             <div v-if="current.registrationDeadline">
-              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/70">
+              <dt class="text-xs font-bold uppercase tracking-[0.1em] text-ink-soft/80">
                 Registration closes
               </dt>
               <dd class="mt-1 text-sm font-semibold text-ink">

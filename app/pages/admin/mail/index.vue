@@ -104,17 +104,17 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 
     <div class="mt-8 grid gap-4 sm:grid-cols-3">
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Pending</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Pending</p>
         <p class="mt-2 font-display text-3xl text-ink">{{ data.summary.pending }}</p>
         <p class="mt-1 text-xs text-ink-soft">Waiting for the worker</p>
       </div>
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Sent</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Sent</p>
         <p class="mt-2 font-display text-3xl text-ink">{{ data.summary.sent }}</p>
         <p class="mt-1 text-xs text-ink-soft">Accepted by Resend</p>
       </div>
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
-        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/70">Failed</p>
+        <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Failed</p>
         <p class="mt-2 font-display text-3xl text-ink">{{ data.summary.failed }}</p>
         <p class="mt-1 text-xs text-ink-soft">Gave up after five attempts</p>
       </div>
@@ -145,7 +145,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           v-model="search"
           type="search"
           placeholder="Search a recipient, subject, or kind…"
-          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none"
+          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none"
         />
       </label>
     </div>

@@ -110,7 +110,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           v-model="search"
           type="search"
           placeholder="Search name, email, city…"
-          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none"
+          class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none"
         />
       </label>
     </div>

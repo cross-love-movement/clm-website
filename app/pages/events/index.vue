@@ -106,7 +106,7 @@ useSeo({
               {{ eventDateParts(event.startsAt).day }}
             </span>
             <span
-              class="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-ink-soft/70"
+              class="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-ink-soft/80"
             >
               {{ eventDateParts(event.startsAt).weekday }}
             </span>
@@ -165,7 +165,7 @@ useSeo({
             <BaseButton :to="`/events/${event.slug}`" variant="secondary" size="sm">
               Details
             </BaseButton>
-            <p v-if="event.registrationDeadline" class="mt-2 text-[0.68rem] text-ink-soft/70">
+            <p v-if="event.registrationDeadline" class="mt-2 text-[0.68rem] text-ink-soft/80">
               Closes {{ formatEventDate(event.registrationDeadline) }}
             </p>
           </div>

@@ -27,7 +27,7 @@ const next = computed(() => latest.value.slice(0, 3))
       >
         <p class="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-clay-700">
           {{ categoryLabels[post.category] }} ·
-          <span class="text-ink-soft/70">{{ formatDateShort(post.publishedAt) }}</span>
+          <span class="text-ink-soft/80">{{ formatDateShort(post.publishedAt) }}</span>
         </p>
         <h3 class="mt-2 text-xl leading-snug text-ink transition group-hover:text-clay-700">
           {{ post.title }}

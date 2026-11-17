@@ -178,7 +178,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
               <td class="whitespace-nowrap px-5 py-4 text-ink-soft">
                 <p class="font-medium text-ink">{{ formatEventDate(event.startsAt) }}</p>
                 <p class="mt-0.5 text-xs">{{ formatEventTime(event.startsAt, event.endsAt) }}</p>
-                <p v-if="!isUpcoming(event.startsAt)" class="mt-1 text-xs text-ink-soft/70">
+                <p v-if="!isUpcoming(event.startsAt)" class="mt-1 text-xs text-ink-soft/80">
                   Past event
                 </p>
               </td>

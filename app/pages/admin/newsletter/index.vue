@@ -286,7 +286,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
               v-model="search"
               type="search"
               placeholder="Search an email address…"
-              class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-brand-400 focus:outline-none"
+              class="w-full rounded-full border border-sand-300 bg-white px-4 py-2 text-sm text-ink placeholder:text-ink-soft/75 focus:border-brand-400 focus:outline-none"
             />
           </label>
         </div>
@@ -364,7 +364,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                     >
                       {{ actingId === row.id ? 'Removing…' : 'Unsubscribe' }}
                     </button>
-                    <span v-else class="text-xs text-ink-soft/70">
+                    <span v-else class="text-xs text-ink-soft/80">
                       {{ row.unsubscribedAt ? formatDateTime(row.unsubscribedAt) : 'Removed' }}
                     </span>
                   </td>

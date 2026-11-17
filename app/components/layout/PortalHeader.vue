@@ -128,7 +128,7 @@ async function signOut() {
               <Icon
                 name="chevron-down"
                 :size="14"
-                class="shrink-0 text-ink-soft/70 transition-transform"
+                class="shrink-0 text-ink-soft/80 transition-transform"
                 :class="{ 'rotate-180': menuOpen }"
               />
             </button>

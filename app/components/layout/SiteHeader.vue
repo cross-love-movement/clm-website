@@ -3,6 +3,9 @@ const { site, primaryNav } = useSite()
 const route = useRoute()
 const mobileOpen = ref(false)
 
+const menuTrigger = ref<HTMLButtonElement | null>(null)
+const menuPanel = ref<HTMLElement | null>(null)
+
 const isActive = (to: string) =>
   to === '/' ? route.path === '/' : route.path === to || route.path.startsWith(`${to}/`)
 
@@ -13,12 +16,54 @@ watch(
   },
 )
 
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') mobileOpen.value = false
+/** Escape, the close button, and the backdrop all put focus back on the trigger. */
+function closeMenu() {
+  mobileOpen.value = false
+  menuTrigger.value?.focus()
 }
 
-watch(mobileOpen, (open) => {
-  if (import.meta.client) document.body.style.overflow = open ? 'hidden' : ''
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && mobileOpen.value) closeMenu()
+}
+
+/**
+ * The panel covers the page, so the keyboard has to stay inside it until it
+ * closes. Tabbing past the last control wraps to the first.
+ */
+function trapFocus(event: KeyboardEvent) {
+  if (event.key !== 'Tab' || !menuPanel.value) return
+
+  const focusable = Array.from(
+    menuPanel.value.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
+    ),
+  )
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (!first || !last) return
+
+  if (
+    event.shiftKey &&
+    (document.activeElement === first || document.activeElement === menuPanel.value)
+  ) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(mobileOpen, async (open) => {
+  if (!import.meta.client) return
+
+  document.body.style.overflow = open ? 'hidden' : ''
+
+  if (!open) return
+
+  await nextTick()
+  menuPanel.value?.focus()
 })
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
@@ -64,6 +109,7 @@ onBeforeUnmount(() => {
         </span>
 
         <button
+          ref="menuTrigger"
           type="button"
           class="inline-flex size-10 items-center justify-center rounded-full border border-sand-300 text-brand-800 transition hover:bg-sand-100 xl:hidden"
           :aria-expanded="mobileOpen"
@@ -78,14 +124,17 @@ onBeforeUnmount(() => {
 
     <Transition name="mobile-nav">
       <div v-if="mobileOpen" class="fixed inset-0 z-50 xl:hidden">
-        <div
-          class="absolute inset-0 bg-brand-950/45 backdrop-blur-sm"
-          @click="mobileOpen = false"
-        />
+        <div class="absolute inset-0 bg-brand-950/45 backdrop-blur-sm" @click="closeMenu" />
 
         <div
           id="mobile-navigation"
-          class="mobile-nav-panel absolute inset-x-0 top-0 max-h-[100dvh] overflow-y-auto rounded-b-4xl bg-sand-50 p-5 pb-8 shadow-lift"
+          ref="menuPanel"
+          class="mobile-nav-panel absolute inset-x-0 top-0 max-h-[100dvh] overflow-y-auto rounded-b-4xl bg-sand-50 p-5 pb-8 shadow-lift focus:outline-none"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site menu"
+          tabindex="-1"
+          @keydown="trapFocus"
         >
           <div class="flex items-center justify-between">
             <NuxtLink to="/" class="flex items-center" @click="mobileOpen = false">
@@ -95,7 +144,7 @@ onBeforeUnmount(() => {
               type="button"
               class="inline-flex size-10 items-center justify-center rounded-full border border-sand-300 text-brand-800"
               aria-label="Close menu"
-              @click="mobileOpen = false"
+              @click="closeMenu"
             >
               <Icon name="close" :size="20" />
             </button>

@@ -97,12 +97,14 @@ const topics = [
           />
           <span>I agree that Cross-Love Movement may contact me about this enquiry.</span>
         </label>
-        <p v-if="errors.consent" class="mt-1.5 text-sm font-medium text-red-700">
+        <p v-if="errors.consent" role="alert" class="mt-1.5 text-sm font-medium text-red-700">
           {{ errors.consent }}
         </p>
       </div>
 
-      <p v-if="message && !isSuccess" class="text-sm font-medium text-red-700">{{ message }}</p>
+      <p v-if="message && !isSuccess" role="alert" class="text-sm font-medium text-red-700">
+        {{ message }}
+      </p>
 
       <div class="flex flex-wrap items-center gap-4">
         <BaseButton type="submit" size="lg" :disabled="isSubmitting">
