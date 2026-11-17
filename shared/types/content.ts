@@ -304,8 +304,6 @@ export interface Partner {
   mark: string
   type: PartnerType
   logo?: string
-  /** Renders as an open slot rather than an existing partner. */
-  placeholder?: boolean
 }
 
 /** Field-level errors keyed by form field name. */

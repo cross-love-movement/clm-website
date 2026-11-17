@@ -540,11 +540,13 @@ relate to — no anonymous floating quotes.
 
 Partner strip data lives in `app/data/partners.ts` and drives the infinite logo carousel on the home
 page. Entries render as typographic wordmarks (monogram + name + detail) until an authorised logo
-file is supplied — set `logo` to an image path to use the real mark. Dashed tiles are open slots for
-new partners, not existing relationships.
+file is supplied — set `logo` to an image path to use the real mark. Every entry is a relationship
+the organisation can name; there are no "your church here" slots, because a placeholder is still a
+claim about a partner we do not have. The `Partner` type has no placeholder flag, so one cannot be
+added back by accident.
 
-> Event registration currently **emails the team**; it does not persist a booking or increment
-> `capacity`/`registered`. Connect a database or sheet before relying on it for headcounts.
+> Event registration persists a booking in Postgres and decrements the event's places; see
+> [Event app](#event-app) for the capacity, waitlist, and cancellation rules.
 
 ### Content provenance
 
@@ -1004,8 +1006,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 12. **CI** — run `npm run check`, `npm run typecheck`, `npm test`, and `npm run build` on every push.
 13. **Testimonial consent** — collect written permission for every quote, name, role, and location
     before publishing. If consent is withdrawn, remove the quote and its attribution together.
-14. **Partner logos** — replace wordmarks with authorised logo files (`logo` field), and keep the
-    dashed open slots only while you are actively recruiting partners.
+14. **Partner logos** — replace wordmarks with authorised logo files (`logo` field) as permission
+    arrives. Do not reintroduce placeholder slots; the strip shows named relationships only.
 15. **Studio access** — create the GitHub OAuth app, set the client ID/secret, and set
     `NUXT_STUDIO_AUTH_GITHUB_MODERATORS` before sharing `/_studio` with anyone. Without the
     allowlist, anyone who can authorise the OAuth app can commit to `main`.

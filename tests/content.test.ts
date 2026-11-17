@@ -349,9 +349,11 @@ describe('partners', () => {
     }
   })
 
-  it('includes at least one documented partner and one open slot', () => {
-    expect(partners.some((partner) => !partner.placeholder)).toBe(true)
-    expect(partners.some((partner) => partner.placeholder)).toBe(true)
+  it('lists only relationships the organisation can name', () => {
+    // The strip used to carry dashed "Your church / Your company / Your school"
+    // slots. They are gone: the type no longer has a placeholder flag, and this
+    // guards against an empty strip being shipped as a substitute.
+    expect(partners.length).toBeGreaterThan(0)
   })
 })
 

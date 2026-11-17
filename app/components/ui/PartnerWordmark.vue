@@ -14,12 +14,7 @@ const tones: Record<PartnerType, string> = {
 
 <template>
   <li
-    class="flex min-w-[15rem] items-center gap-3 rounded-2xl border px-5 py-4"
-    :class="
-      partner.placeholder
-        ? 'border-dashed border-sand-300 bg-transparent'
-        : 'border-sand-200 bg-white shadow-soft'
-    "
+    class="flex min-w-[15rem] items-center gap-3 rounded-2xl border border-sand-200 bg-white px-5 py-4 shadow-soft"
   >
     <img
       v-if="partner.logo"
@@ -30,20 +25,13 @@ const tones: Record<PartnerType, string> = {
     <span
       v-else
       class="flex size-10 shrink-0 items-center justify-center rounded-xl text-[0.68rem] font-bold tracking-wide"
-      :class="
-        partner.placeholder
-          ? 'border border-dashed border-sand-300 text-ink-soft'
-          : tones[partner.type]
-      "
+      :class="tones[partner.type]"
     >
       {{ partner.mark }}
     </span>
 
     <span class="min-w-0">
-      <span
-        class="block truncate text-sm font-semibold"
-        :class="partner.placeholder ? 'text-ink-soft' : 'text-ink'"
-      >
+      <span class="block truncate text-sm font-semibold text-ink">
         {{ partner.name }}
       </span>
       <span

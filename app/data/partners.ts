@@ -1,10 +1,12 @@
 import type { Partner } from '#shared/types/content'
 
 /**
- * Partner strip. Only the three named churches/ministries are documented in
- * CLM's profile; the dashed entries are open slots, not real partners.
- * Add `logo: '/images/partners/<file>.svg'` to a partner once you have an
- * authorised logo file.
+ * Partner strip. Every entry is a relationship the organisation can name —
+ * there are no "your church here" slots, because a placeholder is still a
+ * claim about a partner we do not have.
+ *
+ * Add `logo: '/images/partners/<file>.svg'` once that partner has given
+ * written permission for the mark.
  */
 export const partners: Partner[] = [
   {
