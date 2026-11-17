@@ -66,6 +66,12 @@ export const donationSchema = z.object({
   note: z.string().trim().max(1000).optional().default(''),
 })
 
+/** The pair carried by the manage link in a monthly gift's receipt. */
+export const donationCancelSchema = z.object({
+  reference: z.string().trim().min(1, 'Please use the manage link from your receipt.'),
+  token: z.string().trim().min(1, 'Please use the manage link from your receipt.'),
+})
+
 export const eventRegistrationSchema = z.object({
   eventSlug: z.string().trim().min(1, 'Please choose an event.'),
   name,

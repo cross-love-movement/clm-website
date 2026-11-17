@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
       'Email',
       'Amount (GHS)',
       'Frequency',
+      'Stopped on',
       'Method',
       'Note',
     ]
@@ -42,6 +43,7 @@ export default defineEventHandler(async (event) => {
         donation.donorEmail,
         formatAmount(donation.amountPesewas, donation.currency),
         donation.frequency === 'monthly' ? 'Monthly' : 'One-time',
+        donation.cancelledAt ?? '',
         donation.channel ?? '',
         donation.note,
       ]

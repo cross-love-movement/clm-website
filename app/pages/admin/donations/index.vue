@@ -242,6 +242,13 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             </td>
             <td class="whitespace-nowrap px-4 py-4 text-ink-soft">
               {{ donation.frequency === 'monthly' ? 'Monthly' : 'One-time' }}
+              <span
+                v-if="donation.cancelledAt"
+                class="ml-2 rounded-full bg-sand-200 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide"
+                :title="`Stopped ${formatDateShort(donation.cancelledAt)}`"
+              >
+                Stopped
+              </span>
             </td>
             <td class="whitespace-nowrap px-4 py-4 text-ink-soft">
               {{ channelLabel(donation.channel) }}

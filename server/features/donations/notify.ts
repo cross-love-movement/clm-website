@@ -3,7 +3,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { useDatabase } from '../../database/client'
 import { donations, mailOutbox, type DonationRow } from '../../database/schema'
 import { drainOutbox } from '../mail/outbox'
-import { receiptMail, staffDonationMail } from './mail'
+import { cancellationMail, receiptMail, renewalFailedMail, staffDonationMail } from './mail'
 
 /**
  * Queues both mails once, then drains the outbox immediately.
@@ -31,9 +31,7 @@ export async function queueDonationReceipts(donation: DonationRow) {
 
   if (!queued) return
 
-  void drainOutbox().catch((error) => {
-    console.error('[mail] donation receipts queued but not sent immediately', error)
-  })
+  drainSoon('[mail] donation receipts queued but not sent immediately')
 }
 
 /**
@@ -50,4 +48,36 @@ export async function resendDonationReceipt(id: string) {
   await queueDonationReceipts({ ...row, receiptSentAt: null })
 
   return true
+}
+
+/** The donor's confirmation that a monthly gift has been stopped. */
+export async function queueCancellationMail(donation: DonationRow) {
+  const db = useDatabase()
+
+  await db.insert(mailOutbox).values(cancellationMail(donation))
+  drainSoon('[mail] cancellation queued but not sent immediately')
+}
+
+/** Staff notice that a monthly charge did not go through. */
+export async function queueRenewalFailureMail(donation: DonationRow) {
+  const db = useDatabase()
+
+  await db.insert(mailOutbox).values(
+    renewalFailedMail({
+      donorName: donation.donorName,
+      donorEmail: donation.donorEmail,
+      amountPesewas: donation.amountPesewas,
+      currency: donation.currency,
+      reference: donation.reference,
+      subscriptionCode: donation.subscriptionCode ?? '',
+      failedAt: donation.createdAt,
+    }),
+  )
+  drainSoon('[mail] renewal failure queued but not sent immediately')
+}
+
+function drainSoon(message: string) {
+  void drainOutbox().catch((error) => {
+    console.error(message, error)
+  })
 }

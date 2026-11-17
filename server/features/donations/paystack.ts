@@ -83,6 +83,22 @@ export interface InitializedTransaction {
   reference: string
 }
 
+export interface PaystackSubscription {
+  subscription_code?: string
+  email_token?: string
+  status?: string
+  next_payment_date?: string | null
+  plan?: { plan_code?: string; name?: string; amount?: number } | string | null
+  customer?: PaystackCustomer | null
+}
+
+/** Webhook bodies for the subscription events we act on. */
+export interface PaystackWebhookData extends PaystackTransaction {
+  subscription_code?: string
+  code?: string
+  next_payment_date?: string | null
+}
+
 export function initializeTransaction(input: {
   email: string
   amountPesewas: number
@@ -107,6 +123,48 @@ export function initializeTransaction(input: {
 
 export function verifyTransaction(reference: string) {
   return request<PaystackTransaction>(`/transaction/verify/${encodeURIComponent(reference)}`)
+}
+
+export function getSubscription(code: string) {
+  return request<PaystackSubscription>(`/subscription/${encodeURIComponent(code)}`)
+}
+
+/** Disables a monthly subscription. Paystack needs its email token, not ours. */
+export async function disableSubscription(code: string, token: string) {
+  const key = secretKey()
+
+  if (!key) {
+    throw createError({ statusCode: 503, statusMessage: 'Payments are not configured' })
+  }
+
+  const response = await fetch(`${apiBase()}/subscription/disable`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${key}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ code, token }),
+  })
+
+  const payload = (await response.json().catch(() => null)) as {
+    status?: boolean
+    message?: string
+  } | null
+
+  if (!response.ok || !payload?.status) {
+    console.error('[paystack] disable subscription failed', code, response.status, payload?.message)
+
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Could not cancel the subscription',
+      data: {
+        message:
+          'Paystack did not accept the cancellation just now. Please email donations@crosslovemovement.org and we will handle it.',
+      },
+    })
+  }
+
+  return true
 }
 
 export function createMonthlyPlan(amountPesewas: number) {

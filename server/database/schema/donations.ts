@@ -47,6 +47,11 @@ export const donations = pgTable(
     subscriptionCode: text('subscription_code'),
     paidAt: timestamp('paid_at', { withTimezone: true }),
     receiptSentAt: timestamp('receipt_sent_at', { withTimezone: true }),
+    /**
+     * When the donor stopped a monthly gift. The payment status is left alone:
+     * the charges that were collected are still money received.
+     */
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     /** Raw verify/webhook body, kept for reconciliation and disputes. */
     payload: jsonb('payload'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

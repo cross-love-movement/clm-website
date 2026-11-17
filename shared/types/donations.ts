@@ -25,6 +25,8 @@ export interface DonationSummary {
   note: string
   channel: string | null
   paidAt: string | null
+  /** Set when the donor stopped a monthly gift. */
+  cancelledAt: string | null
   createdAt: string
 }
 

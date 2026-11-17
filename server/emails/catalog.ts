@@ -45,6 +45,14 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     env: 'RESEND_TEMPLATE_DONATION_RECEIPT',
     file: 'donation-receipt.html',
   },
+  'donation-cancelled': {
+    env: 'RESEND_TEMPLATE_DONATION_CANCELLED',
+    file: 'donation-cancelled.html',
+  },
+  'donation-renewal-failed': {
+    env: 'RESEND_TEMPLATE_DONATION_RENEWAL_FAILED',
+    file: 'donation-renewal-failed.html',
+  },
   partnership: { env: 'RESEND_TEMPLATE_PARTNERSHIP', file: 'partnership.html' },
   newsletter: { env: 'RESEND_TEMPLATE_NEWSLETTER', file: 'newsletter.html' },
   'newsletter-broadcast': {

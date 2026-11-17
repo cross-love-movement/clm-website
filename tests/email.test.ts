@@ -43,7 +43,11 @@ import {
   declineMail,
 } from '../server/features/volunteers/mail'
 import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
-import { receiptMail } from '../server/features/donations/mail'
+import {
+  cancellationMail as donationCancellationMail,
+  receiptMail,
+  renewalFailedMail,
+} from '../server/features/donations/mail'
 import { buildMailPayload } from '../server/utils/mailer'
 import { MAILBOXES, mailboxForContactTopic } from '../server/utils/mailboxes'
 
@@ -159,6 +163,7 @@ const donation: DonationRow = {
   subscriptionCode: null,
   paidAt: new Date('2026-01-01T00:00:00Z'),
   receiptSentAt: null,
+  cancelledAt: null,
   payload: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
   updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -201,6 +206,16 @@ const samples: Record<string, TemplateVariables> = {
     frequency: 'monthly',
   }),
   'donation-receipt': receiptMail(donation).variables,
+  'donation-cancelled': donationCancellationMail(donation).variables,
+  'donation-renewal-failed': renewalFailedMail({
+    donorName: 'Ama Mensah',
+    donorEmail: 'ama@example.com',
+    amountPesewas: 50_000,
+    currency: 'GHS',
+    reference: 'CLM-DON-TEST123456',
+    subscriptionCode: 'SUB_test123',
+    failedAt: new Date('2026-02-01T00:00:00Z'),
+  }).variables,
   partnership: partnershipVariables({
     organisation: 'Acme',
     contactName: 'Kwesi',

@@ -1,0 +1,1 @@
+ALTER TABLE "donations" ADD COLUMN "cancelled_at" timestamp with time zone;

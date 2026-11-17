@@ -1,11 +1,17 @@
 import {
+  cancelLatestForSubscription,
   getDonationByReference,
   markDonationFailed,
   markDonationPaid,
+  recordFailedRenewal,
   recordRecurringCharge,
 } from '../../features/donations/repository'
-import { queueDonationReceipts } from '../../features/donations/notify'
-import { verifyWebhookSignature, type PaystackTransaction } from '../../features/donations/paystack'
+import {
+  queueCancellationMail,
+  queueDonationReceipts,
+  queueRenewalFailureMail,
+} from '../../features/donations/notify'
+import { verifyWebhookSignature, type PaystackWebhookData } from '../../features/donations/paystack'
 
 /**
  * POST /api/paystack/webhook
@@ -22,7 +28,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid signature' })
   }
 
-  let payload: { event?: string; data?: PaystackTransaction }
+  let payload: { event?: string; data?: PaystackWebhookData }
 
   try {
     payload = JSON.parse(raw)
@@ -49,6 +55,24 @@ export default defineEventHandler(async (event) => {
 
   if (payload.event === 'charge.failed' && data.reference) {
     await markDonationFailed(data.reference, data)
+  }
+
+  // A renewal Paystack could not collect. The repository keeps the record and
+  // tells us whether this is the first failure we have seen today; only then
+  // does the giving desk get a mail.
+  if (payload.event === 'charge.failed' || payload.event === 'invoice.payment_failed') {
+    const lapsed = await recordFailedRenewal(data)
+    if (lapsed) await queueRenewalFailureMail(lapsed)
+  }
+
+  // Cancelled from Paystack's own interface rather than our manage link.
+  if (payload.event === 'subscription.not_renew') {
+    const code = data.subscription_code ?? data.subscription?.subscription_code
+
+    if (code) {
+      const cancelled = await cancelLatestForSubscription(code)
+      if (cancelled) await queueCancellationMail(cancelled)
+    }
   }
 
   return { received: true }

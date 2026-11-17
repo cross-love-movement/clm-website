@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, ne, or, sum } from 'drizzle-orm'
+import { and, count, desc, eq, gt, ilike, isNull, ne, or, sum } from 'drizzle-orm'
 
 import type { DonationStatus, DonationSummary, DonationTotals } from '#shared/types/donations'
 
@@ -23,6 +23,7 @@ export function toDonationSummary(row: DonationRow): DonationSummary {
     note: row.note,
     channel: row.channel,
     paidAt: iso(row.paidAt),
+    cancelledAt: iso(row.cancelledAt),
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -135,6 +136,122 @@ export async function recordRecurringCharge(payload: PaystackTransaction) {
       customerCode: payload.customer?.customer_code ?? null,
       subscriptionCode: payload.subscription?.subscription_code ?? null,
       paidAt: payload.paid_at ? new Date(payload.paid_at) : new Date(),
+      payload: payload as unknown as Record<string, unknown>,
+    })
+    .onConflictDoNothing({ target: donations.reference })
+    .returning()
+
+  return row ?? null
+}
+
+/**
+ * Stops the clock on a monthly gift. Only the cancellation timestamp moves: the
+ * charges already collected stay `succeeded`, so totals stay honest.
+ */
+export async function markDonationCancelled(id: string) {
+  const db = useDatabase()
+  const [row] = await db
+    .update(donations)
+    .set({ cancelledAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(donations.id, id), isNull(donations.cancelledAt)))
+    .returning()
+
+  return row ?? null
+}
+
+/** Mirrors a cancellation that happened inside Paystack, keyed by subscription. */
+export async function cancelLatestForSubscription(subscriptionCode: string) {
+  const code = subscriptionCode.trim()
+  if (!code) return null
+
+  const db = useDatabase()
+  const [row] = await db
+    .select({ id: donations.id })
+    .from(donations)
+    .where(and(eq(donations.subscriptionCode, code), eq(donations.status, 'succeeded')))
+    .orderBy(desc(donations.createdAt))
+    .limit(1)
+
+  return row ? markDonationCancelled(row.id) : null
+}
+
+interface RenewalFailure {
+  reference: string
+  amountPesewas: number
+  subscriptionCode: string
+  donorName: string
+  donorEmail: string
+}
+
+function renewalFailureOf(payload: PaystackTransaction): RenewalFailure | null {
+  const subscriptionCode =
+    typeof payload.subscription === 'object' && payload.subscription
+      ? payload.subscription.subscription_code?.trim()
+      : undefined
+  const reference = payload.reference?.trim()
+  const email = payload.customer?.email?.trim().toLowerCase()
+  const amount = payload.amount ?? 0
+
+  if (!subscriptionCode || !reference || !email || amount <= 0) return null
+
+  const name =
+    [payload.customer?.first_name, payload.customer?.last_name].filter(Boolean).join(' ').trim() ||
+    email
+
+  return {
+    reference,
+    amountPesewas: amount,
+    subscriptionCode,
+    donorName: name,
+    donorEmail: email,
+  }
+}
+
+/**
+ * A renewal that Paystack could not collect. The row is recorded so the giving
+ * desk can see the lapse, and the caller mails staff only when this returns a
+ * row: one notice per lapsed subscription per day, however often Paystack
+ * retries the charge.
+ */
+export async function recordFailedRenewal(payload: PaystackTransaction) {
+  const failure = renewalFailureOf(payload)
+  if (!failure) return null
+
+  // The first charge of a new monthly gift already has a row of ours. A failure
+  // there is the donor retrying on the page, not a lapsed renewal.
+  if (await getDonationByReference(failure.reference)) return null
+
+  const db = useDatabase()
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const [recent] = await db
+    .select({ id: donations.id })
+    .from(donations)
+    .where(
+      and(
+        eq(donations.subscriptionCode, failure.subscriptionCode),
+        eq(donations.status, 'failed'),
+        gt(donations.createdAt, since),
+      ),
+    )
+    .limit(1)
+
+  if (recent) return null
+
+  const [row] = await db
+    .insert(donations)
+    .values({
+      reference: failure.reference,
+      status: 'failed',
+      amountPesewas: failure.amountPesewas,
+      currency: payload.currency ?? 'GHS',
+      frequency: 'monthly',
+      donorName: failure.donorName,
+      donorEmail: failure.donorEmail,
+      channel: payload.channel ?? null,
+      planCode:
+        typeof payload.plan === 'object' && payload.plan ? (payload.plan.plan_code ?? null) : null,
+      customerCode: payload.customer?.customer_code ?? null,
+      subscriptionCode: failure.subscriptionCode,
       payload: payload as unknown as Record<string, unknown>,
     })
     .onConflictDoNothing({ target: donations.reference })

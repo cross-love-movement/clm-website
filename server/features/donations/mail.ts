@@ -3,6 +3,7 @@ import { sanitizeSubject } from '../../emails/catalog'
 import { donationVariables } from '../../emails/notifications'
 import type { ComposedMail } from '../../emails/types'
 import { MAILBOXES } from '../../utils/mailboxes'
+import { donationCancelUrl } from './cancel'
 import { formatAmount } from './paystack'
 
 function paidOn(donation: DonationRow) {
@@ -36,6 +37,11 @@ export function receiptMail(donation: DonationRow): ComposedMail {
   const amount = formatAmount(donation.amountPesewas, donation.currency)
   const date = paidOn(donation)
   const method = channelLabel(donation.channel)
+  // Only a monthly gift has something to manage; a one-time gift gets the inbox.
+  const cancelUrl =
+    donation.frequency === 'monthly'
+      ? donationCancelUrl(donation.reference)
+      : `mailto:${MAILBOXES.donations}`
 
   return {
     kind: 'donation-receipt',
@@ -56,7 +62,7 @@ export function receiptMail(donation: DonationRow): ComposedMail {
       `Note: ${donation.note || '—'}`,
       '',
       'Restricted gifts are ring-fenced and reported separately.',
-      'If this is a monthly gift and you would like to change or pause it, reply to this email.',
+      'If this is a monthly gift and you would like to change or pause it, use the manage link in this email or reply to this message.',
       '',
       'Cross-Love Movement Limited By Guarantee',
       'RGD CG041650523 · 64 Thirdes, GT-197-1816, Tema Community 12, Ghana',
@@ -69,6 +75,7 @@ export function receiptMail(donation: DonationRow): ComposedMail {
       METHOD: method,
       REFERENCE: donation.reference,
       NOTE: donation.note || '—',
+      CANCEL_URL: cancelUrl,
     },
   }
 }
@@ -104,5 +111,87 @@ export function staffDonationMail(donation: DonationRow): ComposedMail {
       frequency,
       note: `${donation.note || '—'}\n\nReference: ${donation.reference}`,
     }),
+  }
+}
+
+/** Confirmation after a donor cancels a monthly gift. */
+export function cancellationMail(donation: DonationRow): ComposedMail {
+  const amount = formatAmount(donation.amountPesewas, donation.currency)
+  const date = paidOn(donation)
+
+  return {
+    kind: 'donation-cancelled',
+    toEmail: donation.donorEmail,
+    replyTo: MAILBOXES.donations,
+    subject: sanitizeSubject('Your monthly gift has been cancelled — Cross-Love Movement'),
+    body: [
+      `Hello ${donation.donorName},`,
+      '',
+      `Your monthly gift of ${amount} has been cancelled. No further payments will be taken.`,
+      '',
+      `Reference: ${donation.reference}`,
+      `Cancelled: ${date}`,
+      '',
+      'Thank you for standing with the work. If this was a mistake, reply to this email or write to donations@crosslovemovement.org and we will help.',
+      '',
+      'Cross-Love Movement Limited By Guarantee',
+      'RGD CG041650523 · 64 Thirdes, GT-197-1816, Tema Community 12, Ghana',
+    ].join('\n'),
+    variables: {
+      DONOR_NAME: donation.donorName,
+      AMOUNT: amount,
+      REFERENCE: donation.reference,
+      DATE: date,
+      CONTACT_EMAIL: MAILBOXES.donations,
+    },
+  }
+}
+
+export interface RenewalFailure {
+  donorName: string
+  donorEmail: string
+  amountPesewas: number
+  currency: string
+  reference: string
+  subscriptionCode: string
+  failedAt?: Date | null
+}
+
+/** Staff notice when a monthly charge does not renew. */
+export function renewalFailedMail(input: RenewalFailure): ComposedMail {
+  const amount = formatAmount(input.amountPesewas, input.currency)
+  const date = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Africa/Accra',
+  }).format(input.failedAt ?? new Date())
+
+  return {
+    kind: 'donation-renewal-failed',
+    toEmail: MAILBOXES.donations,
+    replyTo: input.donorEmail,
+    subject: sanitizeSubject(`Monthly gift failed — ${amount} — ${input.donorName}`),
+    body: [
+      'A monthly gift did not renew.',
+      '',
+      `Donor:      ${input.donorName}`,
+      `Email:      ${input.donorEmail}`,
+      `Amount:     ${amount}`,
+      `Reference:  ${input.reference || '—'}`,
+      `Subscription: ${input.subscriptionCode || '—'}`,
+      `Failed:     ${date}`,
+      '',
+      'Check the subscription in Paystack and follow up with the donor directly.',
+    ].join('\n'),
+    variables: {
+      DONOR_NAME: input.donorName,
+      DONOR_EMAIL: input.donorEmail,
+      AMOUNT: amount,
+      REFERENCE: input.reference || '—',
+      SUBSCRIPTION: input.subscriptionCode || '—',
+      DATE: date,
+      CONTACT_EMAIL: MAILBOXES.donations,
+    },
   }
 }
