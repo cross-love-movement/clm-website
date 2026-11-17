@@ -1,11 +1,16 @@
 <script setup lang="ts">
-const props = defineProps<{ initialEvent?: string }>()
+import type { Event } from '#shared/types/content'
+
+const props = withDefaults(
+  defineProps<{ initialEvent?: string; event?: Event | null; lockEvent?: boolean }>(),
+  { event: null, lockEvent: false },
+)
 
 const emit = defineEmits<{ registered: [] }>()
 
 const { upcoming, refresh } = await useEvents()
 
-const initialSlug = props.initialEvent || upcoming.value[0]?.slug || ''
+const initialSlug = props.initialEvent || props.event?.slug || upcoming.value[0]?.slug || ''
 
 const { values, errors, message, isSubmitting, isSuccess, submit, reset } = useForm(
   '/api/events/register',
@@ -28,18 +33,31 @@ watch(
   },
 )
 
-const eventOptions = computed(() =>
-  upcoming.value.map((event) => ({
+const eventOptions = computed(() => {
+  const options = upcoming.value.map((event) => ({
     value: event.slug,
     label: `${event.title} — ${formatEventDate(event.startsAt)}${
       event.availability.open ? '' : ' — fully booked'
     }`,
-  })),
-)
+  }))
 
-const selectedEvent = computed(
-  () => upcoming.value.find((event) => event.slug === values.eventSlug) ?? null,
-)
+  if (props.event && !upcoming.value.some((event) => event.slug === props.event?.slug)) {
+    options.unshift({
+      value: props.event.slug,
+      label: `${props.event.title} — ${formatEventDate(props.event.startsAt)}${
+        props.event.availability.open ? '' : ' — fully booked'
+      }`,
+    })
+  }
+
+  return options
+})
+
+const selectedEvent = computed(() => {
+  if (props.event && props.event.slug === values.eventSlug) return props.event
+
+  return upcoming.value.find((event) => event.slug === values.eventSlug) ?? null
+})
 
 const selectedAvailability = computed(() => selectedEvent.value?.availability ?? null)
 
@@ -99,6 +117,7 @@ async function onSubmit() {
 
     <form v-else novalidate class="space-y-5" @submit.prevent="onSubmit">
       <SelectField
+        v-if="!lockEvent"
         v-model="values.eventSlug"
         label="Which event?"
         name="eventSlug"

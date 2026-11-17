@@ -145,6 +145,7 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 | `/projects`               | Projects index   | —                                  |
 | `/projects/[slug]`        | Project detail   | —                                  |
 | `/events`                 | Events           | `POST /api/events/register`        |
+| `/events/[slug]`          | Event detail     | `GET /api/events/:slug`            |
 | `/news`                   | News index       | —                                  |
 | `/news/[slug]`            | Article          | —                                  |
 | `/volunteer`              | Volunteer        | `POST /api/volunteer`              |
@@ -255,6 +256,10 @@ both pass the check.
 row with the same email (case-insensitive). A repeat returns `409` with an `email` field error; a
 cancelled booking may register again.
 
+**Event detail pages.** Every published event has `/events/:slug`: the date, venue, places
+remaining, the description, an Event JSON-LD block, and the registration form locked to that event.
+The list at `/events` links to it.
+
 **Waitlist.** If the requested places do not fit, the booking is stored as `waitlisted` instead of
 failing — it still gets a reference and an email. Cancelling a confirmed booking promotes waitlisted
 bookings first-come-first-served inside the same transaction, and emails each promoted registrant.
@@ -316,8 +321,8 @@ hitting Resend's rate limit (1,000 guests is roughly 33 minutes).
 **Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
 disables it) so the site has something to show.
 
-**Not built yet:** a public event detail page, reminder emails, and an audit log. Registrations
-store name, email, and phone, so agree a retention period before collecting them in earnest.
+**Not built yet:** reminder emails and an audit log. Registrations store name, email, and phone,
+so agree a retention period before collecting them in earnest.
 
 ### Volunteer app
 

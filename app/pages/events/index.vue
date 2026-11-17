@@ -158,9 +158,12 @@ useSeo({
             </dl>
           </div>
 
-          <div class="sm:text-right">
+          <div class="flex flex-col items-start gap-2 sm:items-end">
             <BaseButton size="sm" :disabled="!isOpen(event)" @click="registerFor(event.slug)">
               {{ isOpen(event) ? 'Register' : 'Closed' }}
+            </BaseButton>
+            <BaseButton :to="`/events/${event.slug}`" variant="secondary" size="sm">
+              Details
             </BaseButton>
             <p v-if="event.registrationDeadline" class="mt-2 text-[0.68rem] text-ink-soft/70">
               Closes {{ formatEventDate(event.registrationDeadline) }}

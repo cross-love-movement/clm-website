@@ -1,6 +1,8 @@
 import { queryCollection } from '@nuxt/content/server'
 
+import { hasDatabase } from '../database/client'
 import { siteUrl } from '../emails/catalog'
+import { listPublishedEvents } from '../features/events/repository'
 
 /** Public pages that are not backed by a content collection. */
 const STATIC_PATHS = [
@@ -43,6 +45,17 @@ export default defineEventHandler(async (event) => {
     queryCollection(event, 'news').select('path', 'publishedAt').all(),
   ])
 
+  let eventEntries: Entry[] = []
+
+  if (hasDatabase()) {
+    try {
+      const events = await listPublishedEvents()
+      eventEntries = events.map((item) => ({ loc: `${base}/events/${item.slug}` }))
+    } catch (error) {
+      console.warn('[sitemap] events unavailable:', error)
+    }
+  }
+
   const entries: Entry[] = [
     ...STATIC_PATHS.map((path) => ({ loc: `${base}${path}` })),
     ...projects.map((project) => ({ loc: `${base}${project.path}` })),
@@ -50,6 +63,7 @@ export default defineEventHandler(async (event) => {
       loc: `${base}${article.path}`,
       lastmod: article.publishedAt,
     })),
+    ...eventEntries,
   ]
 
   const body = [
