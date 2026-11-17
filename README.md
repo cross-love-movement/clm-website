@@ -861,7 +861,7 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 | `DATABASE_SSL`                          | `false`                                              | Enable TLS to the database             |
 | `DATABASE_POOL_SIZE`                    | `10`                                                 | Postgres pool size                     |
 | `DB_MIGRATE_ON_START`                   | `true`                                               | Apply migrations at boot               |
-| `MIGRATIONS_DIR`                        | `server/database/migrations`                         | `/app/migrations` in the image         |
+| `MIGRATIONS_DIR`                        | auto: source tree, `/app/migrations` in image        | Migration SQL location                 |
 | `SEED_SUPERADMIN_EMAIL`                 | _(empty — no seeding)_                               | First superadmin's email               |
 | `SEED_SUPERADMIN_NAME`                  | `Super Admin`                                        | First superadmin's name                |
 | `NUXT_SESSION_PASSWORD`                 | _(required in production)_                           | Signs the session cookie (32+ chars)   |
