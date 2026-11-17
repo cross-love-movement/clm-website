@@ -137,30 +137,35 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route               | Page             | Server route                  |
-| ------------------- | ---------------- | ----------------------------- |
-| `/`                 | Home             | —                             |
-| `/about`            | About            | —                             |
-| `/projects`         | Projects index   | —                             |
-| `/projects/[slug]`  | Project detail   | —                             |
-| `/events`           | Events           | `POST /api/events/register`   |
-| `/news`             | News index       | —                             |
-| `/news/[slug]`      | Article          | —                             |
-| `/volunteer`        | Volunteer        | `POST /api/volunteer`         |
-| `/partnership`      | Partnership      | `POST /api/partnership`       |
-| `/contact`          | Contact          | `POST /api/contact`           |
-| `/donate`           | Donate           | `POST /api/donate`            |
-| `/donate/complete`  | Payment return   | `GET /api/donate/verify`      |
-| `/portal`           | Volunteer portal | `GET /api/portal/assignments` |
-| `/login`            | Sign in          | `POST /api/auth/login`        |
-| `/admin`            | Staff overview   | —                             |
-| `/admin/events`     | Event management | `/api/admin/events`           |
-| `/admin/programmes` | Programmes       | `/api/admin/programmes`       |
-| `/admin/roles`      | Volunteer roles  | `/api/admin/opportunities`    |
-| `/admin/volunteers` | Volunteers       | `/api/admin/volunteers`       |
-| `/admin/donations`  | Donations        | `/api/admin/donations`        |
-| `/admin/users`      | People           | `/api/admin/users`            |
-| `/_studio`          | —                | Nuxt Studio (GitHub OAuth)    |
+| Route                     | Page             | Server route                       |
+| ------------------------- | ---------------- | ---------------------------------- |
+| `/`                       | Home             | —                                  |
+| `/about`                  | About            | —                                  |
+| `/projects`               | Projects index   | —                                  |
+| `/projects/[slug]`        | Project detail   | —                                  |
+| `/events`                 | Events           | `POST /api/events/register`        |
+| `/news`                   | News index       | —                                  |
+| `/news/[slug]`            | Article          | —                                  |
+| `/volunteer`              | Volunteer        | `POST /api/volunteer`              |
+| `/partnership`            | Partnership      | `POST /api/partnership`            |
+| `/contact`                | Contact          | `POST /api/contact`                |
+| `/donate`                 | Donate           | `POST /api/donate`                 |
+| `/donate/complete`        | Payment return   | `GET /api/donate/verify`           |
+| `/newsletter/unsubscribe` | Unsubscribe      | `POST /api/newsletter/unsubscribe` |
+| `/forgot-password`        | Password reset   | `POST /api/auth/reset-request`     |
+| `/reset-password`         | Set password     | `POST /api/auth/reset-confirm`     |
+| `/portal`                 | Volunteer portal | `GET /api/portal/assignments`      |
+| `/login`                  | Sign in          | `POST /api/auth/login`             |
+| `/admin`                  | Staff overview   | —                                  |
+| `/admin/events`           | Event management | `/api/admin/events`                |
+| `/admin/programmes`       | Programmes       | `/api/admin/programmes`            |
+| `/admin/roles`            | Volunteer roles  | `/api/admin/opportunities`         |
+| `/admin/volunteers`       | Volunteers       | `/api/admin/volunteers`            |
+| `/admin/donations`        | Donations        | `/api/admin/donations`             |
+| `/admin/newsletter`       | Newsletter list  | `/api/admin/newsletter`            |
+| `/admin/mail`             | Mail outbox      | `/api/admin/mail`                  |
+| `/admin/users`            | People           | `/api/admin/users`                 |
+| `/_studio`                | —                | Nuxt Studio (GitHub OAuth)         |
 
 The footer newsletter form posts to `POST /api/newsletter`; it has no page of its own.
 
@@ -444,6 +449,9 @@ per amount in `donation_plans`; renewals carry a Paystack reference of their own
 the webhook. Without `NUXT_PAYSTACK_SECRET_KEY`, the form falls back to the old pledge email, so
 previews and local development never dead-end.
 
+**Not built yet:** refunds, donor self-service cancellation of monthly plans, and notifications for
+failed renewals.
+
 | Route                                  | Purpose                              |
 | -------------------------------------- | ------------------------------------ |
 | `POST /api/donate`                     | validate, create the row, initialise |
@@ -697,6 +705,15 @@ subscriber in `server/features/newsletter/mail.ts`.
 To seed a dashboard template, run `npm run emails:sync` (below) or paste the file into the editor
 manually and publish it.
 
+**The outbox screen.** `/admin/mail` lists recent `mail_outbox` rows with status, attempts, and the
+last Resend error, and lets staff retry a pending or failed message. It is visible to anyone with an
+operational permission. Look here first when a form says it succeeded but no email arrived.
+
+| Route                            | Purpose                                 |
+| -------------------------------- | --------------------------------------- |
+| `GET /api/admin/mail`            | list recent rows + counts               |
+| `POST /api/admin/mail/:id/retry` | reset and retry a pending or failed row |
+
 **Syncing the files to Resend.** The files are the source of truth, but a deploy does not push them:
 while an alias is set, Resend renders its own stored copy. After changing a template, run:
 
@@ -760,12 +777,9 @@ back to the local file, so a misconfiguration is visible rather than silently se
 
 ### Donations
 
-The donate form records a **giving pledge**; the team follows up with verified bank or mobile-money
-details and a receipt. No card data touches the site, and no account numbers are published.
-
-To take payments online, add a gateway route (for Ghana: Paystack or Flutterwave in GHS; Stripe for
-international cards) that creates a transaction and returns a checkout URL, then redirect from
-`DonateForm` on success. The amount/frequency schema already matches that shape.
+The donate form starts a Paystack transaction on the server and redirects to hosted checkout. See
+the **Donations** section above for verification, the webhook, receipts, and the staff resend action.
+Card and mobile-money details never touch this app.
 
 ---
 
@@ -816,9 +830,11 @@ expiry). Password resets use the same mechanism (1-hour expiry).
 Roles: `superadmin`, `admin`, `volunteer`. Operational permissions are assigned per account at
 invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV),
 `canManagePeople` (people screen, invite volunteers), `canManageVolunteers` (applications,
-safeguarding, placements), and `canManageProgrammes` (programmes and roles). An admin starts with
-all five; a superadmin implicitly has everything, plus changing roles, editing permissions, and
-suspending accounts. Volunteers have no staff access. Guards run in route middleware (`admin`,
+safeguarding, placements), `canManageProgrammes` (programmes and roles), `canManageNewsletter`
+(newsletter list and broadcasts), and `canManageDonations` (gifts and receipts). An admin starts with
+every permission; a superadmin implicitly has everything, plus changing roles, editing permissions,
+and suspending accounts. Staff with any of those operational permissions can also open `/admin/mail`
+to inspect and retry queued email. Volunteers have no staff access. Guards run in route middleware (`admin`,
 `manager`, `programme-manager`, `volunteer-manager`, `volunteer`) and again in the API, so a
 volunteer hitting `/api/admin/*` gets `403`.
 
@@ -872,8 +888,10 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 ## Validation performed
 
 - `npm run typecheck` — passes (Nuxt-aware `vue-tsc`)
-- `npm run check` — passes (format, lint, type-aware checks across 178 files)
-- `npm test` — 60 tests passing (content files, event availability and references, permissions, template contract, email rendering, and Resend payload shape)
+- `npm run check` — passes (format, lint, type-aware checks across 264 files)
+- `npm test` — 79 tests passing (content files, event availability and references, permissions,
+  template contract, email rendering, donation references and webhook signatures, mail outbox access,
+  and Resend payload shape)
 - `npm run build` — passes, including Nuxt Content database generation with `node:sqlite`
 - All routes render server-side with `200`; unknown route returns `404` via `app/error.vue`
 - Nuxt Content verified end to end: project pages, news articles, and event YAML are indexed and
@@ -919,7 +937,7 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
    one small live gift before announcing online giving.
 6. **Event data** — events and registrations live in `DATABASE_URL`. Keep one replica, schedule
    nightly Postgres backups, and agree a retention period for registrant names, emails, and phone
-   numbers. The admin CRUD screens are the next phase; until then, events are created with SQL.
+   numbers. Events and volunteers are managed at `/admin/events` and `/admin/volunteers`.
 7. **News** — replace the illustrative posts, agree an editorial cadence, and add an RSS feed
    (`/rss.xml`) if people want to subscribe outside email.
 8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.
