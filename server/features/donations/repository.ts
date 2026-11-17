@@ -312,10 +312,12 @@ export async function planCodeFor(amountPesewas: number) {
   return created?.code ?? plan.plan_code
 }
 
-export async function listDonations(
-  options: { status?: DonationStatus; search?: string } = {},
-): Promise<DonationSummary[]> {
-  const db = useDatabase()
+export interface DonationFilter {
+  status?: DonationStatus
+  search?: string
+}
+
+function donationFilter(options: DonationFilter) {
   const clauses = []
 
   if (options.status) clauses.push(eq(donations.status, options.status))
@@ -332,14 +334,37 @@ export async function listDonations(
     )
   }
 
-  const rows = await db
+  return clauses.length ? and(...clauses) : undefined
+}
+
+/**
+ * Newest first. Without `limit` this returns every matching row, which is what
+ * the CSV export wants; the admin screen always passes a page.
+ */
+export async function listDonations(
+  options: DonationFilter & { limit?: number; offset?: number } = {},
+): Promise<DonationSummary[]> {
+  const db = useDatabase()
+  const statement = db
     .select()
     .from(donations)
-    .where(clauses.length ? and(...clauses) : undefined)
-    .orderBy(desc(donations.createdAt))
-    .limit(500)
+    .where(donationFilter(options))
+    .orderBy(desc(donations.createdAt), desc(donations.id))
+    .$dynamic()
+
+  if (options.limit !== undefined) statement.limit(options.limit)
+  if (options.offset) statement.offset(options.offset)
+
+  const rows = await statement
 
   return rows.map(toDonationSummary)
+}
+
+export async function countDonations(options: DonationFilter = {}) {
+  const db = useDatabase()
+  const [row] = await db.select({ total: count() }).from(donations).where(donationFilter(options))
+
+  return Number(row?.total ?? 0)
 }
 
 export async function donationTotals(): Promise<DonationTotals> {

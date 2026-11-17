@@ -1,14 +1,19 @@
 import { requirePermission } from '../../../features/auth/guards'
-import { listSubscribers, summariseSubscribers } from '../../../features/newsletter/repository'
+import {
+  countSubscribers,
+  listSubscribers,
+  summariseSubscribers,
+} from '../../../features/newsletter/repository'
 import type { SubscriberStatus } from '#shared/types/content'
 import { SUBSCRIBER_STATUSES } from '#shared/types/content'
 import { csvLine } from '../../../utils/csv'
+import { parsePage, resolvePage } from '../../../utils/pagination'
 
 /**
  * GET /api/admin/newsletter
  *   ?status=subscribed|unsubscribed
- *   ?q=search
- *   ?format=csv
+ *   ?q=search  ?page=  ?pageSize=
+ *   ?format=csv  every matching subscriber, ignoring the page
  */
 export default defineEventHandler(async (event) => {
   await requirePermission(event, 'canManageNewsletter')
@@ -20,10 +25,10 @@ export default defineEventHandler(async (event) => {
       ? (query.status as SubscriberStatus)
       : undefined
   const search = typeof query.q === 'string' && query.q ? query.q : undefined
-
-  const subscribers = await listSubscribers({ status, search })
+  const filter = { status, search }
 
   if (query.format === 'csv') {
+    const subscribers = await listSubscribers(filter)
     const lines = [
       csvLine(['email', 'status', 'source', 'subscribed_at', 'unsubscribed_at']),
       ...subscribers.map((row) =>
@@ -37,5 +42,21 @@ export default defineEventHandler(async (event) => {
     return lines.join('\n')
   }
 
-  return { subscribers, summary: await summariseSubscribers() }
+  const requested = parsePage(event)
+  const total = await countSubscribers(filter)
+  const pagination = resolvePage(total, requested)
+  const subscribers = await listSubscribers({
+    ...filter,
+    limit: pagination.pageSize,
+    offset: pagination.offset,
+  })
+
+  return {
+    subscribers,
+    summary: await summariseSubscribers(),
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    pageCount: pagination.pageCount,
+  }
 })

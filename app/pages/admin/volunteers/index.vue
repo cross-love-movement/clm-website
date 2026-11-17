@@ -4,58 +4,71 @@ import { VOLUNTEER_STATUSES } from '#shared/types/volunteers'
 
 definePageMeta({ middleware: ['admin', 'volunteer-manager'], layout: 'admin' })
 
-const {
-  data: volunteers,
-  error,
-  pending,
-  refresh,
-} = await useFetch<
-  {
-    id: string
-    userId: string | null
-    name: string
-    email: string
-    phone: string
-    city: string
-    status: VolunteerStatus
-    createdAt: string
-  }[]
->('/api/admin/volunteers', { key: 'admin-volunteers', default: () => [] })
+interface VolunteerRow {
+  id: string
+  userId: string | null
+  name: string
+  email: string
+  phone: string
+  city: string
+  status: VolunteerStatus
+  createdAt: string
+}
+
+interface VolunteersResponse {
+  volunteers: VolunteerRow[]
+  summary: Record<VolunteerStatus, number>
+  page: number
+  pageSize: number
+  total: number
+  pageCount: number
+}
 
 const search = ref('')
 const statusFilter = ref<'all' | VolunteerStatus>('all')
+const page = ref(1)
 
-const counts = computed(() => ({
-  all: volunteers.value.length,
-  applied: volunteers.value.filter((person) => person.status === 'applied').length,
-  screening: volunteers.value.filter((person) => person.status === 'screening').length,
-  active: volunteers.value.filter((person) => person.status === 'active').length,
+const query = computed(() => ({
+  page: page.value,
+  ...(statusFilter.value === 'all' ? {} : { status: statusFilter.value }),
+  ...(search.value.trim() ? { q: search.value.trim() } : {}),
 }))
 
-const filters = computed(() => [
-  { value: 'all' as const, label: 'All', count: counts.value.all },
-  { value: 'applied' as const, label: 'Applied', count: counts.value.applied },
-  { value: 'screening' as const, label: 'Screening', count: counts.value.screening },
-  { value: 'active' as const, label: 'Active', count: counts.value.active },
+const emptySummary = Object.fromEntries(VOLUNTEER_STATUSES.map((status) => [status, 0])) as Record<
+  VolunteerStatus,
+  number
+>
+
+const { data, error, pending, refresh } = await useFetch<VolunteersResponse>(
+  '/api/admin/volunteers',
   {
-    value: 'invited' as const,
-    label: 'Invited',
-    count: volunteers.value.filter((person) => person.status === 'invited').length,
+    key: 'admin-volunteers',
+    query,
+    default: () => ({
+      volunteers: [],
+      summary: { ...emptySummary },
+      page: 1,
+      pageSize: 25,
+      total: 0,
+      pageCount: 1,
+    }),
   },
-])
+)
 
-const visible = computed(() => {
-  const needle = search.value.trim().toLowerCase()
-
-  return volunteers.value.filter((person) => {
-    if (statusFilter.value !== 'all' && person.status !== statusFilter.value) return false
-    if (!needle) return true
-
-    return [person.name, person.email, person.city].some((value) =>
-      value.toLowerCase().includes(needle),
-    )
-  })
+// A narrower filter can drop below the current page, so start over at the top.
+watch([search, statusFilter], () => {
+  page.value = 1
 })
+
+watch(query, () => refresh(), { deep: true })
+
+const filters = computed(() => [
+  { value: 'all' as const, label: 'All', count: data.value.total },
+  { value: 'applied' as const, label: 'Applied', count: data.value.summary.applied },
+  { value: 'screening' as const, label: 'Screening', count: data.value.summary.screening },
+  { value: 'active' as const, label: 'Active', count: data.value.summary.active },
+  { value: 'invited' as const, label: 'Invited', count: data.value.summary.invited },
+])
 
 useSeo({
   title: 'Volunteers',
@@ -120,10 +133,14 @@ useSeoMeta({ robots: 'noindex, nofollow' })
     </AlertBox>
 
     <div
-      v-else-if="!pending && !visible.length"
+      v-else-if="!pending && !data.volunteers.length"
       class="mt-6 rounded-2xl border border-dashed border-sand-300 bg-sand-100 p-8 text-center text-sm text-ink-soft"
     >
-      {{ volunteers.length ? 'No volunteers match that filter.' : 'No applications yet.' }}
+      {{
+        statusFilter !== 'all' || search.trim()
+          ? 'No volunteers match that filter.'
+          : 'No applications yet.'
+      }}
     </div>
 
     <div
@@ -142,7 +159,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             </tr>
           </thead>
           <tbody class="divide-y divide-sand-200">
-            <tr v-for="person in visible" :key="person.id" class="hover:bg-sand-50">
+            <tr v-for="person in data.volunteers" :key="person.id" class="hover:bg-sand-50">
               <td class="px-4 py-4">
                 <NuxtLink
                   :to="`/admin/volunteers/${person.id}`"
@@ -183,6 +200,16 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         </table>
       </div>
     </div>
+
+    <PaginationBar
+      :page="data.page"
+      :page-size="data.pageSize"
+      :total="data.total"
+      :page-count="data.pageCount"
+      :busy="pending"
+      label="Volunteers"
+      @update:page="page = $event"
+    />
 
     <button
       type="button"

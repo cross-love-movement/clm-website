@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
-import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm'
 
 import type {
   NewsletterSubscriber,
@@ -123,24 +123,45 @@ export async function unsubscribeSubscriber(id: string) {
 export interface SubscriberFilter {
   status?: SubscriberStatus
   search?: string
+  /** Both optional: the broadcast needs every subscriber, the admin table a page. */
+  limit?: number
+  offset?: number
+}
+
+function subscriberFilter(filter: SubscriberFilter) {
+  const search = filter.search?.trim()
+
+  return and(
+    filter.status ? eq(newsletterSubscribers.status, filter.status) : undefined,
+    search ? ilike(newsletterSubscribers.email, `%${search}%`) : undefined,
+  )
 }
 
 export async function listSubscribers(filter: SubscriberFilter = {}) {
   const db = useDatabase()
-  const search = filter.search?.trim()
-
-  const rows = await db
+  const statement = db
     .select()
     .from(newsletterSubscribers)
-    .where(
-      and(
-        filter.status ? eq(newsletterSubscribers.status, filter.status) : undefined,
-        search ? ilike(newsletterSubscribers.email, `%${search}%`) : undefined,
-      ),
-    )
-    .orderBy(desc(newsletterSubscribers.subscribedAt))
+    .where(subscriberFilter(filter))
+    .orderBy(desc(newsletterSubscribers.subscribedAt), desc(newsletterSubscribers.id))
+    .$dynamic()
+
+  if (filter.limit !== undefined) statement.limit(filter.limit)
+  if (filter.offset) statement.offset(filter.offset)
+
+  const rows = await statement
 
   return rows.map(toSubscriber)
+}
+
+export async function countSubscribers(filter: SubscriberFilter = {}) {
+  const db = useDatabase()
+  const [row] = await db
+    .select({ total: count() })
+    .from(newsletterSubscribers)
+    .where(subscriberFilter(filter))
+
+  return Number(row?.total ?? 0)
 }
 
 export async function summariseSubscribers(): Promise<NewsletterSummary> {

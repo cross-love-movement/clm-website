@@ -9,36 +9,48 @@ const canManage = computed(() =>
   hasPermission(user.value as SessionUser | null, 'canManageNewsletter'),
 )
 
+const search = ref('')
+const status = ref<'all' | 'subscribed' | 'unsubscribed'>('all')
+const page = ref(1)
+
+const query = computed(() => ({
+  page: page.value,
+  ...(status.value === 'all' ? {} : { status: status.value }),
+  ...(search.value.trim() ? { q: search.value.trim() } : {}),
+}))
+
 const { data, error, pending, refresh } = await useFetch<{
   subscribers: NewsletterSubscriber[]
   summary: NewsletterSummary
+  page: number
+  pageSize: number
+  total: number
+  pageCount: number
 }>('/api/admin/newsletter', {
   key: 'admin-newsletter',
+  query,
   default: () => ({
     subscribers: [],
     summary: { subscribed: 0, unsubscribed: 0, total: 0 },
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    pageCount: 1,
   }),
 })
 
-const search = ref('')
-const status = ref<'all' | 'subscribed' | 'unsubscribed'>('all')
+// A narrower filter can drop below the current page, so start over at the top.
+watch([search, status], () => {
+  page.value = 1
+})
+
+watch(query, () => refresh(), { deep: true })
 
 const filters = computed(() => [
   { value: 'all' as const, label: 'All', count: data.value.summary.total },
   { value: 'subscribed' as const, label: 'Subscribed', count: data.value.summary.subscribed },
   { value: 'unsubscribed' as const, label: 'Unsubscribed', count: data.value.summary.unsubscribed },
 ])
-
-const visible = computed(() => {
-  const needle = search.value.trim().toLowerCase()
-
-  return data.value.subscribers.filter((row) => {
-    if (status.value !== 'all' && row.status !== status.value) return false
-    if (!needle) return true
-
-    return row.email.toLowerCase().includes(needle)
-  })
-})
 
 const csvHref = '/api/admin/newsletter?format=csv'
 
@@ -296,11 +308,11 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         </div>
 
         <div
-          v-else-if="!visible.length"
+          v-else-if="!data.subscribers.length"
           class="mt-6 rounded-2xl border border-dashed border-sand-300 bg-sand-100 p-8 text-center text-sm text-ink-soft"
         >
           {{
-            data.subscribers.length
+            status !== 'all' || search.trim()
               ? 'No subscribers match that filter.'
               : 'No one has subscribed yet.'
           }}
@@ -323,7 +335,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
               </thead>
               <tbody class="divide-y divide-sand-200">
                 <tr
-                  v-for="row in visible"
+                  v-for="row in data.subscribers"
                   :key="row.id"
                   class="align-top hover:bg-sand-50"
                   :class="{ 'opacity-60': row.status === 'unsubscribed' }"
@@ -373,6 +385,16 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             </table>
           </div>
         </div>
+
+        <PaginationBar
+          :page="data.page"
+          :page-size="data.pageSize"
+          :total="data.total"
+          :page-count="data.pageCount"
+          :busy="pending"
+          label="Subscribers"
+          @update:page="page = $event"
+        />
 
         <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
           Unsubscribed addresses are kept so the history is visible, and are never emailed again. A

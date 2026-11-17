@@ -5,22 +5,39 @@ definePageMeta({ middleware: ['admin', 'donation-manager'], layout: 'admin' })
 
 const status = ref<'all' | DonationStatus>('all')
 const search = ref('')
+const page = ref(1)
 
 const query = computed(() => ({
+  page: page.value,
   ...(status.value === 'all' ? {} : { status: status.value }),
   ...(search.value.trim() ? { search: search.value.trim() } : {}),
 }))
 
-const { data, pending, refresh } = await useFetch<{
+interface DonationsResponse {
   donations: DonationSummary[]
   totals: DonationTotals
-}>('/api/admin/donations', {
+  page: number
+  pageSize: number
+  total: number
+  pageCount: number
+}
+
+const { data, pending, refresh } = await useFetch<DonationsResponse>('/api/admin/donations', {
   key: 'admin-donations',
   query,
   default: () => ({
     donations: [],
     totals: { succeededPesewas: 0, succeededCount: 0, pendingCount: 0 },
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    pageCount: 1,
   }),
+})
+
+// A narrower filter can drop below the current page, so start over at the top.
+watch([status, search], () => {
+  page.value = 1
 })
 
 watch(query, () => refresh(), { deep: true })
@@ -186,8 +203,8 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       </div>
       <div class="rounded-3xl border border-sand-200 bg-white p-5 shadow-soft">
         <p class="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft/80">Records</p>
-        <p class="mt-2 font-display text-3xl text-ink">{{ data.donations.length }}</p>
-        <p class="mt-1 text-xs text-ink-soft">In this view</p>
+        <p class="mt-2 font-display text-3xl text-ink">{{ data.total }}</p>
+        <p class="mt-1 text-xs text-ink-soft">Matching this filter</p>
       </div>
     </div>
 
@@ -352,6 +369,16 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         </tbody>
       </table>
     </div>
+
+    <PaginationBar
+      :page="data.page"
+      :page-size="data.pageSize"
+      :total="data.total"
+      :page-count="data.pageCount"
+      :busy="pending"
+      label="Donations"
+      @update:page="page = $event"
+    />
 
     <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
       A gift is only marked succeeded from a verified Paystack response, either on the thank-you

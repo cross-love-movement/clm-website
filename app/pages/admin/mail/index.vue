@@ -5,8 +5,10 @@ definePageMeta({ middleware: ['admin', 'mail-manager'], layout: 'admin' })
 
 const status = ref<'all' | MailStatus>('all')
 const search = ref('')
+const page = ref(1)
 
 const query = computed(() => ({
+  page: page.value,
   ...(status.value === 'all' ? {} : { status: status.value }),
   ...(search.value.trim() ? { search: search.value.trim() } : {}),
 }))
@@ -14,13 +16,26 @@ const query = computed(() => ({
 const { data, pending, refresh } = await useFetch<{
   rows: MailMessage[]
   summary: MailSummary
+  page: number
+  pageSize: number
+  total: number
+  pageCount: number
 }>('/api/admin/mail', {
   key: 'admin-mail',
   query,
   default: () => ({
     rows: [],
     summary: { pending: 0, sent: 0, failed: 0 },
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    pageCount: 1,
   }),
+})
+
+// A narrower filter can drop below the current page, so start over at the top.
+watch([status, search], () => {
+  page.value = 1
 })
 
 watch(query, () => refresh(), { deep: true })
@@ -233,6 +248,16 @@ useSeoMeta({ robots: 'noindex, nofollow' })
         </tbody>
       </table>
     </div>
+
+    <PaginationBar
+      :page="data.page"
+      :page-size="data.pageSize"
+      :total="data.total"
+      :page-count="data.pageCount"
+      :busy="pending"
+      label="Outbox"
+      @update:page="page = $event"
+    />
 
     <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
       Retrying clears the attempt count and last error. A message that has already been sent is

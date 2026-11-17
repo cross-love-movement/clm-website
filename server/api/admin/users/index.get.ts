@@ -4,11 +4,16 @@ import { useDatabase } from '../../../database/client'
 import { users } from '../../../database/schema'
 import { requirePermission } from '../../../features/auth/guards'
 
+/**
+ * The staff directory is small and the page needs every row for its role and
+ * status counts, so this returns the list whole rather than paging it.
+ */
 export default defineEventHandler(async (event) => {
   await requirePermission(event, 'canManagePeople')
 
   const database = useDatabase()
-  const rows = await database
+
+  return await database
     .select({
       id: users.id,
       email: users.email,
@@ -21,6 +26,4 @@ export default defineEventHandler(async (event) => {
     })
     .from(users)
     .orderBy(desc(users.createdAt))
-
-  return rows
 })

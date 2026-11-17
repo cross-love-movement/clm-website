@@ -1,13 +1,19 @@
 import { requirePermission } from '../../../features/auth/guards'
-import { donationTotals, listDonations } from '../../../features/donations/repository'
+import {
+  countDonations,
+  donationTotals,
+  listDonations,
+} from '../../../features/donations/repository'
 import { formatAmount } from '../../../features/donations/paystack'
+import { csvLine } from '../../../utils/csv'
+import { parsePage, resolvePage } from '../../../utils/pagination'
 import { DONATION_STATUSES, type DonationStatus } from '#shared/types/donations'
 
-function csvCell(value: string) {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-}
-
-/** Every gift, newest first. `?format=csv` is the accountant's copy. */
+/**
+ * GET /api/admin/donations
+ *   ?status=  ?search=  ?page=  ?pageSize=
+ *   ?format=csv  every matching gift, ignoring the page
+ */
 export default defineEventHandler(async (event) => {
   await requirePermission(event, 'canManageDonations')
 
@@ -17,10 +23,10 @@ export default defineEventHandler(async (event) => {
       ? (query.status as DonationStatus)
       : undefined
   const search = typeof query.search === 'string' ? query.search : undefined
-
-  const donations = await listDonations({ status, search })
+  const filter = { status, search }
 
   if (query.format === 'csv') {
+    const donations = await listDonations(filter)
     const header = [
       'Reference',
       'Date',
@@ -36,7 +42,7 @@ export default defineEventHandler(async (event) => {
     ]
 
     const lines = donations.map((donation) =>
-      [
+      csvLine([
         donation.reference,
         donation.paidAt ?? donation.createdAt,
         donation.status,
@@ -48,9 +54,7 @@ export default defineEventHandler(async (event) => {
         donation.refundedAt ?? '',
         donation.channel ?? '',
         donation.note,
-      ]
-        .map((cell) => csvCell(String(cell)))
-        .join(','),
+      ]),
     )
 
     setHeader(event, 'content-type', 'text/csv; charset=utf-8')
@@ -59,8 +63,21 @@ export default defineEventHandler(async (event) => {
     return [header.join(','), ...lines].join('\n')
   }
 
+  const requested = parsePage(event)
+  const total = await countDonations(filter)
+  const pagination = resolvePage(total, requested)
+  const donations = await listDonations({
+    ...filter,
+    limit: pagination.pageSize,
+    offset: pagination.offset,
+  })
+
   return {
     donations,
     totals: await donationTotals(),
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    pageCount: pagination.pageCount,
   }
 })

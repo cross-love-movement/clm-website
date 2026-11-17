@@ -26,6 +26,7 @@ import type {
   VolunteerStatus,
   VolunteerSummary,
 } from '#shared/types/volunteers'
+import { VOLUNTEER_STATUSES } from '#shared/types/volunteers'
 
 import { useDatabase } from '../../database/client'
 import {
@@ -866,25 +867,72 @@ export async function submitApplication(input: ApplicationInput): Promise<Submit
 
 /* Volunteers ---------------------------------------------------------- */
 
-export async function listVolunteers(
-  options: { status?: VolunteerStatus; search?: string } = {},
-): Promise<VolunteerSummary[]> {
-  const db = useDatabase()
+export interface VolunteerFilter {
+  status?: VolunteerStatus
+  search?: string
+}
+
+function volunteerFilter(options: VolunteerFilter) {
   const clauses = []
 
   if (options.status) clauses.push(eq(volunteers.status, options.status))
   if (options.search?.trim()) {
     const needle = `%${options.search.trim()}%`
-    clauses.push(or(ilike(volunteers.name, needle), ilike(volunteers.email, needle)))
+    clauses.push(
+      or(
+        ilike(volunteers.name, needle),
+        ilike(volunteers.email, needle),
+        ilike(volunteers.city, needle),
+      ),
+    )
   }
 
-  const rows = await db
+  return clauses.length ? and(...clauses) : undefined
+}
+
+/** Newest first. Without `limit` every matching row comes back. */
+export async function listVolunteers(
+  options: VolunteerFilter & { limit?: number; offset?: number } = {},
+): Promise<VolunteerSummary[]> {
+  const db = useDatabase()
+  const statement = db
     .select()
     .from(volunteers)
-    .where(clauses.length ? and(...clauses) : undefined)
-    .orderBy(desc(volunteers.createdAt))
+    .where(volunteerFilter(options))
+    .orderBy(desc(volunteers.createdAt), desc(volunteers.id))
+    .$dynamic()
+
+  if (options.limit !== undefined) statement.limit(options.limit)
+  if (options.offset) statement.offset(options.offset)
+
+  const rows = await statement
 
   return rows.map(toVolunteerSummary)
+}
+
+export async function countVolunteers(options: VolunteerFilter = {}) {
+  const db = useDatabase()
+  const [row] = await db.select({ total: count() }).from(volunteers).where(volunteerFilter(options))
+
+  return Number(row?.total ?? 0)
+}
+
+/** Counts for the status chips, over the whole table rather than one page. */
+export async function summariseVolunteers(): Promise<Record<VolunteerStatus, number>> {
+  const db = useDatabase()
+  const rows = await db
+    .select({ status: volunteers.status, total: count() })
+    .from(volunteers)
+    .groupBy(volunteers.status)
+
+  const summary = Object.fromEntries(VOLUNTEER_STATUSES.map((status) => [status, 0])) as Record<
+    VolunteerStatus,
+    number
+  >
+
+  for (const row of rows) summary[row.status] = Number(row.total)
+
+  return summary
 }
 
 export async function getVolunteer(id: string): Promise<VolunteerDetail | null> {

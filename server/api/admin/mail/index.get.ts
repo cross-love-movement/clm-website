@@ -11,6 +11,7 @@ import {
 import { useDatabase } from '../../../database/client'
 import { mailOutbox, type MailOutboxRow } from '../../../database/schema'
 import { requireAnyPermission } from '../../../features/auth/guards'
+import { parsePage, resolvePage } from '../../../utils/pagination'
 
 function toMessage(row: MailOutboxRow): MailMessage {
   return {
@@ -59,12 +60,19 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = useDatabase()
+  const where = conditions.length ? and(...conditions) : undefined
+
+  const requested = parsePage(event)
+  const [counted] = await db.select({ total: count() }).from(mailOutbox).where(where)
+  const pagination = resolvePage(Number(counted?.total ?? 0), requested)
+
   const rows = await db
     .select()
     .from(mailOutbox)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(mailOutbox.createdAt))
-    .limit(100)
+    .where(where)
+    .orderBy(desc(mailOutbox.createdAt), desc(mailOutbox.id))
+    .limit(pagination.pageSize)
+    .offset(pagination.offset)
 
   const grouped = await db
     .select({ status: mailOutbox.status, total: count() })
@@ -79,5 +87,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { rows: rows.map(toMessage), summary }
+  return {
+    rows: rows.map(toMessage),
+    summary,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    pageCount: pagination.pageCount,
+  }
 })
