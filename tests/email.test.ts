@@ -403,13 +403,15 @@ describe('Resend payload', () => {
 })
 
 describe('mailbox routing', () => {
-  it('routes volunteers and donations to their own inboxes', () => {
+  it('routes each contact topic to its own inbox', () => {
     expect(MAILBOXES.volunteers).toBe('volunteers@crosslovemovement.org')
     expect(MAILBOXES.donations).toBe('donations@crosslovemovement.org')
+    expect(MAILBOXES.media).toBe('media@crosslovemovement.org')
 
     expect(mailboxForContactTopic('volunteering')).toBe(MAILBOXES.volunteers)
     expect(mailboxForContactTopic('donation')).toBe(MAILBOXES.donations)
     expect(mailboxForContactTopic('complaint')).toBe(MAILBOXES.admin)
+    expect(mailboxForContactTopic('media')).toBe(MAILBOXES.media)
     expect(mailboxForContactTopic('partnership')).toBe(MAILBOXES.info)
     expect(mailboxForContactTopic('anything else')).toBe(MAILBOXES.info)
   })

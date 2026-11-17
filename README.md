@@ -372,17 +372,18 @@ added later, draft/publish approval belongs with that work.
 
 ### Mail routing
 
-| Trigger                                    | Inbox                                         |
-| ------------------------------------------ | --------------------------------------------- |
-| Volunteer application                      | `volunteers@crosslovemovement.org`            |
-| Contact form — volunteering                | `volunteers@crosslovemovement.org`            |
-| Donation form                              | `donations@crosslovemovement.org`             |
-| Contact form — donation                    | `donations@crosslovemovement.org`             |
-| Contact form — complaint                   | `admin@crosslovemovement.org`                 |
-| Contact form — general, media, partnership | `info@crosslovemovement.org`                  |
-| Partnership form                           | `info@crosslovemovement.org`                  |
-| Invite and password-reset replies          | `support@crosslovemovement.org` (Reply-To)    |
-| Unrouted fallback                          | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
+| Trigger                             | Inbox                                         |
+| ----------------------------------- | --------------------------------------------- |
+| Volunteer application               | `volunteers@crosslovemovement.org`            |
+| Contact form — volunteering         | `volunteers@crosslovemovement.org`            |
+| Donation form                       | `donations@crosslovemovement.org`             |
+| Contact form — donation             | `donations@crosslovemovement.org`             |
+| Contact form — complaint            | `admin@crosslovemovement.org`                 |
+| Contact form — media                | `media@crosslovemovement.org`                 |
+| Contact form — general, partnership | `info@crosslovemovement.org`                  |
+| Partnership form                    | `info@crosslovemovement.org`                  |
+| Invite and password-reset replies   | `support@crosslovemovement.org` (Reply-To)    |
+| Unrouted fallback                   | `info@crosslovemovement.org` (`NUXT_MAIL_TO`) |
 
 The mailboxes are defined once in `server/utils/mailboxes.ts`. These are recipients; the sending
 address still has to live on the domain verified in Resend. All inboxes must be routed in Cloudflare

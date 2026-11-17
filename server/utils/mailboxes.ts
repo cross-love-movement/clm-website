@@ -6,6 +6,7 @@ export const MAILBOXES = {
   volunteers: 'volunteers@crosslovemovement.org',
   admin: 'admin@crosslovemovement.org',
   donations: 'donations@crosslovemovement.org',
+  media: 'media@crosslovemovement.org',
   support: 'support@crosslovemovement.org',
   info: 'info@crosslovemovement.org',
 } as const
@@ -19,9 +20,10 @@ export function mailboxForContactTopic(topic: string) {
       return MAILBOXES.donations
     case 'complaint':
       return MAILBOXES.admin
+    case 'media':
+      return MAILBOXES.media
     case 'general':
     case 'partnership':
-    case 'media':
     default:
       return MAILBOXES.info
   }
