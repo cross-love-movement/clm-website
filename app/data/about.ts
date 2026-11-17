@@ -26,13 +26,13 @@ export const pillars: Pillar[] = [
   {
     title: 'Christian Mission Projects',
     description:
-      'Church-specific support in communities the state seldom reaches — building materials, seating, equipment, and the practical help that keeps a local congregation serving its neighbours.',
+      'These categories of projects are typically “church” specific. In Ghana, the role the church plays in society has been paramount in contributing to civic and moral education, ensuring peace and development. In remote regions, where the government is typically out of reach, you will see a small church giving hope to this community. (e.g. providing potable water). Through our grassroots networks, we contribute to the needs of these churches, as they become a local resource and support centre in such communities',
     icon: 'book',
   },
   {
     title: 'Youth Empowerment Programmes',
     description:
-      'Capacity-building for young people: peace advocacy, creative mentorship, evangelism in the spaces youth already inhabit, and a career symposium for the next generation.',
+      'These categories of projects are typically "youth empowerment and capacity-building" oriented. As a youthful country, we acknowledge that youth is the greatest asset for the future. By creating a space where they discover their full potential, where they have the opportunity to contribute to positive causes, where they are resourced to be active players in their various societies, through the contributions of our network of youth pacesetters, we believe we contribute to knitting a positive tapestry for the future of Ghana, and beyond. Since 2018, we\'ve leveraged creativity to transcend denominational, generational and cultural barriers to get youths involved in social intervention activities.',
     icon: 'sparkles',
   },
   // {

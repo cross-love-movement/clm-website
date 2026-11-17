@@ -55,7 +55,7 @@ useSeo({
           <p class="eyebrow">Who we are</p>
           <h1 class="mt-3 text-3xl leading-tight sm:text-4xl">
             A movement of
-            <em class="font-display italic text-clay-600">Young Creatives</em>
+            <em class="font-display italic text-clay-600">Young Multi-hyphenates</em>
           </h1>
           <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-soft">
             {{ site.description }}

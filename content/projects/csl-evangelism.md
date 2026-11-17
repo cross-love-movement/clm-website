@@ -5,8 +5,8 @@ summary: CSL Evangelism carries Christian values into the spaces young people al
 location: Ghana
 status: active
 timeframe: Ongoing
-image: /images/project-community.svg
-imageAlt: Abstract artwork of overlapping circles and a small group of people
+image: https://assets.crosslovemovement.org/Picture2.png
+imageAlt: CSL Logo
 accent: clay
 featured: false
 goals:
