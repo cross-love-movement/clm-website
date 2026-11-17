@@ -23,6 +23,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     }
 
     markDatabaseReady()
+    console.info('[db] ready — migrations applied, outbox enabled')
 
     const admin = await seedSuperadmin()
     if (admin) {

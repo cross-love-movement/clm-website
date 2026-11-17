@@ -1,23 +1,26 @@
 import { sql } from 'drizzle-orm'
 
-import { hasDatabase, useDatabase } from '../database/client'
+import { hasDatabase, isDatabaseReady, useDatabase } from '../database/client'
 
 /**
- * Coolify health check: reports whether the database answers and whether mail
- * delivery is configured. The mail flag is safe to expose — it says only
- * whether a key is present, never the key itself.
+ * Coolify health check: reports whether the database answers, whether mail
+ * delivery is configured, and whether the outbox worker is allowed to run.
+ *
+ * `outbox: not-ready` means migrations did not complete, so queued mail will
+ * never be sent. The flags are safe to expose — no keys or addresses.
  */
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const mail = config.resendApiKey ? 'configured' : 'not-configured'
+  const outbox = !hasDatabase() ? 'not-configured' : isDatabaseReady() ? 'ready' : 'not-ready'
 
   if (!hasDatabase()) {
-    return { ok: true, database: 'not-configured', mail }
+    return { ok: true, database: 'not-configured', mail, outbox }
   }
 
   try {
     await useDatabase().execute(sql`select 1`)
-    return { ok: true, database: 'up', mail }
+    return { ok: true, database: 'up', mail, outbox }
   } catch {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }

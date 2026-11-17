@@ -792,7 +792,7 @@ export SEED_SUPERADMIN_EMAIL=you@example.com
 npm run dev
 ```
 
-`GET /api/health` reports `database: up`, `not-configured`, or `503`, plus `mail: configured` or `mail: not-configured`. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+`GET /api/health` reports `database: up`, `not-configured`, or `503`, plus `mail: configured` or `mail: not-configured` and `outbox: ready`, `not-ready`, or `not-configured`. `outbox: not-ready` means migrations did not complete, so queued mail will never be sent. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
 
 See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
 
