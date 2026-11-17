@@ -1,4 +1,5 @@
 import { parseOrThrow } from '../../../utils/validation'
+import { recordAudit } from '../../../features/audit/repository'
 import { sendInviteEmail } from '../../../features/auth/mail'
 import { inviteSchema } from '../../../features/auth/schemas'
 import { inviteUser } from '../../../features/auth/service'
@@ -31,6 +32,14 @@ export default defineEventHandler(async (event) => {
       token: result.token,
     })
   }
+
+  await recordAudit(actor, {
+    action: 'user.invited',
+    entity: 'user',
+    entityId: result?.user.id ?? null,
+    summary: `Invited ${data.email} as ${data.role}.`,
+    metadata: { email: data.email, role: data.role, sent: Boolean(result) },
+  })
 
   return {
     message: `If ${data.email} can be invited, they will receive an email with a link to set a password.`,

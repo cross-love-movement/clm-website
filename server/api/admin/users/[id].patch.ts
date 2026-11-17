@@ -9,6 +9,7 @@ import {
 
 import { useDatabase } from '../../../database/client'
 import { users } from '../../../database/schema'
+import { recordAudit } from '../../../features/audit/repository'
 import { requireSuperadmin } from '../../../features/auth/guards'
 import { userUpdateSchema } from '../../../features/auth/schemas'
 import { parseOrThrow } from '../../../utils/validation'
@@ -71,6 +72,20 @@ export default defineEventHandler(async (event) => {
   if (!updated) {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
+
+  const changes = [
+    data.role ? `role to ${data.role}` : '',
+    data.status ? `status to ${data.status}` : '',
+    data.permissions ? `permissions to ${data.permissions.join(', ') || 'none'}` : '',
+  ].filter(Boolean)
+
+  await recordAudit(actor, {
+    action: 'user.updated',
+    entity: 'user',
+    entityId: id,
+    summary: `Changed ${updated.email}'s ${changes.join(' and ')}.`,
+    metadata: { email: updated.email, role: updated.role, status: updated.status },
+  })
 
   return updated
 })

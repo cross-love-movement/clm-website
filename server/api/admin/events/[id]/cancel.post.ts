@@ -1,5 +1,6 @@
+import { recordAudit } from '../../../../features/audit/repository'
 import { requirePermission } from '../../../../features/auth/guards'
-import { cancelEvent } from '../../../../features/events/repository'
+import { cancelEvent, getEventForEdit } from '../../../../features/events/repository'
 
 /**
  * POST /api/admin/events/:id/cancel
@@ -9,12 +10,13 @@ import { cancelEvent } from '../../../../features/events/repository'
  * per-booking cancel action still exists on the registrations table.
  */
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'canEdit')
+  const actor = await requirePermission(event, 'canEdit')
 
   const id = getRouterParam(event, 'id')
 
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Invalid event id' })
 
+  const title = (await getEventForEdit(id))?.title ?? id
   const result = await cancelEvent(id)
 
   if (!result.ok) {
@@ -28,6 +30,14 @@ export default defineEventHandler(async (event) => {
       data: { message: 'This event was already cancelled.' },
     })
   }
+
+  await recordAudit(actor, {
+    action: 'event.cancelled',
+    entity: 'event',
+    entityId: id,
+    summary: `Cancelled “${title}” and released ${result.notified} booking(s).`,
+    metadata: { title, notified: result.notified },
+  })
 
   return { notified: result.notified }
 })

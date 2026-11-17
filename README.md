@@ -138,36 +138,38 @@ Components are registered with `pathPrefix: false`, so `ui/BaseButton.vue` is us
 
 ## Routes
 
-| Route                     | Page             | Server route                       |
-| ------------------------- | ---------------- | ---------------------------------- |
-| `/`                       | Home             | —                                  |
-| `/about`                  | About            | —                                  |
-| `/projects`               | Projects index   | —                                  |
-| `/projects/[slug]`        | Project detail   | —                                  |
-| `/events`                 | Events           | `POST /api/events/register`        |
-| `/events/[slug]`          | Event detail     | `GET /api/events/:slug`            |
-| `/news`                   | News index       | —                                  |
-| `/news/[slug]`            | Article          | —                                  |
-| `/volunteer`              | Volunteer        | `POST /api/volunteer`              |
-| `/partnership`            | Partnership      | `POST /api/partnership`            |
-| `/contact`                | Contact          | `POST /api/contact`                |
-| `/donate`                 | Donate           | `POST /api/donate`                 |
-| `/donate/complete`        | Payment return   | `GET /api/donate/verify`           |
-| `/newsletter/unsubscribe` | Unsubscribe      | `POST /api/newsletter/unsubscribe` |
-| `/forgot-password`        | Password reset   | `POST /api/auth/reset-request`     |
-| `/reset-password`         | Set password     | `POST /api/auth/reset-confirm`     |
-| `/portal`                 | Volunteer portal | `GET /api/portal/assignments`      |
-| `/login`                  | Sign in          | `POST /api/auth/login`             |
-| `/admin`                  | Staff overview   | —                                  |
-| `/admin/events`           | Event management | `/api/admin/events`                |
-| `/admin/programmes`       | Programmes       | `/api/admin/programmes`            |
-| `/admin/roles`            | Volunteer roles  | `/api/admin/opportunities`         |
-| `/admin/volunteers`       | Volunteers       | `/api/admin/volunteers`            |
-| `/admin/donations`        | Donations        | `/api/admin/donations`             |
-| `/admin/newsletter`       | Newsletter list  | `/api/admin/newsletter`            |
-| `/admin/mail`             | Mail outbox      | `/api/admin/mail`                  |
-| `/admin/users`            | People           | `/api/admin/users`                 |
-| `/_studio`                | —                | Nuxt Studio (GitHub OAuth)         |
+| Route                     | Page                | Server route                       |
+| ------------------------- | ------------------- | ---------------------------------- |
+| `/`                       | Home                | —                                  |
+| `/about`                  | About               | —                                  |
+| `/projects`               | Projects index      | —                                  |
+| `/projects/[slug]`        | Project detail      | —                                  |
+| `/events`                 | Events              | `POST /api/events/register`        |
+| `/events/[slug]`          | Event detail        | `GET /api/events/:slug`            |
+| `/news`                   | News index          | —                                  |
+| `/news/[slug]`            | Article             | —                                  |
+| `/volunteer`              | Volunteer           | `POST /api/volunteer`              |
+| `/partnership`            | Partnership         | `POST /api/partnership`            |
+| `/contact`                | Contact             | `POST /api/contact`                |
+| `/donate`                 | Donate              | `POST /api/donate`                 |
+| `/donate/complete`        | Payment return      | `GET /api/donate/verify`           |
+| `/donate/cancel`          | Stop a monthly gift | `POST /api/donate/cancel`          |
+| `/newsletter/unsubscribe` | Unsubscribe         | `POST /api/newsletter/unsubscribe` |
+| `/forgot-password`        | Password reset      | `POST /api/auth/reset-request`     |
+| `/reset-password`         | Set password        | `POST /api/auth/reset-confirm`     |
+| `/portal`                 | Volunteer portal    | `GET /api/portal/assignments`      |
+| `/login`                  | Sign in             | `POST /api/auth/login`             |
+| `/admin`                  | Staff overview      | —                                  |
+| `/admin/events`           | Event management    | `/api/admin/events`                |
+| `/admin/programmes`       | Programmes          | `/api/admin/programmes`            |
+| `/admin/roles`            | Volunteer roles     | `/api/admin/opportunities`         |
+| `/admin/volunteers`       | Volunteers          | `/api/admin/volunteers`            |
+| `/admin/donations`        | Donations           | `/api/admin/donations`             |
+| `/admin/newsletter`       | Newsletter list     | `/api/admin/newsletter`            |
+| `/admin/mail`             | Mail outbox         | `/api/admin/mail`                  |
+| `/admin/users`            | People              | `/api/admin/users`                 |
+| `/admin/audit`            | Activity trail      | `/api/admin/audit`                 |
+| `/_studio`                | —                   | Nuxt Studio (GitHub OAuth)         |
 
 The footer newsletter form posts to `POST /api/newsletter`; it has no page of its own.
 
@@ -830,7 +832,21 @@ export SEED_SUPERADMIN_EMAIL=you@example.com
 npm run dev
 ```
 
-`GET /api/health` reports `database: up`, `not-configured`, or `503`, plus `mail: configured` or `mail: not-configured` and `outbox: ready`, `not-ready`, or `not-configured`. `outbox: not-ready` means migrations did not complete, so queued mail will never be sent. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+`GET /api/health` reports `database: up`, `not-configured`, or `503`, plus `mail: configured` or `mail: not-configured`, `outbox: ready`, `not-ready`, or `not-configured`, and `payments: configured` or `not-configured`. `outbox: not-ready` means migrations did not complete, so queued mail will never be sent. Without `DATABASE_URL` the site still runs — database features are logged as disabled rather than breaking the marketing pages.
+
+### Activity trail
+
+`/admin/audit` (permission `canManagePeople`) lists the actions that matter: refunds, event cancellations and deletions, guest broadcasts, released bookings, volunteer status changes, staff invites and access changes, and newsletter sends. Each row records the actor as they were at the time — name and address are copied in, so a deleted account still reads correctly. `server/features/audit/repository.ts` exposes `recordAudit(actor, …)`; call it after the change has committed. It never throws, so a failed trail write cannot fail the action that succeeded.
+
+### Reading errors in production
+
+Every request gets an id, returned in the `x-request-id` response header. Unhandled server errors are written to stdout as one JSON object per line:
+
+```json
+{ "level": "error", "requestId": "…", "method": "POST", "path": "/api/donate", "statusCode": 500 }
+```
+
+Ask the person reporting a problem for that id (the browser's network tab has it) and search the container logs for it. 4xx responses are not logged on purpose: they are mostly validation, expired links, and crawlers.
 
 See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
 
@@ -857,6 +873,7 @@ expiry). Password resets use the same mechanism (1-hour expiry).
 | `/portal`                             | `volunteer`                  |
 | `/admin`                              | `superadmin`, `admin`        |
 | `/admin/users`                        | `canManagePeople` permission |
+| `/admin/audit`                        | `canManagePeople` permission |
 
 Roles: `superadmin`, `admin`, `volunteer`. Operational permissions are assigned per account at
 invite time: `canEdit` (events), `canManageRegistrations` (bookings, check-in, CSV),

@@ -1,5 +1,6 @@
+import { recordAudit } from '../../../features/audit/repository'
 import { requirePermission } from '../../../features/auth/guards'
-import { deleteEvent } from '../../../features/events/repository'
+import { deleteEvent, getEventForEdit } from '../../../features/events/repository'
 
 /**
  * DELETE /api/admin/events/:id
@@ -8,12 +9,13 @@ import { deleteEvent } from '../../../features/events/repository'
  * records, so an event with any booking is cancelled or archived instead.
  */
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'canEdit')
+  const actor = await requirePermission(event, 'canEdit')
 
   const id = getRouterParam(event, 'id')
 
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Invalid event id' })
 
+  const title = (await getEventForEdit(id))?.title ?? id
   const result = await deleteEvent(id)
 
   if (!result.ok) {
@@ -30,6 +32,14 @@ export default defineEventHandler(async (event) => {
       },
     })
   }
+
+  await recordAudit(actor, {
+    action: 'event.deleted',
+    entity: 'event',
+    entityId: id,
+    summary: `Deleted “${title}”, which had never taken a booking.`,
+    metadata: { title },
+  })
 
   return { message: 'Event deleted.' }
 })

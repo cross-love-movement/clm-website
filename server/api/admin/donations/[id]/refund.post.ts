@@ -1,4 +1,5 @@
 import { requirePermission } from '../../../../features/auth/guards'
+import { recordAudit } from '../../../../features/audit/repository'
 import { queueRefundMail } from '../../../../features/donations/notify'
 import {
   getDonationById,
@@ -14,7 +15,7 @@ import {
  * and this route is what keeps the books and the donor's record in step.
  */
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'canManageDonations')
+  const actor = await requirePermission(event, 'canManageDonations')
 
   const id = getRouterParam(event, 'id')
 
@@ -49,6 +50,14 @@ export default defineEventHandler(async (event) => {
   }
 
   await queueRefundMail(refunded)
+
+  await recordAudit(actor, {
+    action: 'donation.refunded',
+    entity: 'donation',
+    entityId: refunded.id,
+    summary: `Marked ${refunded.reference} refunded and emailed the donor.`,
+    metadata: { reference: refunded.reference, amountPesewas: refunded.amountPesewas },
+  })
 
   return { donation: toDonationSummary(refunded), already: false }
 })

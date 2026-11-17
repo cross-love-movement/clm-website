@@ -11,6 +11,7 @@ const links = computed(() => {
 
   if (hasPermission(user.value as SessionUser | null, 'canManagePeople')) {
     items.push({ label: 'People', to: '/admin/users' })
+    items.push({ label: 'Activity', to: '/admin/audit' })
   }
 
   if (hasPermission(user.value as SessionUser | null, 'canManageProgrammes')) {

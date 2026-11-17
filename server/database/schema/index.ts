@@ -1,3 +1,4 @@
+export * from './audit'
 export * from './donations'
 export * from './events'
 export * from './newsletter'

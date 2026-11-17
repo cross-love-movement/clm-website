@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 
 import { hasDatabase, isDatabaseReady, useDatabase } from '../database/client'
+import { paystackConfigured } from '../features/donations/paystack'
 
 /**
  * Coolify health check: reports whether the database answers, whether mail
@@ -13,14 +14,15 @@ export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const mail = config.resendApiKey ? 'configured' : 'not-configured'
   const outbox = !hasDatabase() ? 'not-configured' : isDatabaseReady() ? 'ready' : 'not-ready'
+  const payments = paystackConfigured() ? 'configured' : 'not-configured'
 
   if (!hasDatabase()) {
-    return { ok: true, database: 'not-configured', mail, outbox }
+    return { ok: true, database: 'not-configured', mail, outbox, payments }
   }
 
   try {
     await useDatabase().execute(sql`select 1`)
-    return { ok: true, database: 'up', mail, outbox }
+    return { ok: true, database: 'up', mail, outbox, payments }
   } catch {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
