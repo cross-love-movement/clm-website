@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { hasPermission, type SessionUser } from '#shared/types/auth'
+import {
+  canManageMail as userCanManageMail,
+  hasPermission,
+  type SessionUser,
+} from '#shared/types/auth'
 
 definePageMeta({ middleware: 'admin', layout: 'admin' })
 
@@ -9,6 +13,7 @@ const canManageProgrammes = computed(() => hasPermission(current.value, 'canMana
 const canManageVolunteers = computed(() => hasPermission(current.value, 'canManageVolunteers'))
 const canManageNewsletter = computed(() => hasPermission(current.value, 'canManageNewsletter'))
 const canManageDonations = computed(() => hasPermission(current.value, 'canManageDonations'))
+const canManageMail = computed(() => userCanManageMail(current.value))
 
 useSeo({
   title: 'Staff portal',
@@ -112,6 +117,21 @@ useSeo({
         </p>
         <BaseButton to="/admin/newsletter" variant="secondary" size="sm" class="mt-4 self-start">
           Manage newsletter
+        </BaseButton>
+      </article>
+
+      <article
+        v-if="canManageMail"
+        class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
+      >
+        <Icon name="mail" :size="22" class="text-clay-600" />
+        <h2 class="mt-3 text-lg text-ink">Mail outbox</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
+          See everything the site has queued, what Resend accepted, and why a message failed. Retry
+          one that did not go out.
+        </p>
+        <BaseButton to="/admin/mail" variant="secondary" size="sm" class="mt-4 self-start">
+          Open outbox
         </BaseButton>
       </article>
     </div>

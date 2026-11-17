@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { hasPermission, type SessionUser } from '#shared/types/auth'
+import { canManageMail, hasPermission, type SessionUser } from '#shared/types/auth'
 
 const { user } = useUserSession()
 
@@ -28,6 +28,10 @@ const links = computed(() => {
 
   if (hasPermission(user.value as SessionUser | null, 'canManageDonations')) {
     items.push({ label: 'Donations', to: '/admin/donations' })
+  }
+
+  if (canManageMail(user.value as SessionUser | null)) {
+    items.push({ label: 'Mail', to: '/admin/mail' })
   }
 
   return items

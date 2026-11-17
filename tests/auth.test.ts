@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
+import { canManageMail, type Permission, type SessionUser } from '../shared/types/auth'
 import { hashPassword, verifyPassword } from '../server/features/auth/password'
 
 describe('password hashing', () => {
@@ -30,5 +31,21 @@ describe('password hashing', () => {
     expect(first).not.toBe(second)
     expect(await verifyPassword('same password', first)).toBe(true)
     expect(await verifyPassword('same password', second)).toBe(true)
+  })
+})
+
+function withPermissions(role: SessionUser['role'], permissions: Permission[]): SessionUser {
+  return { id: 'user', email: 'user@example.com', name: 'User', role, permissions }
+}
+
+describe('mail outbox access', () => {
+  it('allows superadmins and operational managers', () => {
+    expect(canManageMail(withPermissions('superadmin', []))).toBe(true)
+    expect(canManageMail(withPermissions('admin', ['canManageNewsletter']))).toBe(true)
+    expect(canManageMail(withPermissions('admin', ['canManageDonations']))).toBe(true)
+    expect(canManageMail(withPermissions('admin', ['canManageRegistrations']))).toBe(true)
+    expect(canManageMail(withPermissions('admin', ['canManageVolunteers']))).toBe(true)
+    expect(canManageMail(withPermissions('admin', ['canEdit']))).toBe(false)
+    expect(canManageMail(null)).toBe(false)
   })
 })

@@ -25,6 +25,14 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number]
 
+/** Operational permissions that may view or retry the mail outbox. */
+export const MAIL_PERMISSIONS = [
+  'canManageRegistrations',
+  'canManageVolunteers',
+  'canManageNewsletter',
+  'canManageDonations',
+] as const satisfies readonly Permission[]
+
 /** Anyone who may open the staff portal. */
 export const STAFF_ROLES: readonly UserRole[] = ['superadmin', 'admin']
 
@@ -53,6 +61,11 @@ export function hasPermission(user: PermissionHolder | null | undefined, permiss
   if (user.role === 'superadmin') return true
 
   return Boolean(user.permissions?.includes(permission))
+}
+
+/** Anyone who may view the mail outbox and retry a message. */
+export function canManageMail(user: PermissionHolder | null | undefined) {
+  return MAIL_PERMISSIONS.some((permission) => hasPermission(user, permission))
 }
 
 /** Where a signed-in account should land. */

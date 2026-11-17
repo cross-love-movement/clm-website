@@ -10,22 +10,9 @@ import { mailOutbox } from '../../database/schema'
  * failure cannot send twice. Five failed attempts mark it `failed` and leave
  * it for a human to inspect.
  */
-let warnedNotReady = false
-
 export async function drainOutbox(limit = 10) {
   // Plugins may start in any order; never touch the table before migrations.
-  if (!isDatabaseReady()) {
-    if (!warnedNotReady) {
-      console.warn(
-        '[mail] outbox drain skipped: database is not ready — check the [db] startup log for a migration error',
-      )
-      warnedNotReady = true
-    }
-
-    return 0
-  }
-
-  warnedNotReady = false
+  if (!isDatabaseReady()) return 0
 
   const db = useDatabase()
   const pending = await db
