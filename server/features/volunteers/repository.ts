@@ -267,6 +267,55 @@ export async function listProgrammes(): Promise<ProgrammeSummary[]> {
   )
 }
 
+export type DeleteProgrammeResult =
+  | { ok: true; title: string }
+  | { ok: false; reason: 'not-found' }
+  | { ok: false; reason: 'in-use'; assignments: number; applications: number }
+
+/**
+ * Removes a programme that nothing has happened to yet. Placements and
+ * applications are people's records, so a programme that has either is kept and
+ * archived instead — the same rule events use for bookings.
+ *
+ * Its role needs go with it: they exist only to describe this programme.
+ */
+export async function deleteProgramme(id: string): Promise<DeleteProgrammeResult> {
+  const db = useDatabase()
+
+  return db.transaction(async (tx) => {
+    const [programme] = await tx
+      .select()
+      .from(programmes)
+      .where(eq(programmes.id, id))
+      .for('update')
+
+    if (!programme) return { ok: false, reason: 'not-found' } as const
+
+    // Count every row, including cancelled ones: the foreign key restricts on
+    // history, not just on live placements.
+    const [placed] = await tx
+      .select({ total: count() })
+      .from(volunteerAssignments)
+      .where(eq(volunteerAssignments.programmeId, id))
+
+    const [applied] = await tx
+      .select({ total: count() })
+      .from(volunteerApplications)
+      .where(eq(volunteerApplications.programmeId, id))
+
+    const assignments = Number(placed?.total ?? 0)
+    const applications = Number(applied?.total ?? 0)
+
+    if (assignments > 0 || applications > 0) {
+      return { ok: false, reason: 'in-use', assignments, applications } as const
+    }
+
+    await tx.delete(programmes).where(eq(programmes.id, id))
+
+    return { ok: true, title: programme.title } as const
+  })
+}
+
 export async function getProgramme(id: string): Promise<Programme | null> {
   const db = useDatabase()
   const [row] = await db.select().from(programmes).where(eq(programmes.id, id)).limit(1)

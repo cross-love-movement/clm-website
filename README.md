@@ -376,6 +376,12 @@ Staff review at `/admin/volunteers`, invite the volunteer (creating a `volunteer
 place them into a programme or an event at `/admin/volunteers/:id`. Volunteers see their placements
 at `/portal`. Placing someone into a role locks the need row and refuses to overfill its places.
 
+**Deleting.** A programme can be deleted from `/admin/programmes` while nothing has happened to it:
+no volunteer placed, no application received. Deleting also removes the roles it needed. Once either
+exists it is a record about people, so it is kept — set its status to `archived` instead, which takes
+it off the public volunteer page without losing the history. Events follow the same rule with
+bookings.
+
 **Safeguarding** lives on the volunteer row: date of birth, emergency contact, consent timestamp,
 briefing date, background-check status, and internal notes. It is only visible with
 `canManageVolunteers`.
@@ -384,7 +390,7 @@ briefing date, background-check status, and internal notes. It is only visible w
 seeded (`SEED_VOLUNTEER_PROGRAMMES=false` disables it). The four day roles are needs on the matching
 event, and mentoring is a need on the programme, so both paths are visible immediately.
 
-**Not built yet:** approval/decline emails, shifts and hours logging, reports, and volunteer content
+**Not built yet:** shifts and hours logging, reports, and volunteer content
 grants. Content editing stays with developers/GitHub or Nuxt Studio for now; if scoped editors are
 added later, draft/publish approval belongs with that work.
 

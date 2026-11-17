@@ -3,6 +3,7 @@ export const AUDIT_ENTITIES = [
   'donation',
   'event',
   'registration',
+  'programme',
   'volunteer',
   'user',
   'newsletter',

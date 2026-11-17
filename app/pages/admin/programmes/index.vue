@@ -13,6 +13,42 @@ const {
   default: () => [],
 })
 
+const deleting = ref('')
+const confirmDeleteId = ref('')
+const flash = ref<{ tone: 'success' | 'error'; message: string } | null>(null)
+
+function errorMessage(caught: unknown) {
+  const payload = (caught as { data?: { data?: { message?: string }; statusMessage?: string } })
+    .data
+
+  return payload?.data?.message || payload?.statusMessage || 'That did not work. Please try again.'
+}
+
+/** Two steps: the first click asks, the second one deletes. */
+async function remove(programme: ProgrammeSummary) {
+  if (confirmDeleteId.value !== programme.id) {
+    confirmDeleteId.value = programme.id
+    flash.value = null
+    return
+  }
+
+  if (deleting.value) return
+
+  deleting.value = programme.id
+
+  try {
+    await $fetch(`/api/admin/programmes/${programme.id}`, { method: 'DELETE' })
+    flash.value = { tone: 'success', message: `“${programme.title}” is deleted.` }
+    confirmDeleteId.value = ''
+    await refresh()
+  } catch (caught) {
+    flash.value = { tone: 'error', message: errorMessage(caught) }
+    confirmDeleteId.value = ''
+  } finally {
+    deleting.value = ''
+  }
+}
+
 useSeo({
   title: 'Programmes',
   description: 'Manage Cross-Love Movement volunteer programmes.',
@@ -47,78 +83,118 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       <p class="mt-1">{{ error.statusMessage || 'Try refreshing the page.' }}</p>
     </AlertBox>
 
-    <div
-      v-else-if="!pending && !programmes.length"
-      class="mt-8 rounded-3xl border border-dashed border-sand-300 bg-sand-100 p-10 text-center"
-    >
-      <Icon name="sprout" :size="28" class="mx-auto text-clay-600" />
-      <h2 class="mt-3 text-lg text-ink">No programmes yet.</h2>
-      <p class="mt-2 text-sm text-ink-soft">
-        Create one, then tick the roles it needs and give each one a headcount.
-      </p>
-      <BaseButton to="/admin/programmes/new" size="sm" class="mt-5">Create a programme</BaseButton>
-    </div>
-
-    <div v-else class="mt-8 grid gap-5 lg:grid-cols-2">
-      <article
-        v-for="programme in programmes"
-        :key="programme.id"
-        class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
-      >
-        <div class="flex flex-wrap items-center gap-2">
-          <span
-            class="rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.08em]"
-            :class="programmeStatusTone(programme.status)"
-          >
-            {{ programme.status }}
-          </span>
-          <span class="text-xs font-semibold text-ink-soft">
-            {{ programmeTypeLabels[programme.type] }}
-          </span>
-        </div>
-
-        <h2 class="mt-3 text-xl text-ink">{{ programme.title }}</h2>
-        <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          {{ programme.summary || 'No summary yet.' }}
+    <template v-else>
+      <AlertBox v-if="confirmDeleteId" tone="error" title="Delete this programme?" class="mt-8">
+        <p class="mt-1">
+          This removes the programme and the roles it needs. Deletion is only allowed while no
+          volunteer has been placed here and nobody has applied — a programme with history should be
+          set to <strong class="font-semibold">archived</strong> instead.
         </p>
+      </AlertBox>
 
-        <dl class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-soft">
-          <div v-if="programme.startsAt">
-            <dt class="sr-only">Starts</dt>
-            <dd>{{ formatDateShort(programme.startsAt) }}</dd>
-          </div>
-          <div v-if="programme.location">
-            <dt class="sr-only">Location</dt>
-            <dd>{{ programme.location }}</dd>
-          </div>
-          <div>
-            <dt class="sr-only">Roles</dt>
-            <dd>{{ programme.needCount }} roles</dd>
-          </div>
-          <div>
-            <dt class="sr-only">Volunteers</dt>
-            <dd>{{ programme.volunteerCount }} placed</dd>
-          </div>
-        </dl>
+      <AlertBox v-if="flash" :tone="flash.tone" class="mt-6">
+        {{ flash.message }}
+      </AlertBox>
 
-        <BaseButton
-          :to="`/admin/programmes/${programme.id}`"
-          variant="secondary"
-          size="sm"
-          class="mt-5 self-start"
+      <div
+        v-if="!pending && !programmes.length"
+        class="mt-8 rounded-3xl border border-dashed border-sand-300 bg-sand-100 p-10 text-center"
+      >
+        <Icon name="sprout" :size="28" class="mx-auto text-clay-600" />
+        <h2 class="mt-3 text-lg text-ink">No programmes yet.</h2>
+        <p class="mt-2 text-sm text-ink-soft">
+          Create one, then tick the roles it needs and give each one a headcount.
+        </p>
+        <BaseButton to="/admin/programmes/new" size="sm" class="mt-5"
+          >Create a programme</BaseButton
         >
-          Open programme
-        </BaseButton>
-      </article>
-    </div>
+      </div>
 
-    <button
-      type="button"
-      class="mt-6 text-sm font-semibold text-clay-700 hover:text-clay-900 disabled:opacity-50"
-      :disabled="pending"
-      @click="refresh()"
-    >
-      {{ pending ? 'Refreshing…' : 'Refresh' }}
-    </button>
+      <div v-else class="mt-8 grid gap-5 lg:grid-cols-2">
+        <article
+          v-for="programme in programmes"
+          :key="programme.id"
+          class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-soft"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <span
+              class="rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.08em]"
+              :class="programmeStatusTone(programme.status)"
+            >
+              {{ programme.status }}
+            </span>
+            <span class="text-xs font-semibold text-ink-soft">
+              {{ programmeTypeLabels[programme.type] }}
+            </span>
+          </div>
+
+          <h2 class="mt-3 text-xl text-ink">{{ programme.title }}</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink-soft">
+            {{ programme.summary || 'No summary yet.' }}
+          </p>
+
+          <dl class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-soft">
+            <div v-if="programme.startsAt">
+              <dt class="sr-only">Starts</dt>
+              <dd>{{ formatDateShort(programme.startsAt) }}</dd>
+            </div>
+            <div v-if="programme.location">
+              <dt class="sr-only">Location</dt>
+              <dd>{{ programme.location }}</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Roles</dt>
+              <dd>{{ programme.needCount }} roles</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Volunteers</dt>
+              <dd>{{ programme.volunteerCount }} placed</dd>
+            </div>
+          </dl>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3 self-start">
+            <BaseButton :to="`/admin/programmes/${programme.id}`" variant="secondary" size="sm">
+              Open programme
+            </BaseButton>
+
+            <template v-if="confirmDeleteId === programme.id">
+              <button
+                type="button"
+                class="text-xs font-semibold text-red-700 hover:text-red-900 disabled:opacity-50"
+                :disabled="deleting === programme.id"
+                @click="remove(programme)"
+              >
+                {{ deleting === programme.id ? 'Deleting…' : 'Confirm delete' }}
+              </button>
+              <button
+                type="button"
+                class="text-xs font-semibold text-ink-soft hover:text-ink"
+                :disabled="deleting === programme.id"
+                @click="confirmDeleteId = ''"
+              >
+                Cancel
+              </button>
+            </template>
+            <button
+              v-else
+              type="button"
+              class="text-xs font-semibold text-ink-soft transition hover:text-red-700"
+              @click="remove(programme)"
+            >
+              Delete
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <button
+        type="button"
+        class="mt-6 text-sm font-semibold text-clay-700 hover:text-clay-900 disabled:opacity-50"
+        :disabled="pending"
+        @click="refresh()"
+      >
+        {{ pending ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </template>
   </section>
 </template>
