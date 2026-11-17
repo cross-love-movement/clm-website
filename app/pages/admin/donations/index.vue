@@ -39,6 +39,7 @@ const filters = computed(() => [
   { value: 'all' as const, label: 'All' },
   { value: 'succeeded' as const, label: 'Succeeded' },
   { value: 'pending' as const, label: 'Pending' },
+  { value: 'refunded' as const, label: 'Refunded' },
   { value: 'failed' as const, label: 'Failed' },
 ])
 
@@ -77,6 +78,7 @@ function statusTone(value: DonationStatus) {
 }
 
 const actingId = ref('')
+const confirmRefundId = ref('')
 const flash = ref<{ tone: 'success' | 'error'; message: string } | null>(null)
 
 function errorMessage(caught: unknown) {
@@ -100,6 +102,37 @@ async function resendReceipt(donation: DonationSummary) {
     await refresh()
   } catch (caught) {
     flash.value = { tone: 'error', message: errorMessage(caught) }
+  } finally {
+    actingId.value = ''
+  }
+}
+
+/**
+ * The refund itself happens in Paystack. This records it here, so the totals
+ * stop counting the money and the donor is told it is coming back.
+ */
+async function markRefunded(donation: DonationSummary) {
+  if (confirmRefundId.value !== donation.id) {
+    confirmRefundId.value = donation.id
+    flash.value = null
+    return
+  }
+
+  if (actingId.value) return
+
+  actingId.value = donation.id
+
+  try {
+    await $fetch(`/api/admin/donations/${donation.id}/refund`, { method: 'POST' })
+    flash.value = {
+      tone: 'success',
+      message: `${donation.reference} is marked refunded and the donor has been emailed.`,
+    }
+    confirmRefundId.value = ''
+    await refresh()
+  } catch (caught) {
+    flash.value = { tone: 'error', message: errorMessage(caught) }
+    confirmRefundId.value = ''
   } finally {
     actingId.value = ''
   }
@@ -188,6 +221,14 @@ useSeoMeta({ robots: 'noindex, nofollow' })
       </label>
     </div>
 
+    <AlertBox v-if="confirmRefundId" tone="error" title="Mark this gift refunded?" class="mt-6">
+      <p class="mt-1">
+        Issue the refund in Paystack first — this page never moves money. Marking it here records
+        the refund, takes it out of the settled total, and emails the donor to say it is on its way
+        back.
+      </p>
+    </AlertBox>
+
     <AlertBox v-if="flash" :tone="flash.tone" class="mt-6">
       {{ flash.message }}
     </AlertBox>
@@ -265,15 +306,46 @@ useSeoMeta({ robots: 'noindex, nofollow' })
               {{ donation.reference }}
             </td>
             <td class="whitespace-nowrap px-4 py-4">
-              <button
-                v-if="donation.status === 'succeeded'"
-                type="button"
-                class="rounded-full border border-sand-300 px-3 py-1.5 text-xs font-semibold text-ink-soft transition hover:border-brand-400 hover:text-ink disabled:opacity-50"
-                :disabled="actingId === donation.id"
-                @click="resendReceipt(donation)"
-              >
-                {{ actingId === donation.id ? 'Queueing…' : 'Resend receipt' }}
-              </button>
+              <div v-if="donation.status === 'succeeded'" class="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  class="rounded-full border border-sand-300 px-3 py-1.5 text-xs font-semibold text-ink-soft transition hover:border-brand-400 hover:text-ink disabled:opacity-50"
+                  :disabled="actingId === donation.id"
+                  @click="resendReceipt(donation)"
+                >
+                  {{ actingId === donation.id ? 'Queueing…' : 'Resend receipt' }}
+                </button>
+
+                <template v-if="confirmRefundId === donation.id">
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-red-700 hover:text-red-900 disabled:opacity-50"
+                    :disabled="actingId === donation.id"
+                    @click="markRefunded(donation)"
+                  >
+                    {{ actingId === donation.id ? 'Saving…' : 'Confirm refund' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-ink-soft hover:text-ink"
+                    :disabled="actingId === donation.id"
+                    @click="confirmRefundId = ''"
+                  >
+                    Cancel
+                  </button>
+                </template>
+                <button
+                  v-else
+                  type="button"
+                  class="text-xs font-semibold text-ink-soft transition hover:text-red-700"
+                  @click="markRefunded(donation)"
+                >
+                  Mark refunded
+                </button>
+              </div>
+              <span v-else-if="donation.refundedAt" class="text-xs font-semibold text-ink-soft">
+                Refunded
+              </span>
               <span v-else class="text-ink-soft/60">—</span>
             </td>
           </tr>
@@ -284,7 +356,8 @@ useSeoMeta({ robots: 'noindex, nofollow' })
     <p class="mt-5 text-xs leading-relaxed text-ink-soft/80">
       A gift is only marked succeeded from a verified Paystack response, either on the thank-you
       page or by webhook. Monthly renewals arrive with a Paystack reference of their own and are
-      recorded the same way.
+      recorded the same way. A refund is issued in Paystack; marking it here keeps the totals and
+      the donor's record honest.
     </p>
   </section>
 </template>

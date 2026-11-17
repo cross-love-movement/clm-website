@@ -27,6 +27,8 @@ export interface DonationSummary {
   paidAt: string | null
   /** Set when the donor stopped a monthly gift. */
   cancelledAt: string | null
+  /** Set when a settled gift was sent back. */
+  refundedAt: string | null
   createdAt: string
 }
 

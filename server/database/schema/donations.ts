@@ -52,6 +52,11 @@ export const donations = pgTable(
      * the charges that were collected are still money received.
      */
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    /**
+     * When a settled gift was sent back. Money that has returned is no longer
+     * `succeeded`, so the totals exclude it without extra arithmetic.
+     */
+    refundedAt: timestamp('refunded_at', { withTimezone: true }),
     /** Raw verify/webhook body, kept for reconciliation and disputes. */
     payload: jsonb('payload'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -49,6 +49,10 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     env: 'RESEND_TEMPLATE_DONATION_CANCELLED',
     file: 'donation-cancelled.html',
   },
+  'donation-refunded': {
+    env: 'RESEND_TEMPLATE_DONATION_REFUNDED',
+    file: 'donation-refunded.html',
+  },
   'donation-renewal-failed': {
     env: 'RESEND_TEMPLATE_DONATION_RENEWAL_FAILED',
     file: 'donation-renewal-failed.html',

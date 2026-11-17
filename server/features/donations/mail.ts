@@ -147,6 +147,46 @@ export function cancellationMail(donation: DonationRow): ComposedMail {
   }
 }
 
+/** The donor's confirmation that a gift has been sent back. */
+export function refundMail(donation: DonationRow): ComposedMail {
+  const amount = formatAmount(donation.amountPesewas, donation.currency)
+  const refundedOn = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Africa/Accra',
+  }).format(donation.refundedAt ?? new Date())
+
+  return {
+    kind: 'donation-refunded',
+    toEmail: donation.donorEmail,
+    replyTo: MAILBOXES.donations,
+    subject: sanitizeSubject(`Your gift of ${amount} has been refunded — Cross-Love Movement`),
+    body: [
+      `Hello ${donation.donorName},`,
+      '',
+      `We have sent back your gift of ${amount}.`,
+      '',
+      `Reference: ${donation.reference}`,
+      `Refunded:  ${refundedOn}`,
+      '',
+      'Depending on your bank or mobile-money provider it can take five to ten working days to appear. If it has not arrived after that, reply to this email or write to donations@crosslovemovement.org and we will chase it.',
+      '',
+      'Thank you for giving in the first place.',
+      '',
+      'Cross-Love Movement Limited By Guarantee',
+      'RGD CG041650523 · 64 Thirdes, GT-197-1816, Tema Community 12, Ghana',
+    ].join('\n'),
+    variables: {
+      DONOR_NAME: donation.donorName,
+      AMOUNT: amount,
+      REFERENCE: donation.reference,
+      DATE: refundedOn,
+      CONTACT_EMAIL: MAILBOXES.donations,
+    },
+  }
+}
+
 export interface RenewalFailure {
   donorName: string
   donorEmail: string

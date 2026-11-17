@@ -24,6 +24,7 @@ export function toDonationSummary(row: DonationRow): DonationSummary {
     channel: row.channel,
     paidAt: iso(row.paidAt),
     cancelledAt: iso(row.cancelledAt),
+    refundedAt: iso(row.refundedAt),
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -63,6 +64,13 @@ export async function createPendingDonation(input: NewDonationInput) {
 export async function getDonationByReference(reference: string) {
   const db = useDatabase()
   const [row] = await db.select().from(donations).where(eq(donations.reference, reference)).limit(1)
+
+  return row ?? null
+}
+
+export async function getDonationById(id: string) {
+  const db = useDatabase()
+  const [row] = await db.select().from(donations).where(eq(donations.id, id)).limit(1)
 
   return row ?? null
 }
@@ -154,6 +162,21 @@ export async function markDonationCancelled(id: string) {
     .update(donations)
     .set({ cancelledAt: new Date(), updatedAt: new Date() })
     .where(and(eq(donations.id, id), isNull(donations.cancelledAt)))
+    .returning()
+
+  return row ?? null
+}
+
+/**
+ * Records money that went back to the donor. The refund itself is issued in
+ * Paystack; this keeps our books and the donor's record in step with it.
+ */
+export async function markDonationRefunded(id: string) {
+  const db = useDatabase()
+  const [row] = await db
+    .update(donations)
+    .set({ status: 'refunded', refundedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(donations.id, id), eq(donations.status, 'succeeded')))
     .returning()
 
   return row ?? null

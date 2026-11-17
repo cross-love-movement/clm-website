@@ -89,6 +89,26 @@ useSeoMeta({ robots: 'noindex, nofollow' })
           <BaseButton class="mt-6" variant="secondary" @click="refresh()">Check again</BaseButton>
         </div>
 
+        <div v-else-if="data?.status === 'refunded'" class="text-center">
+          <p class="eyebrow text-clay-700">Refunded</p>
+          <h1 class="mt-3 text-3xl leading-tight">That gift has been sent back.</h1>
+          <p class="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">
+            <template v-if="data.amount">
+              We have returned <strong class="font-semibold text-ink">{{ data.amount }}</strong>
+              to the account you paid with.
+            </template>
+            <template v-else>We have returned your gift.</template>
+            Banks and mobile-money providers can take five to ten working days. A confirmation is on
+            its way to your inbox.
+          </p>
+          <p class="mt-4 text-xs text-ink-soft/80">Reference {{ data.reference }}</p>
+
+          <div class="mt-7 flex flex-wrap justify-center gap-3">
+            <BaseButton to="/" variant="secondary">Back home</BaseButton>
+            <BaseButton to="/contact" variant="secondary">Ask the giving team</BaseButton>
+          </div>
+        </div>
+
         <div v-else class="text-center">
           <p class="eyebrow text-clay-700">Not completed</p>
           <h1 class="mt-3 text-3xl leading-tight">That payment did not go through.</h1>

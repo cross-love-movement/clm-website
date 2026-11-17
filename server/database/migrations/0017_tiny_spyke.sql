@@ -1,0 +1,1 @@
+ALTER TABLE "donations" ADD COLUMN "refunded_at" timestamp with time zone;

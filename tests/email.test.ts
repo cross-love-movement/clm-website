@@ -46,6 +46,7 @@ import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
 import {
   cancellationMail as donationCancellationMail,
   receiptMail,
+  refundMail,
   renewalFailedMail,
 } from '../server/features/donations/mail'
 import { buildMailPayload } from '../server/utils/mailer'
@@ -164,6 +165,7 @@ const donation: DonationRow = {
   paidAt: new Date('2026-01-01T00:00:00Z'),
   receiptSentAt: null,
   cancelledAt: null,
+  refundedAt: null,
   payload: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
   updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -207,6 +209,11 @@ const samples: Record<string, TemplateVariables> = {
   }),
   'donation-receipt': receiptMail(donation).variables,
   'donation-cancelled': donationCancellationMail(donation).variables,
+  'donation-refunded': refundMail({
+    ...donation,
+    status: 'refunded',
+    refundedAt: new Date('2026-02-01T00:00:00Z'),
+  }).variables,
   'donation-renewal-failed': renewalFailedMail({
     donorName: 'Ama Mensah',
     donorEmail: 'ama@example.com',

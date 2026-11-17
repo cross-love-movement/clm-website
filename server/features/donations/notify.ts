@@ -3,7 +3,13 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { useDatabase } from '../../database/client'
 import { donations, mailOutbox, type DonationRow } from '../../database/schema'
 import { drainOutbox } from '../mail/outbox'
-import { cancellationMail, receiptMail, renewalFailedMail, staffDonationMail } from './mail'
+import {
+  cancellationMail,
+  receiptMail,
+  refundMail,
+  renewalFailedMail,
+  staffDonationMail,
+} from './mail'
 
 /**
  * Queues both mails once, then drains the outbox immediately.
@@ -56,6 +62,14 @@ export async function queueCancellationMail(donation: DonationRow) {
 
   await db.insert(mailOutbox).values(cancellationMail(donation))
   drainSoon('[mail] cancellation queued but not sent immediately')
+}
+
+/** The donor's confirmation that a gift has been sent back. */
+export async function queueRefundMail(donation: DonationRow) {
+  const db = useDatabase()
+
+  await db.insert(mailOutbox).values(refundMail(donation))
+  drainSoon('[mail] refund queued but not sent immediately')
 }
 
 /** Staff notice that a monthly charge did not go through. */

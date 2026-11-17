@@ -44,6 +44,12 @@ export default defineEventHandler(async (event) => {
     return { ...summary, status: 'succeeded' as const }
   }
 
+  // A refunded gift is already settled as far as we are concerned. Verifying
+  // again would only re-read Paystack's view and confuse the donor.
+  if (donation.status === 'refunded') {
+    return { ...summary, status: 'refunded' as const }
+  }
+
   if (!paystackConfigured()) {
     return { ...summary, status: donation.status }
   }
