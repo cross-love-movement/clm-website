@@ -93,13 +93,14 @@ function onKeydown(event: KeyboardEvent) {
           reducedMotion ? 'transition-none' : 'transition-opacity duration-700',
         ]"
       >
-        <img
+        <ResponsiveImage
           :src="slide.image"
           :alt="slide.imageAlt"
-          width="2400"
-          height="1350"
-          decoding="async"
-          :fetchpriority="slideIndex === 0 ? 'high' : 'low'"
+          :width="2400"
+          :height="1350"
+          :eager="slideIndex === 0"
+          :priority="slideIndex === 0 ? 'high' : 'low'"
+          sizes="100vw"
           class="absolute inset-0 size-full object-cover"
         />
         <div

@@ -22,10 +22,10 @@ const statusTone = computed(() => {
     class="group flex h-full flex-col overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift"
   >
     <div class="relative aspect-[16/10] overflow-hidden bg-sand-200">
-      <img
+      <ResponsiveImage
         :src="project.image"
         :alt="project.imageAlt"
-        loading="lazy"
+        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
         class="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
       />
       <span

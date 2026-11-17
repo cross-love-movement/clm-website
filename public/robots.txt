@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /donate/complete
+Disallow: /_studio
+
+Sitemap: https://www.crosslovemovement.org/sitemap.xml

@@ -67,7 +67,21 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#17120f' },
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'Cross-Love Movement' },
+        {
+          property: 'og:image',
+          content: 'https://www.crosslovemovement.org/og-image.png',
+        },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        {
+          property: 'og:image:alt',
+          content: 'Cross-Love Movement — faith in Christ, creativity for change',
+        },
         { name: 'twitter:card', content: 'summary_large_image' },
+        {
+          name: 'twitter:image',
+          content: 'https://www.crosslovemovement.org/og-image.png',
+        },
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
@@ -93,6 +107,8 @@ export default defineNuxtConfig({
     public: {
       // Replaced at runtime by `NUXT_PUBLIC_SITE_URL`.
       siteUrl: 'https://www.crosslovemovement.org',
+      // Enable after Cloudflare Image Resizing is active on the assets zone.
+      imageResizing: false,
     },
   },
 

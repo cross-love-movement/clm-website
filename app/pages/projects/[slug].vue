@@ -38,6 +38,8 @@ useSeo({
   title: computed(() => project.value?.title ?? 'Project'),
   description: computed(() => project.value?.summary ?? ''),
   path: computed(() => project.value?.path ?? ''),
+  image: computed(() => project.value?.image),
+  imageAlt: computed(() => project.value?.imageAlt),
 })
 </script>
 

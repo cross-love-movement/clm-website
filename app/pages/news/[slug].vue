@@ -25,6 +25,8 @@ useSeo({
   description: computed(() => post.value?.summary ?? ''),
   path: computed(() => post.value?.path ?? ''),
   type: 'article',
+  image: computed(() => post.value?.image),
+  imageAlt: computed(() => post.value?.imageAlt),
 })
 
 useHead(() => {

@@ -19,14 +19,13 @@ withDefaults(
 <template>
   <section class="relative isolate overflow-hidden bg-brand-950 text-sand-50">
     <template v-if="image">
-      <img
+      <ResponsiveImage
         :src="image"
         alt=""
         aria-hidden="true"
         class="absolute inset-0 -z-10 size-full object-cover"
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
+        eager
+        sizes="100vw"
       />
       <!-- Two overlays: a base scrim for contrast anywhere, then a left-heavy
            gradient so the copy stays readable over a bright photograph. -->

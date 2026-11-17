@@ -26,17 +26,18 @@ npm install
 npm run dev              # http://localhost:3000
 ```
 
-| Script              | What it does                                           |
-| ------------------- | ------------------------------------------------------ |
-| `npm run dev`       | Dev server with HMR                                    |
-| `npm run build`     | Production build (`.output/`)                          |
-| `npm run preview`   | Preview the production build                           |
-| `npm run typecheck` | `vue-tsc` over app, shared, and server TypeScript      |
-| `npm test`          | Vitest via `vp test` (`tests/*.test.ts`)               |
-| `npm run check`     | Oxfmt + Oxlint + type-aware checks (`vp check`)        |
-| `npm run fmt`       | Format the codebase (`vp fmt`)                         |
-| `npm run lint`      | Lint only (`vp lint`)                                  |
-| `npm run generate`  | Static export — **not** suitable on its own, see below |
+| Script                  | What it does                                             |
+| ----------------------- | -------------------------------------------------------- |
+| `npm run dev`           | Dev server with HMR                                      |
+| `npm run build`         | Production build (`.output/`)                            |
+| `npm run preview`       | Preview the production build                             |
+| `npm run typecheck`     | `vue-tsc` over app, shared, and server TypeScript        |
+| `npm test`              | Vitest via `vp test` (`tests/*.test.ts`)                 |
+| `npm run check`         | Oxfmt + Oxlint + type-aware checks (`vp check`)          |
+| `npm run fmt`           | Format the codebase (`vp fmt`)                           |
+| `npm run lint`          | Lint only (`vp lint`)                                    |
+| `npm run privacy:prune` | Retention report; `--confirm` deletes safe internal sets |
+| `npm run generate`      | Static export — **not** suitable on its own, see below   |
 
 > `nuxt generate` only emits static HTML and would drop the `/api/*` routes. This site should be
 > deployed as a Node server (or on a platform preset such as Netlify/Vercel that hosts Nitro).
@@ -602,6 +603,13 @@ page, and the email header in `server/emails/templates/*.html`. Change it there 
 individual headers; if the organisation supplies the lockup as a single SVG, swap the component
 body for that image.
 
+**Responsive images.** `ResponsiveImage.vue` renders the hero, carousel, project, and news
+photographs. With `NUXT_PUBLIC_IMAGE_RESIZING=true` and Cloudflare Image Resizing enabled for the
+`assets.crosslovemovement.org` zone, it emits a `srcset` at 640, 960, 1280, 1920, and 2400 px.
+Without the flag it serves the original URL, so a zone that does not support resizing cannot break
+the site. Check the zone first: a generated `/cdn-cgi/image/…` URL must return `200`; if it returns
+`404`, leave the flag off.
+
 ---
 
 ## Forms and backend
@@ -811,6 +819,14 @@ npm run dev
 
 See `docs/architecture.md` for the content/operations split, roles, portals, and the phase plan.
 
+### Privacy and retention
+
+`docs/privacy.md` records what the site collects, where it is stored, and the proposed retention
+schedule. `npm run privacy:prune` is a dry run by default; it reports records older than the
+schedule and, with `--confirm`, deletes only expired auth tokens and old outbox rows. Registrations,
+volunteers, donations, and subscribers are reported but never deleted automatically. The public
+privacy notice is pending legal review; do not link a draft policy from the footer.
+
 ---
 
 ## Accounts and portals
@@ -864,6 +880,7 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 | Variable                                | Default                                              | Purpose                                |
 | --------------------------------------- | ---------------------------------------------------- | -------------------------------------- |
 | `NUXT_PUBLIC_SITE_URL`                  | `https://www.crosslovemovement.org`                  | Canonical + OG URLs                    |
+| `NUXT_PUBLIC_IMAGE_RESIZING`            | `false`                                              | Responsive R2 image variants           |
 | `NUXT_RESEND_API_KEY`                   | _(empty — logs in development; fails in production)_ | Mail delivery                          |
 | `NUXT_MAIL_FROM`                        | `Cross-Love Movement <info@crosslovemovement.org>`   | Sender                                 |
 | `NUXT_MAIL_TO`                          | `info@crosslovemovement.org`                         | General fallback inbox                 |
@@ -928,9 +945,10 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
 
 1. **Sign off the placeholder content** listed under “Not yet confirmed” above.
 2. **Add real photography** at 16:10 for programme cards and portfolio pieces, plus a portrait hero
-   image, replacing the SVGs in `public/images/`. Add a 1200×630 OG image and reference it in
-   `nuxt.config.ts`.
-3. **Legal pages** — privacy policy, safeguarding policy, and the latest report. Only link to real
+   image, replacing the SVGs in `public/images/`. The shared 1200×630 social image is
+   `public/og-image.png`; regenerate it if the tagline or branding changes.
+3. **Legal pages** — use `docs/privacy.md` as the source. Publish the privacy policy only after
+   legal review, together with the safeguarding policy and the latest report. Only link to real
    documents.
 4. **Mail** — verify the Resend domain and set `NUXT_MAIL_TO`; test one submission per form.
 5. **Payments** — set `NUXT_PAYSTACK_SECRET_KEY`, register the webhook URL in Paystack, and make
@@ -942,7 +960,8 @@ Passwords are hashed with scrypt from `node:crypto`; tokens are stored as SHA-25
    (`/rss.xml`) if people want to subscribe outside email.
 8. **Rate limiting** — move to a shared store (Redis/Upstash) if you run more than one instance.
 9. **Analytics and consent** — add only what is needed, with a consent gate if required.
-10. **SEO** — add `@nuxtjs/sitemap` + `robots.txt` once the final domain is live.
+10. **SEO** — `/sitemap.xml` and `/robots.txt` are generated; submit the sitemap in Search Console
+    after launch and add an RSS feed (`/rss.xml`) if people want to subscribe outside email.
 11. **Accessibility** — run axe/Lighthouse and a keyboard pass, especially the mobile menu.
 12. **CI** — run `npm run check`, `npm run typecheck`, `npm test`, and `npm run build` on every push.
 13. **Testimonial consent** — collect written permission for every quote, name, role, and location
