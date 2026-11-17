@@ -251,6 +251,10 @@ the homepage carousel — so “places left” cannot disagree between them.
 confirmed attendees, and inserts in the same transaction. Two simultaneous group bookings cannot
 both pass the check.
 
+**One live booking per email.** The same transaction checks for an existing confirmed or waitlisted
+row with the same email (case-insensitive). A repeat returns `409` with an `email` field error; a
+cancelled booking may register again.
+
 **Waitlist.** If the requested places do not fit, the booking is stored as `waitlisted` instead of
 failing — it still gets a reference and an email. Cancelling a confirmed booking promotes waitlisted
 bookings first-come-first-served inside the same transaction, and emails each promoted registrant.
@@ -312,9 +316,8 @@ hitting Resend's rate limit (1,000 guests is roughly 33 minutes).
 **Bootstrap data.** On a fresh database one published event is seeded (`SEED_EVENTS=false`
 disables it) so the site has something to show.
 
-**Not built yet:** per-email duplicate prevention, a public event detail page, reminder emails,
-and an audit log. Registrations store name, email, and phone, so agree a retention period before
-collecting them in earnest.
+**Not built yet:** a public event detail page, reminder emails, and an audit log. Registrations
+store name, email, and phone, so agree a retention period before collecting them in earnest.
 
 ### Volunteer app
 
@@ -360,6 +363,8 @@ does not require a deploy. If nothing is open, the page still accepts a general 
 `volunteers@crosslovemovement.org` in `mail_outbox`, and drains the queue immediately. If delivery
 fails, the row is retried by the background worker. Staff do not need to be signed in to learn
 that someone applied.
+Moving an application to `approved` or `declined` queues the matching email to the volunteer once;
+the transition is visible in `/admin/mail`.
 Staff review at `/admin/volunteers`, invite the volunteer (creating a `volunteer` account), then
 place them into a programme or an event at `/admin/volunteers/:id`. Volunteers see their placements
 at `/portal`. Placing someone into a role locks the need row and refuses to overfill its places.
@@ -689,6 +694,8 @@ or alias**. Leave it blank to keep rendering the file in the app. Sending still 
 | `auth-invite`           | `RESEND_TEMPLATE_AUTH_INVITE`           | `NAME`, `PORTAL`, `ACTION_URL`, `EXPIRES`                                                                                                                           |
 | `auth-reset`            | `RESEND_TEMPLATE_AUTH_RESET`            | `NAME`, `ACTION_URL`, `EXPIRES`                                                                                                                                     |
 | `volunteer-application` | `RESEND_TEMPLATE_VOLUNTEER_APPLICATION` | `APPLICANT_NAME`, `APPLICANT_EMAIL`, `PHONE`, `CITY`, `AVAILABILITY`, `PROGRAMME`, `EVENT`, `ROLE`, `INTEREST`, `EXPERIENCE`, `MESSAGE`, `CONSENT_AT`, `REVIEW_URL` |
+| `volunteer-approved`    | `RESEND_TEMPLATE_VOLUNTEER_APPROVED`    | `NAME`, `AREA`, `CONTACT_EMAIL`                                                                                                                                     |
+| `volunteer-declined`    | `RESEND_TEMPLATE_VOLUNTEER_DECLINED`    | `NAME`, `AREA`, `CONTACT_EMAIL`                                                                                                                                     |
 | `donation-receipt`      | `RESEND_TEMPLATE_DONATION_RECEIPT`      | `DONOR_NAME`, `AMOUNT`, `FREQUENCY`, `DATE`, `METHOD`, `REFERENCE`, `NOTE`                                                                                          |
 | `contact`               | `RESEND_TEMPLATE_CONTACT`               | `NAME`, `SENDER_EMAIL`, `PHONE`, `TOPIC`, `MESSAGE`                                                                                                                 |
 | `donation`              | `RESEND_TEMPLATE_DONATION`              | `NAME`, `DONOR_EMAIL`, `AMOUNT`, `FREQUENCY`, `NOTE`                                                                                                                |

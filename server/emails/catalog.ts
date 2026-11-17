@@ -31,6 +31,14 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     env: 'RESEND_TEMPLATE_VOLUNTEER_APPLICATION',
     file: 'volunteer-application.html',
   },
+  'volunteer-approved': {
+    env: 'RESEND_TEMPLATE_VOLUNTEER_APPROVED',
+    file: 'volunteer-approved.html',
+  },
+  'volunteer-declined': {
+    env: 'RESEND_TEMPLATE_VOLUNTEER_DECLINED',
+    file: 'volunteer-declined.html',
+  },
   contact: { env: 'RESEND_TEMPLATE_CONTACT', file: 'contact.html' },
   donation: { env: 'RESEND_TEMPLATE_DONATION', file: 'donation.html' },
   'donation-receipt': {

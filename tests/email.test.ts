@@ -37,7 +37,11 @@ import {
   promotionMail,
   waitlistMail,
 } from '../server/features/events/mail'
-import { applicationNotification } from '../server/features/volunteers/mail'
+import {
+  applicationNotification,
+  approvalMail,
+  declineMail,
+} from '../server/features/volunteers/mail'
 import { issueMail, welcomeMail } from '../server/features/newsletter/mail'
 import { receiptMail } from '../server/features/donations/mail'
 import { buildMailPayload } from '../server/utils/mailer'
@@ -182,6 +186,8 @@ const samples: Record<string, TemplateVariables> = {
     opportunityTitle: 'Sound engineer',
     adminUrl: 'https://www.crosslovemovement.org/admin/volunteers/1',
   }).variables,
+  'volunteer-approved': approvalMail(volunteer, 'Sound engineer').variables,
+  'volunteer-declined': declineMail(volunteer, 'Sound engineer').variables,
   contact: contactVariables({
     name: 'Ama',
     email: 'ama@example.com',

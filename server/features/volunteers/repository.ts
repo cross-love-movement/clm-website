@@ -947,6 +947,48 @@ export async function updateVolunteer(id: string, input: VolunteerUpdateInput) {
   return row ?? null
 }
 
+/** The current status, read before an update so a transition can email once. */
+export async function getVolunteerStatus(id: string) {
+  const db = useDatabase()
+  const [row] = await db
+    .select({ status: volunteers.status })
+    .from(volunteers)
+    .where(eq(volunteers.id, id))
+    .limit(1)
+
+  return row?.status ?? null
+}
+
+/** Best label for what the volunteer applied to, used in status emails. */
+export async function latestApplicationArea(id: string) {
+  const db = useDatabase()
+  const [row] = await db
+    .select({
+      area: volunteerApplications.area,
+      programmeTitle: programmes.title,
+      eventTitle: events.title,
+      opportunityTitle: volunteerOpportunities.title,
+    })
+    .from(volunteerApplications)
+    .leftJoin(programmes, eq(programmes.id, volunteerApplications.programmeId))
+    .leftJoin(events, eq(events.id, volunteerApplications.eventId))
+    .leftJoin(
+      volunteerOpportunities,
+      eq(volunteerOpportunities.id, volunteerApplications.opportunityId),
+    )
+    .where(eq(volunteerApplications.volunteerId, id))
+    .orderBy(desc(volunteerApplications.createdAt))
+    .limit(1)
+
+  return (
+    row?.opportunityTitle ||
+    row?.eventTitle ||
+    row?.programmeTitle ||
+    row?.area ||
+    'general volunteering'
+  )
+}
+
 export async function linkVolunteerAccount(
   id: string,
   userId: string,

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, sum } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, sql, sum } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { Event, AdminEvent, AdminEventDetail } from '#shared/types/content'
@@ -124,7 +124,7 @@ export interface RegisterInput {
 
 export type RegisterResult =
   | { ok: true; status: 'confirmed' | 'waitlisted'; event: Event; registration: RegistrationRow }
-  | { ok: false; reason: 'not-found' | 'closed' }
+  | { ok: false; reason: 'not-found' | 'closed' | 'duplicate' }
 
 /**
  * Locks the event row, counts confirmed seats, and inserts the booking in one
@@ -148,6 +148,21 @@ export async function registerForEvent(input: RegisterInput): Promise<RegisterRe
           return { ok: false, reason: 'closed' } as const
         }
 
+        const email = input.email.trim().toLowerCase()
+        const [existing] = await tx
+          .select({ id: eventRegistrations.id })
+          .from(eventRegistrations)
+          .where(
+            and(
+              eq(eventRegistrations.eventId, event.id),
+              inArray(eventRegistrations.status, ['confirmed', 'waitlisted']),
+              sql`lower(${eventRegistrations.email}) = ${email}`,
+            ),
+          )
+          .limit(1)
+
+        if (existing) return { ok: false, reason: 'duplicate' } as const
+
         const taken = await confirmedSeats(tx, event.id)
         const remaining = Math.max(0, event.capacity - taken)
         const status = input.attendees <= remaining ? 'confirmed' : 'waitlisted'
@@ -159,7 +174,7 @@ export async function registerForEvent(input: RegisterInput): Promise<RegisterRe
             reference,
             eventId: event.id,
             name: input.name,
-            email: input.email,
+            email,
             phone: input.phone ?? '',
             attendees: input.attendees,
             notes: input.notes ?? '',

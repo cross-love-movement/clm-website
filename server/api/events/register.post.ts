@@ -46,6 +46,18 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    if (result.reason === 'duplicate') {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Already registered',
+        data: {
+          message:
+            'That email already has a place for this event. Check your inbox for the reference, or contact us if you need to change it.',
+          errors: { email: 'This email is already registered for this event.' },
+        },
+      })
+    }
+
     throw createError({
       statusCode: 409,
       statusMessage: 'Registration closed',

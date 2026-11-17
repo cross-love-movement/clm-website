@@ -354,6 +354,10 @@ useSeoMeta({ robots: 'noindex, nofollow' })
             {{ inviting ? 'Sending…' : 'Invite to portal' }}
           </BaseButton>
         </div>
+
+        <p class="mt-2 text-xs text-ink-soft/80">
+          Approving or declining sends the volunteer an email.
+        </p>
       </div>
 
       <AlertBox v-if="flash" :tone="flash.tone" class="mt-6">
